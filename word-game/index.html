@@ -823,18 +823,27 @@ const LIKELIHOOD_STR = "00000000000000000100zy000000z0000000x000000yzz000000000z
     if (b && !m.isUserBest && m.grade !== "Optimal" && m.n > 1) {
       if (m.T === 1 || m.n === 1) lines.push(`<p><b>Better option:</b> ${W(b.word)}, the most likely remaining answer.</p>`);
       else {
-        const why = [`it needs about ${b.eg.toFixed(2)} guesses to finish on average, versus ${u.eg.toFixed(2)} for yours`];
+        // Reasons go in "why" only when they favor the better option; anything that favors your guess is a trade-off.
+        const why = [], but = [];
+        if (b.eg < u.eg - 0.005) why.push(`it needs about ${b.eg.toFixed(2)} guesses to finish on average, versus ${u.eg.toFixed(2)} for yours`);
+        else if (b.eg > u.eg + 0.005) but.push(`it takes slightly more guesses on average (${b.eg.toFixed(2)} vs ${u.eg.toFixed(2)})`);
         if (b.guaranteed === true && u.guaranteed !== true) why.push(`it guarantees a win within ${turnsLeftText(m.T)}`);
-        if (m.T === 2) why.push(`your chance of finishing would be ${pct(b.pWin2)} instead of ${pct(u.pWin2)}`);
-        why.push(`it splits the ${plural(m.n, "possible answer")} into ${b.groups} groups (largest ${b.worst}); yours made ${u.groups} (largest ${u.worst})`);
+        if (m.T === 2 && b.pWin2 > u.pWin2 + 0.005) why.push(`your chance of finishing would be ${pct(b.pWin2)} instead of ${pct(u.pWin2)}`);
+        if (b.groups > u.groups) why.push(`it produces ${b.groups} different color patterns across the ${plural(m.n, "possible answer")}, versus ${u.groups} for yours, so you'd usually be left with fewer words`);
+        else if (b.groups < u.groups) but.push(`it has fewer possible color patterns (${b.groups} vs ${u.groups})`);
+        if (b.worst < u.worst) why.push(`in the worst case it leaves ${b.worst.toLocaleString()} ${b.worst === 1 ? "word" : "words"}, versus ${u.worst.toLocaleString()} for yours`);
+        else if (b.worst > u.worst) but.push(`its worst case leaves more words (${b.worst.toLocaleString()} vs ${u.worst.toLocaleString()})`);
         if (b.isCandidate && !u.isCandidate) why.push(`it could also have been the answer (${pct(b.solveChance)} chance)`);
+        else if (u.isCandidate && !b.isCandidate) but.push(`it couldn't be the answer itself, while yours had a ${u.solveChance < 0.005 ? "small" : pct(u.solveChance)} chance`);
         const others = m.alternatives.filter(a => a.word !== b.word).slice(0, 2).map(a => a.word);
-        lines.push(`<p><b>Better option:</b> ${W(b.word)}${others.length ? ` (also strong: ${W(others.join(", "))})` : ""}. It's stronger because ${why.join("; ")}.</p>`);
+        const reason = why.length ? ` It's stronger because ${why.join("; ")}.` : "";
+        const tradeoff = but.length ? ` Trade-off: ${but.join("; ")}.` : "";
+        lines.push(`<p><b>Better option:</b> ${W(b.word)}${others.length ? ` (also strong: ${W(others.join(", "))})` : ""}.${reason}${tradeoff}</p>`);
         const lt = letterNote(m);
         if (lt) lines.push(`<p>${lt}</p>`);
         if (m.bestGroups && m.userGroups) {
-          lines.push(`<p>How ${W(b.word)} would sort them:</p>${splitHTML(m.bestGroups)}`);
-          lines.push(`<p>How ${W(u.word)} sorted them (outlined in red: words it couldn't tell apart):</p>${splitHTML(m.userGroups)}`);
+          lines.push(`<p>How ${W(b.word)} would sort them by color pattern:</p>${splitHTML(m.bestGroups)}`);
+          lines.push(`<p>How ${W(u.word)} sorted them (outlined in red: words that share a color pattern, so it couldn't tell them apart):</p>${splitHTML(m.userGroups)}`);
         }
       }
       if (m.rareBetter) lines.push(`<p style="color:var(--muted)">Among rare words, ${W(m.rareBetter.word)} scores slightly higher (${m.rareBetter.eg.toFixed(2)} guesses). It isn't used as the benchmark because few players would think of it.</p>`);
@@ -914,8 +923,8 @@ const LIKELIHOOD_STR = "00000000000000000100zy000000z0000000x000000yzz000000000z
       const t = costly, b = t.best;
       if (t.reason === "missedForced") improve = `On guess ${t.index + 1} only ${W(t.candidatesBefore[0])} fit. Before you type, check your word against every green, yellow and gray clue so far.`;
       else if (t.reason === "finalNotAnswer" || t.reason === "unlikelyFinal") improve = `On your final guess, play the most likely word that still fits: ${W(b.word)}.`;
-      else if (t.reason === "noInfo") improve = `On guess ${t.index + 1}, ${W(t.user.word)} gave the same colors for every possible answer. ${W(b.word)} would have split them into ${b.groups} groups.`;
-      else if (t.bestGroups) improve = lesson(t) + ` Here ${W(t.user.word)} left ${t.userGroups.filter(g => g.words.length > 1).map(g => W(g.words.join(" & "))).join(", ") || "some words"} together; ${W(b.word)} would have separated ${b.groups === t.n ? "all of them" : `them into ${b.groups} groups`}.`;
+      else if (t.reason === "noInfo") improve = `On guess ${t.index + 1}, ${W(t.user.word)} gave the same colors for every possible answer. ${W(b.word)} would have given ${b.groups} different color patterns.`;
+      else if (t.bestGroups) improve = lesson(t) + ` Here ${W(t.user.word)} left ${t.userGroups.filter(g => g.words.length > 1).map(g => W(g.words.join(" & "))).join(", ") || "some words"} together; ${W(b.word)} would have ${b.groups === t.n ? "given each one its own color pattern" : `sorted them into ${b.groups} color patterns`}.`;
       else improve = lesson(t);
     } else {
       const near = ms.filter(m => !m.isUserBest && m.best && m.n > 1 && m.T > 1).sort((a, b) => b.cost - a.cost)[0];
