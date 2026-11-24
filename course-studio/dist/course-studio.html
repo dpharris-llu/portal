@@ -111,7 +111,7 @@ main:focus { outline: none; }
 .step-meta { display: block; font-size: .76rem; color: var(--muted); font-weight: 400; }
 .step-flag { color: var(--gap); font-weight: 700; }
 
-.why-panel { position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; padding: 1.25rem 1.25rem 3rem; border-left: 1px solid var(--line); background: var(--surface-2); }
+.why-panel { position: sticky; top: env(safe-area-inset-top, 0px); height: calc(100vh - env(safe-area-inset-top, 0px)); overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1.25rem 3rem; border-left: 1px solid var(--line); background: var(--surface-2); }
 
 /* Step header */
 .step-head { border-bottom: 1px solid var(--line); padding-bottom: .9rem; margin-bottom: 1rem; }
@@ -232,7 +232,14 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 
 @media (max-width: 1150px) {
   .layout { grid-template-columns: 210px minmax(0, 1fr); }
-  .why-panel { grid-column: 1 / -1; position: static; max-height: none; border-left: 0; border-top: 1px solid var(--line); }
+  /* Narrower screens: the "why" panel becomes a drawer that slides in from the right. */
+  .why-panel { position: fixed; top: 0; right: 0; bottom: 0; height: auto; width: min(420px, calc(100vw - 40px)); z-index: 30;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1rem); padding-right: max(1.25rem, env(safe-area-inset-right, 0px)); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+    box-shadow: -8px 0 24px rgba(0,0,0,.18); transform: translateX(100%); visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s; }
+  body.why-open .why-panel { transform: none; visibility: visible; transition: transform .22s ease; }
+  body.why-open .why-backdrop { display: block; }
+  .why-toggle { display: inline-flex; }
+  .drawer-only { display: inline-block; }
 }
 @media (max-width: 760px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
@@ -241,7 +248,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
   .steps a { grid-template-columns: 26px auto; white-space: nowrap; }
   .step-meta { display: none; }
   main { padding: 1rem 16px 3rem; }
-  .why-panel { padding: 1rem 16px 3rem; }
+  .why-panel { padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   .top { padding: .6rem 16px; }
   .source-banner { padding: .45rem 16px; }
   .chain { grid-template-columns: 1fr; }
@@ -299,6 +306,17 @@ table.heat td.count { text-align: left; white-space: nowrap; border: 0; padding-
 #syllabusDoc h4 { margin: 1rem 0 .3rem; font-size: .95rem; }
 #syllabusDoc .empty { color: var(--muted); font-style: italic; }
 table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(--ink); font-size: .88rem; font-weight: 600; text-align: left; }
+
+/* Drawer controls (shown only when the "why" panel is a drawer) */
+.why-toggle { display: none; position: fixed; z-index: 25; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  align-items: center; gap: .4rem; box-shadow: 0 4px 14px rgba(0,0,0,.2); border-radius: 999px; padding: .55rem 1rem; }
+.why-toggle .count { background: var(--accent-ink); color: var(--accent); border-radius: 999px; padding: 0 .45rem; font-size: .78rem; }
+.why-backdrop { display: none; position: fixed; inset: 0; z-index: 29; background: rgba(0,0,0,.32); }
+.drawer-only { display: none; }
+.why-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+@media (prefers-reduced-motion: reduce) { .why-panel { transition: none !important; } }
+@media print { .why-toggle, .why-backdrop { display: none !important; } }
+@media (max-width: 1150px) { .why-toggle { display: inline-flex; } .drawer-only { display: inline-block; } }
 </style>
 <a class="skip" href="#foundations">Skip to the course steps</a>
 <header class="top">
@@ -324,6 +342,8 @@ table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(-
   <main id="main" tabindex="-1"></main>
   <aside class="why-panel" id="whyPanel" aria-label="Why this approach" aria-live="polite"></aside>
 </div>
+<button type="button" class="btn why-toggle" id="whyToggle" aria-controls="whyPanel" aria-expanded="false" data-action="openWhy">Why this step</button>
+<div class="why-backdrop" data-action="closeWhy"></div>
 <p class="sr" id="flash" role="status"></p>
 <dialog id="legend" aria-labelledby="legendTitle"></dialog>
 <dialog id="learning" aria-label="Your learning"></dialog>
@@ -1955,8 +1975,10 @@ table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(-
       ${res.error ? `<p class="status gap" style="margin-top:.5rem">${esc(res.error)}</p>` : ""}
       ${res.result ? coachHTML(res.result) : ""}
     </div>`;
+    const gapCount = issues.filter(i => i.severity === "gap").length;
+    $("#whyToggle").innerHTML = `Why this step${gapCount ? ` <span class="count" aria-label="${gapCount} gaps">✕${gapCount}</span>` : ""}`;
     $("#whyPanel").innerHTML = `
-      <h2>Why this step</h2>
+      <div class="why-head"><h2 id="whyTitle" tabindex="-1">Why this step</h2><button type="button" class="btn small ghost drawer-only" data-action="closeWhy">Close</button></div>
       <p class="why-step">${esc(s.why)}</p>
       <p class="source-chip">${s.module != null ? esc(C.MODULES[s.module]) : '<span class="draft-flag">Mission lens · draft for review</span>'}</p>
       ${s.learn ? `<div class="learn-card"><span class="eyebrow">The idea to use here</span><p>${esc(s.learn)}</p></div>` : ""}
@@ -2140,7 +2162,7 @@ table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(-
     if (h && !h.closest("#legend")) {
       focusHint = h.dataset.hint;
       renderWhy();
-      if (window.matchMedia("(max-width: 1150px)").matches) $("#whyPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      if (isDrawer()) openWhy();
       return;
     }
     const a = e.target.closest("[data-action]");
@@ -2179,6 +2201,8 @@ table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(-
       case "kcNext": kcState = {}; renderWhy(); break;
       case "kcReview": C.KNOWLEDGE.filter(k => k.step === stepId).forEach(k => { delete db.learning[k.id]; }); kcState = {}; save(); renderWhy(); renderLearning(); break;
       case "closeHint": focusHint = null; renderWhy(); break;
+      case "openWhy": openWhy(); break;
+      case "closeWhy": closeWhy(); break;
       case "coach": askCoach(); break;
       case "print": window.print(); break;
       case "copyPlan": copyText($("[data-live=plan]").innerText, "Plan copied. Paste it into a document or the Canvas submission box."); break;
@@ -2200,6 +2224,21 @@ table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(-
       case "closeDialog": $("#learning").close(); break;
     }
   });
+
+  // The "why" panel is a drawer on narrower screens.
+  const isDrawer = () => window.matchMedia("(max-width: 1150px)").matches;
+  function openWhy() {
+    document.body.classList.add("why-open");
+    $("#whyToggle").setAttribute("aria-expanded", "true");
+    const t = $("#whyTitle"); if (t) t.focus({ preventScroll: true });
+  }
+  function closeWhy() {
+    if (!document.body.classList.contains("why-open")) return;
+    document.body.classList.remove("why-open");
+    $("#whyToggle").setAttribute("aria-expanded", "false");
+    if (isDrawer()) $("#whyToggle").focus({ preventScroll: true });
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("why-open")) closeWhy(); });
 
   function flash(msg) { const el = $("#planMsg") || $("#flash"); if (el) el.textContent = msg; }
   async function copyText(text, ok) {
@@ -2237,6 +2276,7 @@ table.grid tbody th { text-transform: none; letter-spacing: normal; color: var(-
     const id = location.hash.replace("#", "");
     if (C.STEPS.some(s => s.id === id)) {
       stepId = id; focusHint = null; kcState = {};
+      document.body.classList.remove("why-open"); $("#whyToggle").setAttribute("aria-expanded", "false");
       if ($("#learning").open) $("#learning").close();
       renderStep(); $("#main").focus({ preventScroll: true }); window.scrollTo(0, 0);
     }

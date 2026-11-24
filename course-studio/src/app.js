@@ -853,8 +853,10 @@
       ${res.error ? `<p class="status gap" style="margin-top:.5rem">${esc(res.error)}</p>` : ""}
       ${res.result ? coachHTML(res.result) : ""}
     </div>`;
+    const gapCount = issues.filter(i => i.severity === "gap").length;
+    $("#whyToggle").innerHTML = `Why this step${gapCount ? ` <span class="count" aria-label="${gapCount} gaps">✕${gapCount}</span>` : ""}`;
     $("#whyPanel").innerHTML = `
-      <h2>Why this step</h2>
+      <div class="why-head"><h2 id="whyTitle" tabindex="-1">Why this step</h2><button type="button" class="btn small ghost drawer-only" data-action="closeWhy">Close</button></div>
       <p class="why-step">${esc(s.why)}</p>
       <p class="source-chip">${s.module != null ? esc(C.MODULES[s.module]) : '<span class="draft-flag">Mission lens · draft for review</span>'}</p>
       ${s.learn ? `<div class="learn-card"><span class="eyebrow">The idea to use here</span><p>${esc(s.learn)}</p></div>` : ""}
@@ -1038,7 +1040,7 @@
     if (h && !h.closest("#legend")) {
       focusHint = h.dataset.hint;
       renderWhy();
-      if (window.matchMedia("(max-width: 1150px)").matches) $("#whyPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      if (isDrawer()) openWhy();
       return;
     }
     const a = e.target.closest("[data-action]");
@@ -1077,6 +1079,8 @@
       case "kcNext": kcState = {}; renderWhy(); break;
       case "kcReview": C.KNOWLEDGE.filter(k => k.step === stepId).forEach(k => { delete db.learning[k.id]; }); kcState = {}; save(); renderWhy(); renderLearning(); break;
       case "closeHint": focusHint = null; renderWhy(); break;
+      case "openWhy": openWhy(); break;
+      case "closeWhy": closeWhy(); break;
       case "coach": askCoach(); break;
       case "print": window.print(); break;
       case "copyPlan": copyText($("[data-live=plan]").innerText, "Plan copied. Paste it into a document or the Canvas submission box."); break;
@@ -1098,6 +1102,21 @@
       case "closeDialog": $("#learning").close(); break;
     }
   });
+
+  // The "why" panel is a drawer on narrower screens.
+  const isDrawer = () => window.matchMedia("(max-width: 1150px)").matches;
+  function openWhy() {
+    document.body.classList.add("why-open");
+    $("#whyToggle").setAttribute("aria-expanded", "true");
+    const t = $("#whyTitle"); if (t) t.focus({ preventScroll: true });
+  }
+  function closeWhy() {
+    if (!document.body.classList.contains("why-open")) return;
+    document.body.classList.remove("why-open");
+    $("#whyToggle").setAttribute("aria-expanded", "false");
+    if (isDrawer()) $("#whyToggle").focus({ preventScroll: true });
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("why-open")) closeWhy(); });
 
   function flash(msg) { const el = $("#planMsg") || $("#flash"); if (el) el.textContent = msg; }
   async function copyText(text, ok) {
@@ -1135,6 +1154,7 @@
     const id = location.hash.replace("#", "");
     if (C.STEPS.some(s => s.id === id)) {
       stepId = id; focusHint = null; kcState = {};
+      document.body.classList.remove("why-open"); $("#whyToggle").setAttribute("aria-expanded", "false");
       if ($("#learning").open) $("#learning").close();
       renderStep(); $("#main").focus({ preventScroll: true }); window.scrollTo(0, 0);
     }
