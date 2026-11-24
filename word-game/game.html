@@ -10,8 +10,11 @@
   --muted: #5d6670;
   --line: #c9d0d6;
   --tile-empty: #ffffff;
-  --key: #dde3e8;
+  --key: #ffffff;
   --key-ink: #1c2126;
+  --key-border: #aeb8c1;
+  --used-key: #353c43;   /* ruled-out letters: dark and crossed out */
+  --used-ink: #b3bcc4;
   --hit: #3d8b4f;      /* right letter, right spot */
   --near: #c99a1e;     /* in the word, wrong spot */
   --miss: #7a828a;     /* not in the word */
@@ -22,13 +25,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #12161a; --surface: #1b2026; --ink: #e8ecef; --muted: #98a2ab; --line: #343c44;
-    --tile-empty: #161b20; --key: #2b333b; --key-ink: #e8ecef;
+    --tile-empty: #161b20; --key: #4a5662; --key-ink: #ffffff; --key-border: #6a7783; --used-key: #0b0e11; --used-ink: #9aa5af;
     --hit: #3f9454; --near: #c49a26; --miss: #4b535b; --on-color: #ffffff; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #12161a; --surface: #1b2026; --ink: #e8ecef; --muted: #98a2ab; --line: #343c44;
-  --tile-empty: #161b20; --key: #2b333b; --key-ink: #e8ecef;
+  --tile-empty: #161b20; --key: #4a5662; --key-ink: #ffffff; --key-border: #6a7783; --used-key: #0b0e11; --used-ink: #9aa5af;
   --hit: #3f9454; --near: #c49a26; --miss: #4b535b; --on-color: #ffffff; color-scheme: dark;
 }
 html, body { min-height: 100%; }
@@ -86,16 +89,33 @@ button:focus-visible { outline: 3px solid var(--near); outline-offset: 2px; }
 .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 .alpha { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; }
 .key {
-  min-width: 0; height: 48px; border: none; border-radius: 6px; background: var(--key); color: var(--key-ink);
+  min-width: 0; height: 48px; border: 1.5px solid var(--key-border); border-radius: 6px; background: var(--key); color: var(--key-ink);
   font-family: var(--font-display); font-size: 1.05rem; text-transform: uppercase;
   box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1); transition: background-color 0.2s, opacity 0.2s;
 }
 .key:hover { filter: brightness(0.96); }
-.key.hit { background: var(--hit); color: var(--on-color); }
-.key.near { background: var(--near); color: var(--on-color); }
-.key.miss { background: var(--miss); color: var(--on-color); opacity: 0.55; }
+.key.hit, .key.near { color: var(--on-color); border-color: transparent; }
+.key.hit { background: var(--hit); }
+.key.near { background: var(--near); }
+.key.miss {
+  background: var(--used-key); color: var(--used-ink); border-color: transparent; box-shadow: none;
+  text-decoration: line-through; text-decoration-thickness: 2px;
+}
 .key.wide { grid-column: span 2; font-family: var(--font-body); font-weight: 600; font-size: 0.85rem; text-transform: none; }
 .counts { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
+
+.score { width: 100%; border-top: 1px solid var(--line); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; }
+.score h2 { margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.score-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.linkbtn { background: none; border: none; color: var(--muted); font-size: 0.78rem; text-decoration: underline; padding: 4px; }
+.linkbtn.confirm { color: #b4442f; font-weight: 600; }
+.nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.num b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.num span { font-size: 0.75rem; color: var(--muted); }
+.dist { display: grid; grid-template-columns: auto 1fr; gap: 5px 8px; align-items: center; font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.dist .lbl { color: var(--muted); font-weight: 600; text-align: right; }
+.bar { background: var(--miss); color: var(--on-color); font-weight: 600; padding: 2px 8px; border-radius: 4px; text-align: right; min-width: 1.8em; width: max-content; max-width: 100%; box-sizing: border-box; }
+.bar.now { background: var(--hit); }
 @media (max-width: 380px) { .key { height: 42px; font-size: 0.95rem; } .alpha { gap: 4px; } }
 </style>
 
@@ -118,11 +138,28 @@ button:focus-visible { outline: 3px solid var(--near); outline-offset: 2px; }
       <div class="legend">
         <span><i style="background:var(--hit)"></i>Right spot</span>
         <span><i style="background:var(--near)"></i>Wrong spot</span>
-        <span><i style="background:var(--miss)"></i>Not in word</span>
+        <span><i style="background:var(--used-key)"></i>Not in word</span>
       </div>
     </div>
     <div class="alpha" id="alpha"></div>
     <div class="counts" id="counts"></div>
+  </section>
+
+  <section class="score" aria-label="Your score">
+    <div class="score-head">
+      <h2>Your score</h2>
+      <button class="linkbtn" id="resetStats" type="button">Reset score</button>
+    </div>
+    <div class="nums">
+      <div class="num"><b id="sPlayed">0</b><span>Played</span></div>
+      <div class="num"><b id="sWin">0</b><span>Win %</span></div>
+      <div class="num"><b id="sStreak">0</b><span>Streak</span></div>
+      <div class="num"><b id="sBest">0</b><span>Best streak</span></div>
+    </div>
+    <div>
+      <h2 style="margin-bottom:8px">Solved in…</h2>
+      <div class="dist" id="dist"></div>
+    </div>
   </section>
 </div>
 
@@ -143,6 +180,56 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
   const countsEl = document.getElementById("counts");
 
   let state;
+
+  // Score is kept in this browser only.
+  const STATS_KEY = "five-letter-hunt-stats";
+  const blankStats = () => ({ played: 0, wins: 0, streak: 0, best: 0, dist: [0, 0, 0, 0, 0, 0] });
+  let stats = blankStats();
+  try { const s = JSON.parse(localStorage.getItem(STATS_KEY)); if (s && Array.isArray(s.dist)) stats = s; } catch (e) {}
+  function saveStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {} }
+
+  function recordResult() {
+    if (state.recorded) return;
+    state.recorded = true;
+    stats.played++;
+    if (state.won) {
+      stats.wins++; stats.streak++; stats.best = Math.max(stats.best, stats.streak);
+      stats.dist[state.guesses.length - 1]++;
+    } else stats.streak = 0;
+    saveStats();
+  }
+
+  function paintStats() {
+    document.getElementById("sPlayed").textContent = stats.played;
+    document.getElementById("sWin").textContent = stats.played ? Math.round(100 * stats.wins / stats.played) : 0;
+    document.getElementById("sStreak").textContent = stats.streak;
+    document.getElementById("sBest").textContent = stats.best;
+    const dist = document.getElementById("dist");
+    dist.innerHTML = "";
+    const max = Math.max(1, ...stats.dist);
+    stats.dist.forEach((n, i) => {
+      const l = document.createElement("div"); l.className = "lbl"; l.textContent = i + 1;
+      const b = document.createElement("div");
+      b.className = "bar" + (state && state.won && state.guesses.length === i + 1 ? " now" : "");
+      b.style.width = (n ? Math.max(8, 100 * n / max) : 0) + "%";
+      b.textContent = n;
+      b.setAttribute("aria-label", `${n} ${n === 1 ? "game" : "games"} solved in ${i + 1}`);
+      dist.append(l, b);
+    });
+  }
+
+  const resetBtn = document.getElementById("resetStats");
+  let resetArmed = null;
+  resetBtn.addEventListener("click", () => {
+    if (!resetArmed) {
+      resetBtn.textContent = "Tap again to erase score"; resetBtn.classList.add("confirm");
+      resetArmed = setTimeout(() => { resetArmed = null; resetBtn.textContent = "Reset score"; resetBtn.classList.remove("confirm"); }, 4000);
+      return;
+    }
+    clearTimeout(resetArmed); resetArmed = null;
+    resetBtn.textContent = "Reset score"; resetBtn.classList.remove("confirm");
+    stats = blankStats(); saveStats(); paintStats();
+  });
 
   // Score a guess: greens first, then yellows limited by the letters left over.
   function score(guess, answer) {
@@ -279,13 +366,16 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
         const praise = ["Genius!", "Magnificent!", "Impressive!", "Splendid!", "Great!", "Phew!"][r];
         say(`${praise} Solved in ${r + 1} ${r === 0 ? "guess" : "guesses"}.`, { again: true });
         if (!reduced) boardEl.children[r].classList.add("win");
+        recordResult();
       } else if (state.guesses.length === ROWS) {
         state.done = true;
+        recordResult();
         say("Out of guesses. The word was:", { word: true, again: true });
       } else {
         say(`${ROWS - state.guesses.length} ${ROWS - state.guesses.length === 1 ? "guess" : "guesses"} left.`);
       }
       paintAlpha();
+      paintStats();
     }, delay);
   }
 
@@ -310,6 +400,7 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
     state.guesses.forEach((_, r) => paintRow(r, false));
     paintCurrent();
     paintAlpha();
+    paintStats();
     if (state.done) {
       if (state.won) say(`Solved in ${state.guesses.length} ${state.guesses.length === 1 ? "guess" : "guesses"}.`, { again: true });
       else say("Out of guesses. The word was:", { word: true, again: true });
@@ -317,7 +408,10 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
     else say("Type a five-letter word and press Enter.");
   }
 
-  function newGame() { state = freshState(); render(); }
+  function newGame() {
+    if (!state.done && state.guesses.length > 0) { state.done = true; state.won = false; recordResult(); }
+    state = freshState(); render();
+  }
   document.getElementById("newGame").addEventListener("click", e => { newGame(); e.currentTarget.blur(); });
 
   function start(saved) {
