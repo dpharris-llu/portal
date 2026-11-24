@@ -2,10 +2,14 @@
 const fs = require("fs");
 const path = require("path");
 const assert = require("assert");
-const { createEngine } = require("./src/engine.js");
+const { createEngine, decodeLikelihood } = require("./src/engine.js");
 
 const words = fs.readFileSync(path.join(__dirname, "src/words.txt"), "utf8").trim().split(" ");
+// Uniform engine: every possible word equally likely (matches the hand-worked scenario below).
 const engine = createEngine({ guesses: words, answers: words.slice() });
+// Weighted engine: the likelihood model the game uses.
+const likelihood = decodeLikelihood(fs.readFileSync(path.join(__dirname, "src/likelihood.txt"), "utf8").trim());
+const weighted = createEngine({ guesses: words, answers: words.slice(), weights: likelihood });
 const close = (a, b) => Math.abs(a - b) < 0.01;
 let passed = 0;
 const test = (name, fn) => { fn(); passed++; console.log("ok -", name); };
@@ -70,9 +74,24 @@ test("Duplicate letters follow the exact feedback rules", () => {
   const a = engine.analyzeWords(["abide", "erase"], 2, "speed", "abide");
   assert.strictEqual(a.afterCount, 1);
 });
+test("Likelihood model: common words outweigh obscure ones", () => {
+  const w = x => likelihood[words.indexOf(x)];
+  assert(w("raise") > 0.9 && w("pixel") > 0.9);
+  assert(w("tares") < 0.05 && w("dynel") < 0.05);
+});
+test("Weighted scenario still separates FLAME/FLAKE/GLAZE correctly", () => {
+  const a = weighted.analyzeWords(SET, 2, "flake");
+  assert.strictEqual(a.user.guaranteed, true);
+  assert.strictEqual(a.user.worst, 1);
+  assert.strictEqual(a.grade, "Optimal");
+});
+test("Win chance with two turns left is exact", () => {
+  const a = engine.analyzeWords(SET, 2, "glaze");
+  assert(close(a.user.pWin2, 2 / 3));
+});
 test("Full game review runs and grades every move", () => {
   const t = Date.now();
-  const rev = engine.reviewGame(["house", "crane", "moist"], "sixth");
+  const rev = weighted.reviewGame(["house", "crane", "moist"], "sixth");
   assert.strictEqual(rev.moves.length, 3);
   rev.moves.forEach(m => assert(m.grade && m.luck));
   console.log("   review time", Date.now() - t, "ms");

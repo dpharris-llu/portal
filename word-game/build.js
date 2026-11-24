@@ -6,10 +6,11 @@ const src = f => fs.readFileSync(path.join(__dirname, "src", f), "utf8");
 const secret = src("secret-words.txt").trim();
 const words = src("words.txt").trim();
 const openers = JSON.parse(src("openers.json"));
+const likelihood = src("likelihood.txt").trim();
 const body = [
   src("head.html"),
   `<script id="engine-src">\n${src("engine.js")}</script>`,
-  `<script>\nconst ANSWERS_STR = "${secret}";\nconst VALID_STR = "${words}";\nconst OPENERS = ${JSON.stringify(openers)};\n${src("game.js")}</script>\n`,
+  `<script>\nconst ANSWERS_STR = "${secret}";\nconst VALID_STR = "${words}";\nconst OPENERS = ${JSON.stringify(openers)};\nconst LIKELIHOOD_STR = "${likelihood}";\n${src("game.js")}</script>\n`,
 ].join("\n");
 fs.writeFileSync(path.join(__dirname, "game.html"), body);
 fs.writeFileSync(path.join(__dirname, "index.html"),
