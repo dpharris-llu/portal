@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLU Course Studio</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the design step</a>
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <div class="brand-name">Course Studio</div>
+      <div class="brand-sub">Loma Linda University Health · Proof of concept</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <label class="design-pick"><span class="sr">Current design</span><select id="designSelect"></select></label>
+    <button class="btn ghost" data-action="newDesign">New</button>
+    <button class="btn ghost" data-action="loadExample">Load example</button>
+    <button class="btn ghost" data-action="legend" aria-haspopup="dialog">Symbols</button>
+    <label class="toggle"><input type="checkbox" id="hintToggle" checked> <span>Show hints</span></label>
+  </div>
+</header>
+<div class="source-banner" id="sourceBanner"></div>
+<div class="layout">
+  <nav class="steps" aria-label="Design steps"><ol id="stepNav"></ol></nav>
+  <main id="main" tabindex="-1"></main>
+  <aside class="why-panel" id="whyPanel" aria-label="Why this approach" aria-live="polite"></aside>
+</div>
+<p class="sr" id="flash" role="status"></p>
+<dialog id="legend" aria-labelledby="legendTitle"></dialog>
+<input type="file" id="importFile" accept="application/json" hidden>
+<script src="content/course.js"></script>
+<script src="content/mission.js"></script>
+<script src="checks.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

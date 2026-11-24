@@ -1,0 +1,1756 @@
+<title>LLU Course Studio</title>
+<style>
+/* Course Studio. Layout: step rail | design form | "why" panel. Collapses to one column on phones.
+   Every symbol pairs a shape with a word, so color is never the only signal. */
+:root {
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --surface-2: #faf8f5;
+  --ink: #1d2327;
+  --muted: #5b6469;
+  --line: #d9d4cc;
+  --accent: #1f5f73;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2eef1;
+  --strong: #2f6b45;
+  --moderate: #8a6512;
+  --limited: #9a4a2b;
+  --framework: #4b5a8a;
+  --design: #5b6469;
+  --mission: #7a3d6e;
+  --mission-soft: #f4e9f1;
+  --ok: #2f6b45;
+  --ok-soft: #e4f0e7;
+  --partial: #8a6512;
+  --partial-soft: #f6ecd5;
+  --gap: #a33a2a;
+  --gap-soft: #f7e1dc;
+  --note: #4b5a8a;
+  --note-soft: #e7eaf4;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191b; --surface: #1d2326; --surface-2: #232a2e; --ink: #e8e6e1; --muted: #a3aaae; --line: #353e43;
+    --accent: #7fc1d3; --accent-ink: #10181b; --accent-soft: #20353c;
+    --strong: #8cc9a0; --moderate: #e0b85c; --limited: #e79a7c; --framework: #a9b5e3; --design: #a3aaae;
+    --mission: #e0a3d2; --mission-soft: #3a2636;
+    --ok: #8cc9a0; --ok-soft: #1f3327; --partial: #e0b85c; --partial-soft: #3a301a;
+    --gap: #ef8f7d; --gap-soft: #3d221d; --note: #a9b5e3; --note-soft: #252b40; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191b; --surface: #1d2326; --surface-2: #232a2e; --ink: #e8e6e1; --muted: #a3aaae; --line: #353e43;
+  --accent: #7fc1d3; --accent-ink: #10181b; --accent-soft: #20353c;
+  --strong: #8cc9a0; --moderate: #e0b85c; --limited: #e79a7c; --framework: #a9b5e3; --design: #a3aaae;
+  --mission: #e0a3d2; --mission-soft: #3a2636;
+  --ok: #8cc9a0; --ok-soft: #1f3327; --partial: #e0b85c; --partial-soft: #3a301a;
+  --gap: #ef8f7d; --gap-soft: #3d221d; --note: #a9b5e3; --note-soft: #252b40; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.25; }
+h1 { font-size: 1.7rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.2rem; margin: 1.5rem 0 .5rem; }
+h3 { font-size: 1rem; margin: 1rem 0 .4rem; font-family: var(--font); }
+p { margin: .4rem 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: -999px; top: 0; background: var(--surface); padding: .5rem 1rem; z-index: 10; }
+.skip:focus { left: 1rem; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; align-items: center; justify-content: space-between;
+  padding: .75rem 1.25rem; background: var(--surface); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: .7rem; }
+.brand-mark { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--accent); position: relative; flex: none; }
+.brand-mark::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--mission); opacity: .85; }
+.brand-name { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; }
+.brand-sub { color: var(--muted); font-size: .82rem; }
+.top-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.design-pick select { max-width: 15rem; }
+.toggle { display: inline-flex; gap: .35rem; align-items: center; font-size: .9rem; color: var(--muted); }
+
+.btn { text-decoration: none; display: inline-block; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 8px;
+  padding: .4rem .8rem; cursor: pointer; font-weight: 600; font-size: .9rem; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.small { padding: .2rem .55rem; font-size: .82rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.link { border: 0; background: none; color: var(--accent); padding: 0; text-decoration: underline; font-weight: 500; }
+
+.source-banner { padding: .45rem 1.25rem; font-size: .84rem; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.source-banner strong { color: var(--ink); }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr) 360px; gap: 0; align-items: start; max-width: 1500px; margin: 0 auto; }
+main { padding: 1.5rem 1.75rem 4rem; min-width: 0; }
+main:focus { outline: none; }
+.steps { position: sticky; top: env(safe-area-inset-top, 0px); padding: 1.25rem .75rem; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; }
+.steps a { position: relative; display: grid; grid-template-columns: 26px 1fr; gap: .5rem; align-items: center; text-decoration: none; color: var(--ink);
+  padding: .5rem .55rem; border-radius: 8px; }
+.steps a:hover { background: var(--surface); }
+.steps a[aria-current="step"] { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
+.step-num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 700;
+  border: 2px solid var(--line); background: var(--surface); }
+.step-num.done { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.step-num.started { border-color: var(--accent); color: var(--accent); }
+.step-num.mission { border-color: var(--mission); color: var(--mission); }
+.step-meta { display: block; font-size: .76rem; color: var(--muted); font-weight: 400; }
+.step-flag { color: var(--gap); font-weight: 700; }
+
+.why-panel { position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow-y: auto; padding: 1.25rem 1.25rem 3rem; border-left: 1px solid var(--line); background: var(--surface-2); }
+
+/* Step header */
+.step-head { border-bottom: 1px solid var(--line); padding-bottom: .9rem; margin-bottom: 1rem; }
+.eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.produces { color: var(--muted); font-size: .9rem; }
+
+/* Cards and fields */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; margin: .9rem 0; box-shadow: var(--shadow); }
+.card.mission-card { border-left: 4px solid var(--mission); }
+.field { margin: .85rem 0; }
+.field > .label-row { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.field label, .label { font-weight: 600; font-size: .93rem; }
+.field input[type=text], .field input[type=number], .field input[type=date], .field select, .field textarea, .inline-input {
+  width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin-top: .3rem; }
+.field textarea { resize: vertical; min-height: 4.2rem; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 1rem; }
+.hint-line { margin: .15rem 0 0; color: var(--muted); font-size: .86rem; display: flex; gap: .4rem; align-items: baseline; flex-wrap: wrap; }
+body.hints-off .hint-line { display: none; }
+.optional { color: var(--muted); font-weight: 400; font-size: .82rem; }
+
+/* "Why" button */
+.why { display: inline-flex; align-items: center; gap: .25rem; border: 1px solid var(--accent); color: var(--accent); background: var(--surface);
+  border-radius: 999px; padding: 0 .5rem 0 .2rem; font-size: .75rem; font-weight: 700; cursor: pointer; line-height: 1.5rem; }
+.why::before { content: "?"; display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .7rem; }
+.why:hover { background: var(--accent-soft); }
+.why.mission { border-color: var(--mission); color: var(--mission); }
+.why.mission::before { background: var(--mission); }
+
+/* Marks: evidence, Bloom, Miller, AI, mission, status */
+.mark { display: inline-flex; align-items: center; gap: .3rem; font-size: .75rem; font-weight: 700; border-radius: 999px; padding: .05rem .5rem .05rem .4rem;
+  border: 1px solid currentColor; white-space: nowrap; line-height: 1.35rem; background: var(--surface); }
+.mark svg { flex: none; }
+.mark.strong { color: var(--strong); } .mark.moderate { color: var(--moderate); } .mark.limited { color: var(--limited); }
+.mark.framework { color: var(--framework); } .mark.design { color: var(--design); } .mark.mission { color: var(--mission); background: var(--mission-soft); }
+.mark.bloom, .mark.miller, .mark.ai { color: var(--accent); }
+.status { display: inline-flex; align-items: center; gap: .3rem; font-size: .78rem; font-weight: 700; padding: .1rem .55rem; border-radius: 6px; white-space: nowrap; }
+.status.aligned, .status.meets { color: var(--ok); background: var(--ok-soft); }
+.status.partial, .status.approaching { color: var(--partial); background: var(--partial-soft); }
+.status.gap, .status.notyet { color: var(--gap); background: var(--gap-soft); }
+.status.note { color: var(--note); background: var(--note-soft); }
+.status.pending { color: var(--muted); background: var(--surface-2); border: 1px dashed var(--line); }
+
+/* Live analysis */
+.analysis { margin-top: .5rem; display: grid; gap: .4rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.issue { display: grid; grid-template-columns: auto 1fr; gap: .55rem; align-items: start; padding: .55rem .65rem; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: .88rem; }
+.issue .btn.link { font-size: .82rem; }
+.ok-line { color: var(--ok); font-size: .88rem; font-weight: 600; }
+
+/* Tables and repeaters */
+table.grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
+table.grid th, table.grid td { border-bottom: 1px solid var(--line); padding: .45rem .4rem; text-align: left; vertical-align: top; }
+table.grid th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+table.grid input, table.grid select { width: 100%; padding: .35rem .45rem; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.seg-min { width: 4.5rem; }
+.timebar { height: 12px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); display: flex; overflow: hidden; margin: .5rem 0 .2rem; }
+.timebar span { display: block; height: 100%; border-right: 1px solid var(--surface); }
+.timebar .t-listen { background: var(--framework); opacity: .55; }
+.timebar .t-do { background: var(--accent); }
+.timebar .t-over { background: var(--gap); }
+.legend-inline { display: flex; gap: 1rem; font-size: .78rem; color: var(--muted); flex-wrap: wrap; }
+.sw { display: inline-block; width: .8rem; height: .8rem; border-radius: 3px; vertical-align: -1px; margin-right: .3rem; }
+
+/* Choice cards */
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .6rem; margin-top: .5rem; }
+.choice { text-align: left; border: 1px solid var(--line); border-radius: var(--radius); padding: .65rem .75rem; background: var(--surface); cursor: pointer; }
+.choice:hover { border-color: var(--accent); }
+.choice[aria-pressed="true"] { border: 2px solid var(--accent); background: var(--accent-soft); padding: calc(.65rem - 1px) calc(.75rem - 1px); }
+.choice .c-title { font-weight: 700; display: flex; gap: .4rem; align-items: center; }
+.choice .c-sub { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
+.choice.mission-choice[aria-pressed="true"] { border-color: var(--mission); background: var(--mission-soft); }
+
+/* Alignment chain */
+.chain { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: .4rem; align-items: stretch; margin: .5rem 0; }
+.link-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .7rem .8rem; }
+.link-box h3 { margin: 0 0 .3rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.link-box p { font-size: .9rem; }
+.connector { display: grid; place-items: center; align-content: center; gap: .25rem; min-width: 74px; text-align: center; }
+.connector .arrow { font-size: 1.2rem; color: var(--muted); }
+.connector .status { white-space: normal; text-align: center; justify-content: center; max-width: 100px; }
+
+/* Why panel */
+.why-panel h2 { margin-top: 0; font-size: 1.05rem; }
+.why-step { font-family: var(--serif); font-size: 1rem; line-height: 1.45; }
+.source-chip { font-size: .78rem; color: var(--muted); }
+.hint-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .85rem .9rem; margin: .8rem 0; }
+.hint-card.mission { border-left: 4px solid var(--mission); }
+.hint-card h3 { margin: 0 0 .3rem; font-size: .98rem; }
+.hint-card .one-line { font-weight: 600; }
+.hint-card .example { font-size: .87rem; background: var(--surface-2); border-radius: 6px; padding: .45rem .6rem; margin-top: .5rem; }
+.ev-row { border-top: 1px solid var(--line); padding-top: .45rem; margin-top: .45rem; font-size: .84rem; }
+.ev-row .caveat { color: var(--muted); font-style: italic; }
+.panel-section { margin-top: 1.1rem; }
+.panel-section > h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .4rem; }
+.coach-out { font-size: .88rem; }
+.coach-out li { margin: .3rem 0; }
+.muted { color: var(--muted); }
+.draft-flag { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--mission); border: 1px dashed var(--mission); border-radius: 4px; padding: 0 .35rem; }
+
+/* Mission */
+.theme-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .7rem; }
+.theme { border: 1px solid var(--line); border-radius: var(--radius); padding: .7rem .8rem; background: var(--surface); }
+.theme.current { border-color: var(--mission); background: var(--mission-soft); }
+.theme .t-name { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; }
+.dim-detail { border-top: 1px dashed var(--line); margin-top: .6rem; padding-top: .6rem; }
+.weave { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin: .4rem 0; }
+.weave label { font-weight: 500; font-size: .88rem; display: inline-flex; gap: .3rem; align-items: center; }
+
+/* Plan */
+.plan-section { border-bottom: 1px solid var(--line); padding: .6rem 0; }
+.plan-section h3 { margin: 0 0 .2rem; }
+.plan-section .empty { color: var(--muted); font-style: italic; }
+.rubric-table td:first-child { font-weight: 600; }
+
+dialog { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); max-width: 640px; width: calc(100% - 32px); padding: 1.25rem 1.4rem; }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+.legend-grid { display: grid; grid-template-columns: auto 1fr; gap: .55rem 1rem; align-items: center; font-size: .9rem; }
+
+@media (max-width: 1150px) {
+  .layout { grid-template-columns: 210px minmax(0, 1fr); }
+  .why-panel { grid-column: 1 / -1; position: static; max-height: none; border-left: 0; border-top: 1px solid var(--line); }
+}
+@media (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .steps { position: static; padding: .5rem 16px; overflow-x: auto; }
+  .steps ol { display: flex; gap: .3rem; }
+  .steps a { grid-template-columns: 26px auto; white-space: nowrap; }
+  .step-meta { display: none; }
+  main { padding: 1rem 16px 3rem; }
+  .why-panel { padding: 1rem 16px 3rem; }
+  .top { padding: .6rem 16px; }
+  .source-banner { padding: .45rem 16px; }
+  .chain { grid-template-columns: 1fr; }
+  .connector { grid-auto-flow: column; justify-content: start; gap: .5rem; }
+  .connector .arrow { transform: rotate(90deg); }
+  table.grid.stack thead { display: none; }
+  table.grid.stack tr { display: grid; gap: .3rem; padding: .5rem 0; border-bottom: 1px solid var(--line); }
+  table.grid.stack td { border: 0; padding: 0; }
+}
+@media print {
+  .top, .steps, .why-panel, .source-banner, .no-print, .why, .hint-line { display: none !important; }
+  .layout { display: block; }
+  body { background: #fff; color: #000; }
+  .card { box-shadow: none; }
+}
+</style>
+<a class="skip" href="#main">Skip to the design step</a>
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <div class="brand-name">Course Studio</div>
+      <div class="brand-sub">Loma Linda University Health · Proof of concept</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <label class="design-pick"><span class="sr">Current design</span><select id="designSelect"></select></label>
+    <button class="btn ghost" data-action="newDesign">New</button>
+    <button class="btn ghost" data-action="loadExample">Load example</button>
+    <button class="btn ghost" data-action="legend" aria-haspopup="dialog">Symbols</button>
+    <label class="toggle"><input type="checkbox" id="hintToggle" checked> <span>Show hints</span></label>
+  </div>
+</header>
+<div class="source-banner" id="sourceBanner"></div>
+<div class="layout">
+  <nav class="steps" aria-label="Design steps"><ol id="stepNav"></ol></nav>
+  <main id="main" tabindex="-1"></main>
+  <aside class="why-panel" id="whyPanel" aria-label="Why this approach" aria-live="polite"></aside>
+</div>
+<p class="sr" id="flash" role="status"></p>
+<dialog id="legend" aria-labelledby="legendTitle"></dialog>
+<input type="file" id="importFile" accept="application/json" hidden>
+<script>window.STUDIO_EMBEDDED = true;</script>
+<script>
+// Content from "Teaching Well in Higher Ed" (Learning Innovation; draft for build and pilot).
+// The studio reads this file; it does not rewrite the course. Edit here when the course changes.
+// Evidence strengths are the course author's ratings. Citations are flagged in the course as
+// needing verification before publication, and that flag carries through to the studio.
+(function (root) {
+  "use strict";
+
+  const SOURCE = {
+    title: "Teaching Well in Higher Ed",
+    owner: "Learning Innovation",
+    status: "Draft for build and pilot. Citations and the badge threshold need verification before publication.",
+    lastReviewed: "2026-11 (draft)",
+  };
+
+  // Evidence marks. Text always accompanies the symbol, so color is never the only signal.
+  const STRENGTH = {
+    strong: { label: "Strong evidence", short: "Strong", dots: 3 },
+    moderate: { label: "Moderate evidence", short: "Moderate", dots: 2 },
+    limited: { label: "Limited evidence", short: "Limited", dots: 1 },
+    framework: { label: "Framework: a planning tool, not a tested law", short: "Framework", dots: 0 },
+    design: { label: "Design choice: tested by this program's own evaluation", short: "Design choice", dots: 0 },
+    mission: { label: "Mission: a value LLU holds, not an empirical claim", short: "Mission", dots: 0 },
+  };
+
+  // Rows from the Evidence section of each module.
+  const EVIDENCE = {
+    retrieval_spacing: { claim: "Practice testing and spacing are the most useful common study techniques", strength: "strong", support: "Large review of ten techniques (Dunlosky et al. 2013)", module: 1 },
+    neuromyths: { claim: "Learning-style matching and similar beliefs are neuromyths", strength: "strong", support: "Surveys and reviews of educators (Howard-Jones 2014; Dekker et al. 2012)", module: 1 },
+    cognitive_load: { claim: "Cognitive load limits learning; conventional problem solving can slow schema building", strength: "strong", support: "Foundational theory and experiments (Sweller 1988)", module: 1 },
+    expert_blind_spot: { claim: "Experts overlook novices' difficulties", strength: "moderate", support: "Studies of teachers and mathematics expertise (Nathan & Petrosino 2003)", caveat: "Transfer to clinical teaching is plausible but untested.", module: 1 },
+    andragogy: { claim: "Andragogy's assumptions fit what cognitive science shows", strength: "limited", support: "Conceptual reviews (Hagen & Park 2016)", caveat: "Indirect support. Novices often need more structure than the framework suggests.", module: 1 },
+    backward_design: { claim: "Plan backward from desired results, then evidence, then activities", strength: "framework", support: "Understanding by Design (Wiggins & McTighe 2005)", module: 2 },
+    alignment: { claim: "Aligning outcomes, activities and assessment improves learning", strength: "limited", support: "Small experimental and program studies (Biggs 1996; Zhang et al. 2022)", caveat: "Moderate to limited; studies cannot isolate alignment from other changes.", module: 2 },
+    transfer_processing: { claim: "Practice should resemble the later task", strength: "moderate", support: "Transfer-appropriate processing (Morris, Bransford & Franks 1977)", caveat: "Lab-based.", module: 2 },
+    miller: { claim: "Different competence levels need different assessment methods", strength: "framework", support: "Miller's pyramid (Miller 1990) and its critiques", module: 2 },
+    bloom: { claim: "Bloom's levels help match outcomes to assessments", strength: "framework", support: "Revised taxonomy (Anderson & Krathwohl 2001)", module: 2 },
+    active_learning: { claim: "Active learning improves exam performance and lowers failure rates compared with lecture", strength: "strong", support: "Freeman et al. 2014", caveat: "STEM undergraduates; not clinical specifically.", module: 3 },
+    feeling_of_learning: { claim: "Learners can feel they learn less in active classes while learning more", strength: "moderate", support: "Deslauriers et al. 2019", caveat: "One randomized design, in physics.", module: 3 },
+    flipped: { claim: "Flipped classrooms improve learning in health professions education", strength: "moderate", support: "Hew & Lo 2018 (28 comparative studies)", module: 3 },
+    simulation: { claim: "Technology-enhanced simulation improves knowledge, skills and behaviors", strength: "strong", support: "Cook et al. 2011; Mitchell & Ivimey-Cook 2023", caveat: "Weaker for patient outcomes.", module: 3 },
+    tbl: { claim: "Team-based learning looks beneficial in health professions education", strength: "limited", support: "Umbrella review 2024; BEME review", caveat: "Moderate to limited; reviews are uneven.", module: 3 },
+    blended: { claim: "Blended designs show a modest advantage over face-to-face", strength: "limited", support: "Means et al. 2010", caveat: "Confounded by added time and instructional elements.", module: 3 },
+    coi: { claim: "Community of Inquiry as a design framework", strength: "framework", support: "Garrison, Anderson & Archer 2000", module: 3 },
+    attention_myth: { claim: "The 10 to 15 minute attention limit is poorly supported", strength: "moderate", support: "Wilson & Korn 2007; Bradbury 2016", module: 3 },
+    udl: { claim: "Universal Design for Learning as a practical design approach", strength: "framework", support: "Presented for access and inclusion", caveat: "Its brain-network claims have been criticized as weakly supported.", module: 3 },
+    testing_effect: { claim: "Testing improves delayed retention compared with restudying", strength: "strong", support: "Roediger & Karpicke 2006", module: 4 },
+    formative: { claim: "Strengthening formative assessment can raise achievement", strength: "moderate", support: "Black & Wiliam 1998", caveat: "Review of varied studies; dated.", module: 4 },
+    feedback_effect: { claim: "Feedback has a medium average effect, with large variation by type", strength: "moderate", support: "Wisniewski, Zierer & Hattie 2020 (435 studies); Hattie & Timperley 2007", module: 4 },
+    feedback_levels: { claim: "Task, process and self-regulation feedback help more than praise of the person", strength: "moderate", support: "Hattie & Timperley 2007", module: 4 },
+    rubrics: { claim: "Rubrics can support learning when learners use them", strength: "limited", support: "Panadero & Jonsson 2013 (21 studies)", caveat: "Findings are mixed; benefit depends on use.", module: 4 },
+    feedback_principles: { claim: "Feedback principles that build learner self-regulation", strength: "framework", support: "Nicol & Macfarlane-Dick 2006", module: 4 },
+    ai_crutch: { claim: "Unrestricted AI help can raise practice performance while lowering later unaided performance", strength: "moderate", support: "Bastani et al. 2025 (field experiment)", caveat: "One subject and age group; safeguards reduced the harm.", module: 5 },
+    ai_offloading: { claim: "AI support can improve task output without improving knowledge gain or transfer", strength: "limited", support: "Fan et al. 2024 (117 university students)", caveat: "One task; preprint when retrieved.", module: 5 },
+    ai_hpe: { claim: "Health professions learners use AI widely, with benefits and concerns", strength: "moderate", support: "Medical Education systematic review, 2025 (33 studies)", caveat: "Mostly self-report and short-term.", module: 5 },
+    detectors: { claim: "GPT detectors misclassify non-native English writing", strength: "moderate", support: "Liang et al. 2023", caveat: "Detectors have changed since.", module: 5 },
+    aias: { claim: "AI Assessment Scale for choosing levels of AI use", strength: "framework", support: "Perkins et al. 2024 and revised version", caveat: "Not tested for effects on learning; check the current wording.", module: 5 },
+    faculty_dev: { claim: "Evidence for faculty development beyond satisfaction is thin", strength: "moderate", support: "Steinert et al. 2006, 2016; Leslie et al. 2013", module: 6 },
+    capstone_design: { claim: "A reviewed capstone with a rubric improves teaching practice", strength: "design", support: "Not established; this program will test it", module: 6 },
+  };
+
+  // Hints: glance (symbol), hint (one line), deeper (the course page). kind sets the mark.
+  const HINTS = {
+    backward_design: { title: "Start from the outcome", hint: "Deciding the destination first tells you what to cut, what to practice and what to assess.", deeper: "Backward design plans in three stages: identify desired results, determine acceptable evidence, then plan learning experiences. Content is endless and time is not.", example: "Topic-first: \"Cover hypertension in 90 minutes.\" Outcome-first: \"Select and justify a first-line treatment for a patient with hypertension and a comorbidity.\" The second tells you the session needs a case and a decision, not a drug list.", source: [2, 1], evidence: ["backward_design"] },
+    one_outcome: { title: "One outcome, all the way through", hint: "One outcome aligned from session to assessment is enough. Focused and realistic beats a whole-course rewrite.", deeper: "Pick one course you teach this term or soon, and one outcome to follow through every step. Small changes teach you more than a perfect plan.", source: [0, "Get the most from it"], evidence: ["capstone_design"], kind: "design" },
+    outcome_formula: { title: "Verb + what + context", hint: "A useful outcome describes something learners can do that you could observe or check.", deeper: "By the end of [session or unit], learners will be able to [action verb] + [what] + [context or standard]. Write it in learner language, since learners will read it.", example: "Weak: \"Know the signs of sepsis.\" Stronger: \"Identify early signs of sepsis in a case vignette and state the first three actions.\"", source: [2, 2], evidence: ["bloom"] },
+    outcome_verb: { title: "Replace vague verbs", hint: "\"Understand,\" \"know\" and \"appreciate\" cannot be taught toward or assessed. Name the thinking you want.", deeper: "Vague verbs do not say what the learner will do. Replace them with a verb that shows the thinking: explain, select, justify, perform, appraise.", example: "\"Appreciate the role of the interprofessional team\" becomes \"Describe how each team member contributes to a discharge plan and identify a gap in a sample plan.\"", source: [2, 2], evidence: ["bloom"] },
+    one_verb: { title: "One verb per outcome?", hint: "\"Describe and evaluate\" is two outcomes with two different assessments.", deeper: "If two verbs need different evidence, split them. If they form one task, such as \"select and justify,\" keep them together and assess them together.", source: [2, 2], evidence: ["bloom"] },
+    few_outcomes: { title: "A few strong outcomes", hint: "Fewer, stronger outcomes are easier to teach and assess, which makes alignment possible.", deeper: "Fourteen outcomes in a one-hour session cannot all be practiced and assessed. Prioritize, combine or cut.", source: [2, 5], evidence: ["alignment"] },
+    bloom: { title: "Name the level of thinking", hint: "An outcome pitched at the wrong level means the activity and exam test something different from what you meant.", deeper: "Revised Bloom's: remember, understand, apply, analyze, evaluate, create. Higher is not better for every outcome; it is right when the work requires it.", source: [2, 3], evidence: ["bloom"] },
+    miller: { title: "Name the level of competence", hint: "Each level of Miller's pyramid calls for a different kind of assessment.", deeper: "Knows (written exam), knows how (case-based questions), shows how (simulation, standardized patient, OSCE), does (direct observation in practice). If the outcome is \"shows how\" or \"does,\" a written exam alone cannot assess it.", source: [2, 3], evidence: ["miller"] },
+    alignment_chain: { title: "Practice, assessment, level", hint: "Learners do best when what they practice is what they are assessed on.", deeper: "For every outcome ask: do learners practice it? Does the assessment ask them to show it? Do all three sit at the same level? Any outcome missing from an activity or an assessment is a gap. Any activity or assessment tied to no outcome is a candidate to cut.", source: [2, 4], evidence: ["alignment", "transfer_processing"] },
+    pattern_outcome_above: { title: "Outcome higher than the assessment", hint: "The outcome says \"analyze,\" but the exam only asks for recall.", deeper: "Fix: add case-based or open-ended questions at the stated level, or lower the outcome honestly.", source: [2, 5], evidence: ["alignment", "bloom"] },
+    pattern_instruction_below: { title: "Assessment higher than the instruction", hint: "The exam asks for application, but class time was lecture only.", deeper: "Fix: add practice with feedback before the assessment. If learners only listen but are assessed on applying knowledge to new cases, they have not practiced the task.", source: [2, 5], evidence: ["alignment", "transfer_processing"] },
+    pattern_wrong_tool: { title: "Wrong tool for the level", hint: "A performance skill assessed only by a written test.", deeper: "Fix: use observation, simulation or a checklist. A written test cannot show performance.", example: "\"Demonstrate a focused cardiac exam\" taught by video and assessed by a written test of the steps is not aligned.", source: [2, 5], evidence: ["miller"] },
+    pattern_never_taught: { title: "Content never taught", hint: "Does the exam cover anything not in the outcomes or activities?", deeper: "Teach it, or remove it from the exam.", source: [2, 5], evidence: ["alignment"] },
+
+    andragogy: { title: "Open with why it matters", hint: "Adults commit effort when they see how learning connects to their role.", deeper: "Need to know, self-concept, experience, readiness, problem orientation, internal motivation. Open with the clinical or professional problem the content solves. A framework to design with, not a rulebook.", source: [1, 1], evidence: ["andragogy"] },
+    retrieval: { title: "Start with retrieval", hint: "Recalling from memory strengthens learning more than rereading. Three no-stakes questions take about 3 minutes.", deeper: "Quizzing is not only measurement; recall strengthens memory. Tell learners why, because they tend to prefer rereading.", source: [1, 2], evidence: ["retrieval_spacing", "testing_effect"] },
+    spacing: { title: "Space it", hint: "Revisit key content in weeks 2, 4 and 8 instead of covering it once.", deeper: "Distributed practice is one of the two highest-utility strategies. It takes a few minutes of planning.", source: [1, 2], evidence: ["retrieval_spacing"] },
+    concrete_first: { title: "Concrete before abstract", hint: "Give a case first, then name the principle.", deeper: "Adults prefer learning organized around problems, not subjects. Reordering existing content is often enough.", source: [1, 5], evidence: ["andragogy"] },
+    cognitive_load: { title: "Cut extraneous load", hint: "Working memory is limited. Remove what does not serve the goal.", deeper: "You cannot change a topic's inherent complexity much, but you can remove decorative images and slides that duplicate what you say, and chunk new concepts across practice.", source: [1, 4], evidence: ["cognitive_load"] },
+    expert_blind_spot: { title: "Make the steps visible", hint: "Steps you perform automatically become invisible, so explanations skip them.", deeper: "Break complex explanations into steps and say the \"obvious\" parts aloud. Use worked examples before asking learners to solve alone. Ask a recent learner where they got lost.", example: "An attending explains a differential in one fluent pass. The resident nods, but did not catch how each finding narrowed the list.", source: [1, 4], evidence: ["expert_blind_spot", "cognitive_load"] },
+    neuromyth_styles: { title: "Learning styles are a myth", hint: "Matching instruction to a preferred style is not supported. Choose the format the content calls for.", deeper: "Show an anatomy diagram; practice a procedure hands-on. Offer more than one way to engage because it helps everyone and improves access.", source: [1, 3], evidence: ["neuromyths"] },
+
+    active_why: { title: "Why active learning", hint: "Learners remember and use what they do more than what they only hear.", deeper: "Active learning raised exam performance by close to half a standard deviation in a large STEM meta-analysis; lecture-only students were about twice as likely to fail. It does not mean no lecture.", source: [3, 1], evidence: ["active_learning", "flipped"] },
+    feels_worse: { title: "It may feel less effective", hint: "Effortful practice can feel like struggle. Tell learners early why the activities are there.", deeper: "In a randomized physics study, students in active classes learned more but rated their learning lower than students who heard polished lectures.", source: [3, 1], evidence: ["feeling_of_learning"] },
+    method_fit: { title: "Choose the method for the outcome", hint: "Choosing a method because it fits your outcome is more useful than adopting a trend.", deeper: "Retrieval and polling, think-pair-share, case-based learning, team-based learning, flipped classroom, simulation. Start small: one well-run active segment beats a redesign you cannot sustain.", source: [3, 2], evidence: ["active_learning", "simulation", "tbl"] },
+    modality: { title: "Modality serves the outcome", hint: "Pick the modality that lets learners practice the outcome with feedback.", deeper: "Hands-on skills and team coordination: in person or simulation. Real-time discussion: synchronous. Foundational content: asynchronous with retrieval checks. Reflection: asynchronous. A mix: asynchronous preparation, then live application. Design quality matters more than delivery format.", source: [3, 3], evidence: ["blended"] },
+    protect_time: { title: "Protect time", hint: "Activities fail when they are rushed. Cut content to make room.", deeper: "Identify the two or three ideas learners must grasp; move the rest to pre-class material. Time-box each segment and have a fallback.", source: [3, 4], evidence: ["active_learning"] },
+    attention_myth: { title: "The 10-minute rule", hint: "Break up a lecture to add practice and feedback, not to catch a wandering mind.", deeper: "A review found little support for a fixed 10 to 15 minute attention limit. You do not need to chop sessions by a stopwatch.", source: [3, 4], evidence: ["attention_myth"] },
+    plan_feedback: { title: "Plan feedback", hint: "Learners need to learn whether their answer was right and why.", deeper: "Debrief after each activity and correct misconceptions. End with a muddiest point to plan your next session.", source: [3, 2], evidence: ["feedback_effect"] },
+    presence: { title: "Presence online", hint: "Online learners can feel invisible. Plan teaching, social and cognitive presence.", deeper: "Clear instructions and timely feedback; short introductions and small groups; open prompts that require reasoning.", source: [3, 5], evidence: ["coi"] },
+    udl: { title: "Design for every learner", hint: "Caption, use real headings and alt text, and offer more than one way to show learning.", deeper: "Universal Design for Learning plans for variability up front. The case rests on access and inclusion, not neuroscience.", source: [3, 5], evidence: ["udl"] },
+    tell_why: { title: "Tell learners why", hint: "Explaining the purpose of an activity counters the feeling that struggle means poor teaching.", deeper: "Say early that effort is a sign of learning. Name the outcome the activity serves.", source: [3, 1], evidence: ["feeling_of_learning"] },
+
+    formative: { title: "Practice before the graded event", hint: "Low-stakes attempts with feedback let learners practice retrieval and correct errors.", deeper: "Students who took memory tests remembered more a week later than students who restudied, even though restudying made them feel more confident.", source: [4, 1], evidence: ["testing_effect", "formative"] },
+    authentic: { title: "Assess what the outcome says", hint: "If a learner succeeds on the task, does that show they can do what the outcome says?", deeper: "Authentic assessment asks learners to perform tasks like those in practice: cases, simulations, observed performance, portfolios, structured reflection. Multiple-choice still works for knowledge, best when distractors reflect real misconceptions.", example: "Outcome \"counsel a patient on a new medication\": weak match is MCQ recall of side effects; stronger is a simulated counseling encounter scored with a rubric.", source: [4, 2], evidence: ["transfer_processing"] },
+    rubric_size: { title: "Three to five criteria", hint: "Each criterion tied to the outcome keeps scoring consistent and fast.", deeper: "List the criteria you will judge and describe what each level of performance looks like.", source: [4, 3], evidence: ["rubrics"] },
+    rubric_observable: { title: "Describe what you can observe", hint: "Words like \"good\" or \"poor\" do not tell learners what good looks like.", deeper: "Meets: \"Justifies the decision using patient data and evidence.\" Not: \"Good reasoning.\"", source: [4, 3], evidence: ["rubrics"] },
+    rubric_use: { title: "Rubrics help when learners use them", hint: "Share the rubric with the assignment; have learners check their own or a peer's draft.", deeper: "A review of 21 studies found results were not uniform. The benefit depends on how rubrics are used, not on whether one exists.", source: [4, 3], evidence: ["rubrics"] },
+    feedback_where_next: { title: "Where am I going, how, where next?", hint: "Feedback that answers \"where to next\" gives learners something to act on.", deeper: "Give it while learners can still use it, limit it to two or three points, and ask learners what they will change.", source: [4, 4], evidence: ["feedback_effect"] },
+    feedback_levels: { title: "Feedback on the task, not the person", hint: "Task, process and self-regulation feedback help most. Praise of the person adds little information.", deeper: "Task: \"Your differential misses the cardiac causes.\" Process: \"Try ranking dangerous causes first.\" Self-regulation: \"Check your plan against the rubric.\" Self: \"You're a great student\" (least useful).", source: [4, 4], evidence: ["feedback_levels"] },
+    feedback_scale: { title: "Feedback you can sustain", hint: "Good feedback is only useful if you can keep giving it.", deeper: "Auto-graded practice with explanations, common-error comments, peer feedback with a rubric, self-assessment before submission, audio feedback, or feedback on one or two criteria.", source: [4, 5], evidence: ["feedback_principles"] },
+    fairness: { title: "Fairness", hint: "Score against the rubric, not other learners; plan accommodations in advance.", deeper: "Grade without names where you can, and offer a clear process for questions or re-reviews.", source: [4, 5], evidence: [], kind: "design" },
+
+    ai_performance: { title: "Performance is not learning", hint: "AI can raise performance on a task without raising learning.", deeper: "Students with unrestricted AI practice did 48% better during practice but 17% worse on a later exam without AI. A version with safeguards largely avoided the harm.", source: [5, 1], evidence: ["ai_crutch", "ai_offloading"] },
+    ai_level_choose: { title: "Choose the AI level from the outcome", hint: "What must the learner be able to do alone? Pick the lowest level that still serves the learning.", deeper: "Ask whether AI would replace the thinking you want to measure or merely support it. State the level on the assignment, and revisit as tools change.", source: [5, 2], evidence: ["aias"] },
+    ai_visible: { title: "Make the learner's thinking visible", hint: "Redesigning the assessment holds up better than trying to catch AI use.", deeper: "Process evidence (plan, drafts, what changed), a brief oral defense, in-class components for core skills, personal clinical context, critique of AI output, staged tasks.", source: [5, 3], evidence: ["ai_crutch"] },
+    ai_detectors: { title: "Do not rely on detectors", hint: "Detectors misclassified more than half of essays by non-native English writers.", deeper: "A detector score is not good evidence of misconduct. Talk with the student, ask them to explain their work, and follow institutional process.", source: [5, 3], evidence: ["detectors"] },
+    ai_document: { title: "What learners document", hint: "The tool, how they used it, and what they changed.", deeper: "Documentation keeps the learner accountable for accuracy and makes their judgment visible.", source: [5, 5], evidence: ["aias"], kind: "design" },
+    ai_verify: { title: "Teach verification", hint: "Treat AI output as a draft from an unreliable source.", deeper: "Check claims against primary sources and guidelines; look for invented citations and missing context. Have learners try first, then compare with AI.", source: [5, 4], evidence: ["ai_hpe"] },
+    ai_syllabus: { title: "Clear AI expectations", hint: "Name allowed uses, the assignments, and what to document.", deeper: "\"AI may be used for brainstorming in Assignment 2 with a note on how you used it; it may not be used for the case analysis in Assignment 3.\" Not: \"Use AI responsibly.\"", source: [5, 5], evidence: ["aias"] },
+    ai_privacy: { title: "Never enter patient identifiers", hint: "Use invented details, and only tools your institution has approved.", deeper: "The clinician, not the tool, is responsible for decisions. Do not paste student work or identifiable information into unapproved tools.", source: [5, 4], evidence: [], kind: "design" },
+    try_first: { title: "Try first, then compare", hint: "The coach opens after you draft. Offloading the thinking is the risk the course warns about, for faculty too.", deeper: "Learners who started from AI's answer showed \"metacognitive laziness.\" The studio applies the same rule to you: write your own version, then ask the coach to critique it.", source: [5, 4], evidence: ["ai_offloading"] },
+
+    evaluate_change: { title: "How will you know it worked?", hint: "Decide in advance what evidence will show whether the change worked.", deeper: "A quiz result, a student comment, a colleague's observation, or your own notes. Evidence for faculty development beyond satisfaction is thin, so this plan is how you find out.", source: [6, 2], evidence: ["faculty_dev"] },
+    first_step: { title: "One first step, with a date", hint: "A small, specific plan is far more likely to happen than a general intention.", deeper: "Make the first change you named, on the date you set. Ask a colleague to observe one session.", source: [6, 4], evidence: [], kind: "design" },
+    capstone_rubric: { title: "The reviewer's rubric", hint: "The same five criteria a reviewer will use, so you know the standard in advance.", deeper: "Outcome alignment; modality and active learning; assessment quality; AI approach; feasibility and evaluation. Rated Meets, Approaching or Not yet.", source: [6, 3], evidence: ["capstone_design"] },
+    badge_threshold: { title: "Badge standard (draft)", hint: "Meets on at least four criteria and none Not yet. A draft threshold to confirm with the review team.", deeper: "This studio estimates ratings from your entries. A trained reviewer decides.", source: [6, 3], evidence: ["capstone_design"], kind: "design" },
+  };
+
+  const MODULES = ["Orientation", "Module 1: How Adults Learn", "Module 2: Outcomes and Alignment",
+    "Module 3: Active Learning and Modality Choices", "Module 4: Assessment and Feedback",
+    "Module 5: Generative AI in Teaching", "Capstone and Next Steps"];
+
+  // Module 1 audit strategies.
+  const AUDIT = [
+    { id: "retrieval", label: "Retrieval practice", hint: "retrieval" },
+    { id: "spacing", label: "Spacing of key content", hint: "spacing" },
+    { id: "concrete", label: "Concrete example before abstraction", hint: "concrete_first" },
+    { id: "problem", label: "Problem-centered framing", hint: "andragogy" },
+    { id: "load", label: "Reduced extraneous load", hint: "cognitive_load" },
+    { id: "steps", label: "Steps made visible (expert blind spot)", hint: "expert_blind_spot" },
+  ];
+
+  const MODALITIES = [
+    { id: "in_person", label: "In person", fit: "Hands-on skills, physical practice, team coordination" },
+    { id: "simulation", label: "Simulation", fit: "Performance with immediate feedback in a safe setting" },
+    { id: "sync_online", label: "Synchronous online", fit: "Real-time discussion and group problem solving" },
+    { id: "async", label: "Asynchronous", fit: "Foundational content with retrieval checks; reflection and writing" },
+    { id: "blended", label: "Blended", fit: "Asynchronous preparation, then live application" },
+  ];
+
+  // AI Assessment Scale; the course notes the published wording has been revised.
+  const AI_LEVELS = [
+    { level: 1, label: "No AI", meaning: "Completed without any AI assistance", fit: "Core skills you must verify, such as clinical reasoning or procedures" },
+    { level: 2, label: "AI for planning", meaning: "AI may help brainstorm or outline; the final work is the learner's", fit: "Early-stage ideas where the product still shows their thinking" },
+    { level: 3, label: "AI collaboration", meaning: "AI may draft or help; learner critiques, revises and documents use", fit: "Tasks where editing and judging AI output is itself the skill" },
+    { level: 4, label: "Full AI", meaning: "AI used throughout, with learner direction", fit: "Tasks about using AI well in the profession" },
+    { level: 5, label: "AI exploration", meaning: "Learners explore creative or novel uses with AI", fit: "Advanced or experimental work" },
+  ];
+
+  const WORKLOAD = [
+    "Auto-graded practice quizzes with built-in feedback",
+    "Common-error feedback written once",
+    "Peer feedback with a rubric",
+    "Self-assessment before submission",
+    "Audio or video feedback (with captions or transcript)",
+    "Feedback on one or two criteria",
+  ];
+
+  // The guided path. Each step is one apply-it template from the course.
+  const STEPS = [
+    { id: "course", n: 1, title: "Course and outcome", module: 2, produces: "Course, learners and one measurable outcome", why: "Everything else in your course is chosen to serve the outcome. Unclear outcomes are a common reason a well-taught session still misses the mark." },
+    { id: "audit", n: 2, title: "Learning-science audit", module: 1, produces: "Module 1 apply-it: learning-science audit", why: "Most of us teach the way we were taught. Auditing one real session shows which high-yield strategies are already there and which are cheap to add." },
+    { id: "session", n: 3, title: "Session and modality", module: 3, produces: "Module 3 apply-it: session redesign plan", why: "Learners remember and use what they do more than what they only hear. Modality and method are tools for reaching the outcome." },
+    { id: "assessment", n: 4, title: "Assessment and feedback", module: 4, produces: "Module 4 apply-it: assessment and feedback plan", why: "Assessment shapes what learners study. If it does not require the skill named in the outcome, the grade says little about what learners can do." },
+    { id: "alignment", n: 5, title: "Alignment map", module: 2, produces: "Module 2 apply-it: alignment map", why: "Misalignment is easy to miss in your own course. Seeing outcome, activity and assessment side by side lets you fix it before learners pay for it." },
+    { id: "ai", n: 6, title: "AI approach", module: 5, produces: "Module 5 apply-it: AI approach for one assignment", why: "Your learners are likely already using AI. Deciding where it belongs starts with what they must still be able to do themselves." },
+    { id: "mission", n: 7, title: "Mission lens", module: null, produces: "Scholarship for Service: where the mission lives in this design", why: "At Loma Linda, the mission is a design input, not a paragraph pasted into the syllabus." },
+    { id: "plan", n: 8, title: "Plan and self-check", module: 6, produces: "Capstone: Teaching Improvement Plan", why: "The plan assembles itself from your steps. Check it against the reviewer's rubric before anyone else sees it." },
+  ];
+
+  const api = { SOURCE, STRENGTH, EVIDENCE, HINTS, MODULES, AUDIT, MODALITIES, AI_LEVELS, WORKLOAD, STEPS };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.COURSE = api;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>
+// Mission lens: a PROPOSED addition to Teaching Well in Higher Ed.
+// Drafted by Claude for the POC. Not institutional language. Pending review by the course owner.
+// Mission hints carry the Mission mark, never an evidence-strength rating: they state values
+// LLU holds, not research findings. Where a framework supports them, it is named as a framework.
+(function (root) {
+  "use strict";
+
+  const REVIEW = {
+    status: "Draft for review",
+    reviewer: "Course owner",
+    note: "All wording below is a draft written for this proof of concept. Confirm official mission wording and theme definitions before faculty see it.",
+  };
+
+  // Institutional anchors. Wording to confirm against official sources.
+  const ANCHORS = {
+    mission: { text: "To continue the teaching and healing ministry of Jesus Christ", label: "LLUH mission", confirm: true },
+    motto: { text: "To make man whole", label: "University motto", confirm: true },
+    themes: [
+      { id: "sfs", name: "Scholarship for Service", who: "Current Chancellor and Provost", current: true,
+        draft: "Rigorous, evidence-based learning pursued for the sake of others: patients, families, communities and the world. Scholarship is not the end; service is what it is for." },
+      { id: "mfl", name: "Mission-Focused Learning", who: "Previous Provost", current: false,
+        draft: "Learning in which the mission shapes the outcomes, experiences and assessment of a course, rather than being added on at the end." },
+    ],
+  };
+
+  // Dimensions faculty can weave in. Each offers a question for the outcome, an activity, and the assessment.
+  const DIMENSIONS = [
+    { id: "whole_person", label: "Whole-person care", icon: "whole",
+      short: "Physical, mental, social and spiritual dimensions of health",
+      outcome: "Could the outcome ask learners to consider the whole person, not only the condition?",
+      activity: "Could the case include the patient's family, beliefs, fears or social situation?",
+      assessment: "Could one rubric criterion look for attention to the whole person?",
+      example: "Select and justify a first-line treatment for a patient with hypertension and a comorbidity, taking into account the patient's stated goals and circumstances." },
+    { id: "service", label: "Scholarship for service", icon: "service",
+      short: "Knowledge pursued for the sake of others",
+      outcome: "Who is served when a learner masters this outcome? Can the outcome say so?",
+      activity: "Could an activity connect the content to a real community, clinic or service need?",
+      assessment: "Could the task produce something of use to someone beyond the grader?",
+      example: "Appraise a study on opioid-sparing analgesia and write a one-page summary a community clinic could use." },
+    { id: "compassion", label: "Compassion and presence", icon: "heart",
+      short: "Seeing and responding to suffering",
+      outcome: "Is there a moment in this outcome where how the learner is present matters as much as what they know?",
+      activity: "Could learners hear a patient story, or practice delivering hard news with a standardized patient?",
+      assessment: "Could observed communication or a reflection show growth in presence?",
+      example: "Communicate a new diagnosis to a standardized patient using a structured, compassionate approach." },
+    { id: "ethics", label: "Integrity and ethical reasoning", icon: "scale",
+      short: "Doing right when it is costly or unclear",
+      outcome: "Does this content carry an ethical decision learners will face in practice?",
+      activity: "Could a case include a dilemma where the evidence and the patient's values pull apart?",
+      assessment: "Could learners justify a decision in ethical as well as clinical terms?",
+      example: "Justify a treatment plan when guideline evidence conflicts with a patient's stated wishes." },
+    { id: "identity", label: "Professional identity formation", icon: "identity",
+      short: "Becoming, not only knowing and doing",
+      outcome: "Beyond \"does,\" who is the learner becoming? Some authors propose a fifth level above Miller's pyramid: \"is.\"",
+      activity: "Could learners reflect on a role model, a mistake, or what kind of clinician they want to be?",
+      assessment: "Could a structured reflection or portfolio entry show formation over time?",
+      example: "Reflect on a clinical encounter in which your values were tested, and name what you will carry forward." },
+    { id: "interprofessional", label: "Interprofessional collaboration", icon: "team",
+      short: "No one heals alone",
+      outcome: "Does this outcome involve another profession's role? Can it name it?",
+      activity: "Could learners from another LLU school join one case or simulation?",
+      assessment: "Could learners identify each team member's contribution, or a gap in a team plan?",
+      example: "Describe how each team member contributes to a discharge plan and identify a gap in a sample plan." },
+    { id: "equity", label: "Justice and health equity", icon: "equity",
+      short: "Care for the underserved and the overlooked",
+      outcome: "Whose access, cost or circumstances would change how this outcome plays out?",
+      activity: "Could the case vary the patient's insurance, language or neighborhood and ask what changes?",
+      assessment: "Could learners adapt their plan for a patient with fewer resources?",
+      example: "Adapt a first-line treatment plan for a patient who cannot afford the preferred drug." },
+    { id: "wholeness", label: "Wholeness for learners and faculty", icon: "rest",
+      short: "Sustainable effort, rest, and care for the people doing the learning",
+      outcome: "Is the workload this outcome asks for humane?",
+      activity: "Does the session respect learners' time, and model rest rather than heroics?",
+      assessment: "Is the feedback plan sustainable for you, too?",
+      example: "Cut one low-value assignment to make room for practice with feedback." },
+  ];
+
+  const HINTS = {
+    mission_design_input: { title: "Mission is a design input", hint: "Not a paragraph pasted into the syllabus, but a question asked at every step.", deeper: "Scholarship for Service asks what our learning is for. A course embodies the mission when its outcomes, experiences and assessments are shaped by that answer.", kind: "mission" },
+    mission_woven: { title: "Woven, not bolted on", hint: "Mission that lives only in a list is decoration. Connect it to the outcome, an activity or the assessment.", deeper: "Choose one to three dimensions that genuinely fit this course, and show where each one lives. One dimension done well beats eight mentioned.", kind: "mission" },
+    mission_assessed: { title: "What we value, we make visible", hint: "If a dimension never appears in assessment, learners may conclude it does not count.", deeper: "A rubric criterion, an observed behavior or a structured reflection can show growth without grading faith or character.", kind: "mission" },
+    mission_identity: { title: "Becoming, not only doing", hint: "Professional identity formation has been proposed as a level above \"does\" on Miller's pyramid.", deeper: "The course cites this proposal (Academic Medicine, 2016). It is a framework, not a tested law, which fits how the course treats Miller's pyramid itself.", kind: "mission", evidence: ["miller"] },
+    mission_honest: { title: "Values, stated as values", hint: "Mission hints carry this mark instead of an evidence rating.", deeper: "The course is careful to say how strong its evidence is. The mission lens keeps that honesty by stating LLU's commitments as commitments, not research findings.", kind: "mission" },
+    mission_outcome: { title: "Who is served?", hint: "When a learner masters this outcome, who benefits? Can the outcome say so?", deeper: "Scholarship for Service: knowledge pursued for the sake of others. The service may be implied in many outcomes; naming it makes it teachable.", kind: "mission" },
+  };
+
+  const api = { REVIEW, ANCHORS, DIMENSIONS, HINTS };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.MISSION = api;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>
+// Course Studio checks: the rules behind the hints.
+// Each rule comes from Teaching Well in Higher Ed (Learning Innovation, draft for pilot).
+// Every issue names a hint id in content/course.js, so the UI can show "why".
+// Works in the browser (window.Checks) and in Node (module.exports).
+(function (root) {
+  "use strict";
+
+  // ---------- Taxonomies ----------
+  const BLOOM = [null, "Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+  const MILLER = [null, "Knows", "Knows how", "Shows how", "Does"];
+
+  // Verbs that do not say what a learner will do (Module 2, Page 2).
+  const VAGUE = ["understand", "know", "appreciate", "learn", "grasp", "comprehend", "realize",
+    "realise", "value", "gain", "familiar", "aware", "familiarize"];
+
+  // Verb to Bloom level. A starting suggestion; faculty can override it.
+  const BLOOM_VERBS = {
+    1: ["list", "define", "recall", "name", "state", "recognize", "label", "memorize", "repeat", "identify", "match", "cite"],
+    2: ["explain", "describe", "summarize", "classify", "discuss", "paraphrase", "illustrate", "outline", "restate", "report"],
+    3: ["apply", "use", "demonstrate", "perform", "calculate", "administer", "execute", "implement", "solve",
+      "compute", "conduct", "operate", "practice", "measure", "counsel", "communicate", "educate", "teach",
+      "document", "dose", "examine", "obtain", "elicit", "carry"],
+    4: ["analyze", "analyse", "differentiate", "distinguish", "interpret", "compare", "contrast", "categorize",
+      "diagnose", "investigate", "deconstruct", "relate", "infer"],
+    5: ["evaluate", "appraise", "critique", "justify", "judge", "defend", "assess", "prioritize", "recommend",
+      "select", "argue", "decide", "choose", "weigh", "manage"],
+    6: ["create", "design", "develop", "construct", "formulate", "compose", "plan", "propose", "produce",
+      "generate", "devise", "build", "write", "lead"],
+  };
+  const VERB_LEVEL = {};
+  Object.keys(BLOOM_VERBS).forEach(l => BLOOM_VERBS[l].forEach(v => { VERB_LEVEL[v] = Number(l); }));
+
+  // Verbs that describe performance, so the outcome is at least "shows how" on Miller's pyramid.
+  const PERFORMANCE_VERBS = ["perform", "demonstrate", "administer", "counsel", "communicate", "conduct",
+    "examine", "obtain", "elicit", "educate", "lead", "operate", "manage"];
+
+  // What each assessment type can show (Module 2, Page 3; Module 4, Page 2).
+  const ASSESSMENTS = {
+    mcq_recall: { label: "Multiple-choice questions (recall)", bloomMax: 2, millerMax: 1 },
+    mcq_case: { label: "Case-based or extended questions", bloomMax: 4, millerMax: 2 },
+    written_case: { label: "Short written case: justify a decision", bloomMax: 5, millerMax: 2 },
+    essay: { label: "Essay, paper or critique", bloomMax: 6, millerMax: 2 },
+    oral: { label: "Oral exam or brief viva", bloomMax: 5, millerMax: 2 },
+    project: { label: "Project or plan design", bloomMax: 6, millerMax: 2 },
+    reflection: { label: "Structured reflection", bloomMax: 5, millerMax: 2 },
+    simulation: { label: "Simulation, standardized patient or OSCE", bloomMax: 6, millerMax: 3 },
+    observation: { label: "Direct observation or workplace-based assessment", bloomMax: 6, millerMax: 4 },
+    portfolio: { label: "Portfolio of supervised practice", bloomMax: 6, millerMax: 4 },
+  };
+
+  // What each learning activity lets learners practice (Module 1, Page 5; Module 3, Page 2).
+  const ACTIVITIES = {
+    lecture: { label: "Mini-lecture or explanation", bloomMax: 2, millerMax: 1, practice: false },
+    retrieval: { label: "Retrieval questions or polling", bloomMax: 2, millerMax: 1, practice: true },
+    worked_example: { label: "Worked example, steps narrated", bloomMax: 3, millerMax: 2, practice: false },
+    think_pair_share: { label: "Think-pair-share", bloomMax: 4, millerMax: 2, practice: true },
+    case: { label: "Case-based learning", bloomMax: 5, millerMax: 2, practice: true },
+    tbl: { label: "Team-based learning", bloomMax: 5, millerMax: 2, practice: true },
+    flipped: { label: "Flipped: application in class", bloomMax: 5, millerMax: 2, practice: true },
+    simulation: { label: "Simulation with debrief", bloomMax: 6, millerMax: 3, practice: true },
+    reflection: { label: "Reflection or muddiest point", bloomMax: 5, millerMax: 2, practice: true },
+    service: { label: "Service learning or community encounter", bloomMax: 6, millerMax: 4, practice: true },
+  };
+
+  const words = s => String(s || "").toLowerCase().replace(/[^a-z\s,'-]/g, " ").replace(/,/g, " , ").split(/\s+/).filter(Boolean);
+
+  // Strip "By the end of the session, learners will be able to".
+  function stripPreamble(text) {
+    let t = String(text || "").trim();
+    const m = t.match(/\b(?:be able to|will be able to|able to|will|should)\s+(.*)$/i);
+    if (m && /^(by|at|after|upon|on|learners|students|participants|the learner|the student)/i.test(t)) t = m[1];
+    return t;
+  }
+
+  function verbStem(w) {
+    if (VERB_LEVEL[w] !== undefined) return w;
+    if (w.endsWith("ies") && VERB_LEVEL[w.slice(0, -3) + "y"] !== undefined) return w.slice(0, -3) + "y";
+    if (w.endsWith("es") && VERB_LEVEL[w.slice(0, -2)] !== undefined) return w.slice(0, -2);
+    if (w.endsWith("s") && VERB_LEVEL[w.slice(0, -1)] !== undefined) return w.slice(0, -1);
+    return null;
+  }
+
+  // Outcome verbs sit at the start of the outcome or right after "and", "or", "then" or a comma.
+  function findVerbs(text) {
+    const toks = words(stripPreamble(text));
+    const found = [];
+    const vague = [];
+    toks.forEach((w, i) => {
+      const prev = toks[i - 1];
+      const head = i === 0 || prev === "and" || prev === "or" || prev === "then" || prev === "," || prev === "to";
+      if (VAGUE.includes(w) && (head || i < 3)) vague.push(w === "familiar" || w === "aware" ? "be " + w + " with" : w);
+      if (!head) return;
+      const v = verbStem(w);
+      if (v && !found.includes(v)) found.push(v);
+    });
+    return { verbs: found, vague };
+  }
+
+  function issue(code, severity, message, hint) { return { code, severity, message, hint }; }
+
+  // Module 2, Page 2: measurable outcomes.
+  function analyzeOutcome(text) {
+    const result = { verbs: [], bloom: null, millerFloor: null, issues: [] };
+    const t = String(text || "").trim();
+    if (!t) return result;
+    const { verbs, vague } = findVerbs(t);
+    result.verbs = verbs;
+    if (vague.length) {
+      result.issues.push(issue("vague_verb", "gap",
+        `"${vague[0]}" does not say what learners will do, so it is hard to teach toward or assess.`, "outcome_verb"));
+    }
+    if (!verbs.length && !vague.length) {
+      result.issues.push(issue("no_verb", "partial",
+        "Start with an action verb you could observe or check, such as explain, select or perform.", "outcome_formula"));
+    }
+    if (verbs.length >= 2) {
+      result.issues.push(issue("two_verbs", "note",
+        `Two verbs (${verbs.join(", ")}). If they need different assessments, split them. If they are one task, as in "select and justify", keep them together.`, "one_verb"));
+    }
+    if (words(stripPreamble(t)).length < 6) {
+      result.issues.push(issue("no_context", "partial",
+        "Add what learners act on and the context or standard: verb + what + context.", "outcome_formula"));
+    }
+    if (verbs.length) result.bloom = Math.max(...verbs.map(v => VERB_LEVEL[v]));
+    if (verbs.some(v => PERFORMANCE_VERBS.includes(v))) result.millerFloor = 3;
+    return result;
+  }
+
+  function levelOf(list, catalog) {
+    const items = (list || []).map(id => catalog[id]).filter(Boolean);
+    if (!items.length) return null;
+    return {
+      bloom: Math.max(...items.map(a => a.bloomMax)),
+      miller: Math.max(...items.map(a => a.millerMax)),
+      practice: items.some(a => a.practice !== false),
+    };
+  }
+
+  // Module 2, Pages 4 and 5: constructive alignment and the five misalignment patterns.
+  function alignment(design) {
+    const o = (design && design.outcome) || {};
+    const bloom = Number(o.bloom) || analyzeOutcome(o.text).bloom;
+    const miller = Number(o.miller) || null;
+    const methods = ((design.session && design.session.segments) || []).map(s => s.method).filter(Boolean);
+    const act = levelOf(methods, ACTIVITIES);
+    const type = design.assessment && design.assessment.type;
+    const asm = type && ASSESSMENTS[type] ? { bloom: ASSESSMENTS[type].bloomMax, miller: ASSESSMENTS[type].millerMax } : null;
+
+    const out = {
+      outcome: { bloom, miller },
+      practice: { status: "pending", issues: [] },
+      assessment: { status: "pending", issues: [] },
+      level: { status: "pending", issues: [] },
+    };
+    if (!bloom) return out;
+
+    if (act) {
+      out.practice.status = "aligned";
+      if (!act.practice) {
+        out.practice.status = bloom >= 3 ? "gap" : "partial";
+        out.practice.issues.push(issue("instruction_below", out.practice.status,
+          "Learners only listen or watch. They need to practice what the outcome asks, with feedback, before the assessment.", "pattern_instruction_below"));
+      } else if (act.bloom < bloom - 1 || (miller && act.miller < miller)) {
+        out.practice.status = "gap";
+        out.practice.issues.push(issue("instruction_below", "gap",
+          `The activities reach ${BLOOM[act.bloom]}${miller ? " / " + MILLER[act.miller] : ""}, below the outcome. Add practice at the outcome's level.`, "pattern_instruction_below"));
+      } else if (act.bloom < bloom) {
+        out.practice.status = "partial";
+        out.practice.issues.push(issue("instruction_below", "partial",
+          `Practice reaches ${BLOOM[act.bloom]}; the outcome asks for ${BLOOM[bloom]}. One activity at that level would close the gap.`, "pattern_instruction_below"));
+      }
+    }
+
+    if (asm) {
+      out.assessment.status = "aligned";
+      if (miller && miller >= 3 && asm.miller < 3) {
+        out.assessment.status = "gap";
+        out.assessment.issues.push(issue("wrong_tool", "gap",
+          `"${MILLER[miller]}" needs learners to perform. A written or recall format cannot show performance.`, "pattern_wrong_tool"));
+      } else if (miller && asm.miller < miller) {
+        out.assessment.status = "partial";
+        out.assessment.issues.push(issue("wrong_tool", "partial",
+          `This format reaches "${MILLER[asm.miller]}"; the outcome is "${MILLER[miller]}".`, "pattern_wrong_tool"));
+      }
+      if (asm.bloom < bloom) {
+        const sev = asm.bloom < bloom - 1 ? "gap" : "partial";
+        if (sev === "gap" || out.assessment.status === "aligned") out.assessment.status = sev;
+        out.assessment.issues.push(issue("assessment_below", sev,
+          `The outcome asks learners to ${BLOOM[bloom].toLowerCase()}; this format mainly checks ${BLOOM[asm.bloom].toLowerCase()}. Raise the task or lower the outcome honestly.`, "pattern_outcome_above"));
+      }
+    }
+
+    if (act && asm) {
+      const worst = [out.practice.status, out.assessment.status];
+      out.level.status = worst.includes("gap") ? "gap" : worst.includes("partial") ? "partial" : "aligned";
+    }
+    return out;
+  }
+
+  const sumMinutes = segs => (segs || []).reduce((n, s) => n + (Number(s.minutes) || 0), 0);
+
+  // Module 3, Page 4: a timed outline with practice and feedback.
+  function analyzeSession(session) {
+    const s = session || {};
+    const issues = [];
+    const segs = (s.segments || []).filter(x => x.method || x.what);
+    const total = sumMinutes(segs);
+    const length = Number(s.length) || 0;
+    if (length && total > length) issues.push(issue("overtime", "partial",
+      `Segments add up to ${total} minutes in a ${length}-minute session. Cut content to protect the activities.`, "protect_time"));
+    if (segs.length) {
+      let run = 0, longest = 0;
+      segs.forEach(x => { if (x.method === "lecture" || x.method === "worked_example") { run += Number(x.minutes) || 0; longest = Math.max(longest, run); } else run = 0; });
+      if (longest >= 30) issues.push(issue("long_lecture", "note",
+        `${longest} minutes of explanation in a row. Not because attention collapses at 10 minutes (that rule has weak support), but because learners need practice and feedback.`, "attention_myth"));
+      if (!segs.some(x => x.method === "retrieval")) issues.push(issue("no_retrieval", "note",
+        "No retrieval opener yet. Three no-stakes questions on last week's content take about 3 minutes.", "retrieval"));
+    }
+    if (segs.length && !String(s.feedbackDuring || "").trim()) issues.push(issue("no_feedback", "partial",
+      "How will learners find out during the session whether they were right, and why?", "plan_feedback"));
+    return { total, issues };
+  }
+
+  const VAGUE_DESCRIPTORS = ["good", "poor", "excellent", "adequate", "satisfactory", "great", "weak", "strong", "fine", "nice"];
+  const PERSON_PRAISE = /(you'?re|you are) (a )?(great|strong|smart|good|excellent|bright)|good job|great job|well done|nice work/i;
+  const NEXT_STEP = /\b(next time|try|add|consider|start|list|before you|instead|rank|check|revise|include)\b/i;
+
+  // Module 4: assessment, rubrics and feedback.
+  function analyzeAssessment(a) {
+    const x = a || {};
+    const issues = [];
+    const crit = (x.rubric || []).filter(r => String(r.criterion || "").trim());
+    if (crit.length && (crit.length < 3 || crit.length > 5)) issues.push(issue("criteria_count", "note",
+      `${crit.length} criteria. Three to five, each tied to the outcome, keeps scoring consistent and fast.`, "rubric_size"));
+    crit.forEach(r => {
+      const w = words(r.meets);
+      const vague = VAGUE_DESCRIPTORS.find(v => w.includes(v));
+      if (vague && w.length < 8) issues.push(issue("vague_descriptor", "partial",
+        `"${r.criterion}": "${vague}" is not observable. Describe what Meets looks like.`, "rubric_observable"));
+    });
+    const fb = String(x.feedbackSample || "").trim();
+    if (fb) {
+      if (PERSON_PRAISE.test(fb)) issues.push(issue("self_level", "partial",
+        "Praise of the person adds little information. Say what was done well in the task.", "feedback_levels"));
+      if (!NEXT_STEP.test(fb)) issues.push(issue("no_next_step", "partial",
+        "Feedback that changes performance answers \"where to next?\" Add one specific next step.", "feedback_where_next"));
+    }
+    if (x.type && !String(x.formative || "").trim()) issues.push(issue("no_formative", "partial",
+      "Plan at least one low-stakes attempt with feedback before the graded task.", "formative"));
+    return { issues };
+  }
+
+  // Module 5: AI level chosen from the outcome.
+  function analyzeAI(design) {
+    const ai = (design && design.ai) || {};
+    const miller = Number(design && design.outcome && design.outcome.miller) || 0;
+    const issues = [];
+    const level = Number(ai.level) || 0;
+    if (level >= 3 && (miller >= 3 || String(ai.withoutAI || "").trim())) issues.push(issue("ai_core_skill", "partial",
+      "This outcome is a core skill learners must show on their own. Consider no AI for the graded task, with AI allowed in practice.", "ai_level_choose"));
+    if (level >= 2 && !String(ai.document || "").trim()) issues.push(issue("ai_document", "partial",
+      "Say what learners document about their AI use: the tool, how they used it, what they changed.", "ai_document"));
+    const wording = String(ai.wording || "").toLowerCase();
+    if (wording && /responsibl|appropriate(ly)?\b|ethical(ly)?\b/.test(wording) && !/assignment|for\s+\w+ing/.test(wording)) issues.push(issue("ai_vague_policy", "partial",
+      "\"Use AI responsibly\" leaves learners guessing. Name allowed uses, the assignments, and what to document.", "ai_syllabus"));
+    if (/detector|turnitin|gptzero|ai score/i.test(String(ai.misuse || ""))) issues.push(issue("ai_detector", "gap",
+      "Detector scores have misclassified non-native English writing. Talk with the student about their process instead.", "ai_detectors"));
+    return { issues };
+  }
+
+  // Mission lens (draft for review): woven through, not bolted on.
+  function analyzeMission(design) {
+    const m = (design && design.mission) || {};
+    const chosen = (m.dimensions || []).filter(d => d && d.id);
+    const issues = [];
+    if (!chosen.length) return { chosen: 0, woven: 0, issues };
+    const woven = chosen.filter(d => d.outcome || d.activity || d.assessment);
+    chosen.filter(d => !(d.outcome || d.activity || d.assessment)).forEach(d => issues.push(issue("bolted_on", "partial",
+      "Chosen, but not yet in the outcome, an activity or the assessment. Mission that lives only in a list is bolted on, not woven in.", "mission_woven")));
+    if (woven.length && !woven.some(d => d.assessment)) issues.push(issue("mission_unassessed", "note",
+      "What we value, we make visible. Could one rubric criterion or reflection prompt show this growth?", "mission_assessed"));
+    return { chosen: chosen.length, woven: woven.length, issues };
+  }
+
+  // PHI guard: never send patient identifiers to an AI tool (Module 5, Page 4).
+  const PHI_PATTERNS = [
+    { re: /\b\d{3}-\d{2}-\d{4}\b/, what: "a Social Security number" },
+    { re: /\b(mrn|medical record( number)?)\s*[:#]?\s*\d{4,}/i, what: "a medical record number" },
+    { re: /\b(dob|date of birth|born)\s*[:]?\s*\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/i, what: "a date of birth" },
+    { re: /\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/, what: "a phone number" },
+    { re: /\b[\w.+-]+@[\w-]+\.[\w.]+\b/, what: "an email address" },
+    { re: /\b(patient|pt)\s+(name\s*[:]\s*)?(mr|mrs|ms|miss)\.?\s+[A-Z][a-z]+/, what: "a patient name" },
+  ];
+  function scanForPHI(text) {
+    const s = String(text || "");
+    const hit = PHI_PATTERNS.find(p => p.re.test(s));
+    return hit ? hit.what : null;
+  }
+
+  // Capstone self-check: an estimate against the five criteria. A reviewer decides.
+  function capstoneEstimate(design) {
+    const d = design || {};
+    const has = v => String(v || "").trim().length > 0;
+    const out = analyzeOutcome(d.outcome && d.outcome.text);
+    const al = alignment(d);
+    const ses = analyzeSession(d.session);
+    const asm = analyzeAssessment(d.assessment);
+    const ai = analyzeAI(d);
+    const rate = (meets, approaching) => (meets ? "meets" : approaching ? "approaching" : "notyet");
+    const outcomeClean = has(d.outcome && d.outcome.text) && !out.issues.some(i => i.severity === "gap");
+    const segs = ((d.session && d.session.segments) || []).filter(s => s.method);
+    const rubricOK = ((d.assessment && d.assessment.rubric) || []).filter(r => has(r.criterion) && has(r.meets)).length >= 3;
+    const criteria = [
+      { id: "alignment", label: "Outcome alignment",
+        rating: rate(outcomeClean && al.level.status === "aligned", outcomeClean && al.level.status !== "gap" && al.level.status !== "pending") },
+      { id: "active", label: "Modality and active learning",
+        rating: rate(has(d.session && d.session.modalityReason) && al.practice.status === "aligned" && has(d.session && d.session.feedbackDuring),
+          segs.length > 0 && al.practice.status !== "gap") },
+      { id: "assessment", label: "Assessment quality",
+        rating: rate(al.assessment.status === "aligned" && rubricOK && has(d.assessment && d.assessment.feedbackRoutine) && !asm.issues.some(i => i.severity !== "note"),
+          has(d.assessment && d.assessment.type) && al.assessment.status !== "gap") },
+      { id: "ai", label: "AI approach",
+        rating: ai.issues.some(i => i.code === "ai_detector") || !(d.ai && d.ai.level) ? "notyet"
+          : rate(has(d.ai.reason) && has(d.ai.visible) && has(d.ai.wording) && !ai.issues.length, true) },
+      { id: "feasibility", label: "Feasibility and evaluation",
+        rating: rate(has(d.evaluation && d.evaluation.measure) && has(d.evaluation && d.evaluation.firstStep) && has(d.evaluation && d.evaluation.firstDate) && !ses.issues.some(i => i.code === "overtime"),
+          has(d.evaluation && d.evaluation.firstStep) || has(d.evaluation && d.evaluation.measure)) },
+    ];
+    const meets = criteria.filter(c => c.rating === "meets").length;
+    const notyet = criteria.filter(c => c.rating === "notyet").length;
+    return { criteria, meets, notyet, badgeLikely: meets >= 4 && notyet === 0 };
+  }
+
+  const api = {
+    BLOOM, MILLER, ASSESSMENTS, ACTIVITIES, PERFORMANCE_VERBS,
+    analyzeOutcome, alignment, analyzeSession, analyzeAssessment, analyzeAI, analyzeMission,
+    scanForPHI, capstoneEstimate, sumMinutes,
+  };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.Checks = api;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>
+// Course Studio app. Vanilla JS, no build step. State lives in this browser (localStorage).
+// Rendering: a step renders once when you arrive; typing updates state and refreshes only the
+// live regions (analysis, nav, why panel), so inputs keep focus.
+(function () {
+  "use strict";
+  const C = window.COURSE, M = window.MISSION, K = window.Checks;
+  const STORE = "llu-course-studio-v1";
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const has = v => String(v == null ? "" : v).trim().length > 0;
+  const uid = () => "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const ALL_HINTS = Object.assign({}, C.HINTS, M.HINTS);
+  // Preview build (a single published page): no print dialog or file downloads, so copy instead.
+  const EMBEDDED = !!window.STUDIO_EMBEDDED;
+
+  // ---------- State ----------
+  function blankDesign(title) {
+    return {
+      id: uid(), title: title || "Untitled design", updatedAt: Date.now(),
+      course: {}, outcome: {}, audit: {}, session: { segments: [{}, {}, {}] },
+      assessment: { rubric: [{}, {}, {}], workload: [] }, alignment: {}, ai: {}, mission: { dimensions: [] }, evaluation: {},
+    };
+  }
+  function load() {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(STORE)); } catch (e) { /* storage unavailable */ }
+    if (!data || !data.designs) data = { designs: {}, current: null, prefs: { hints: true } };
+    if (!data.current || !data.designs[data.current]) {
+      const d = blankDesign(); data.designs[d.id] = d; data.current = d.id;
+    }
+    return data;
+  }
+  function save() {
+    design.updatedAt = Date.now();
+    try { localStorage.setItem(STORE, JSON.stringify(db)); } catch (e) { /* not saved; page still works */ }
+  }
+  let db = load();
+  let design = db.designs[db.current];
+  let stepId = (location.hash || "").replace("#", "") || "course";
+  let focusHint = null;
+  let coachState = { available: null, loading: false, result: null, error: null, step: null };
+
+  const getPath = (o, p) => p.split(".").reduce((a, k) => (a == null ? undefined : a[k]), o);
+  function setPath(o, p, v) {
+    const ks = p.split(".");
+    let a = o;
+    ks.slice(0, -1).forEach((k, i) => { if (a[k] == null) a[k] = /^\d+$/.test(ks[i + 1]) ? [] : {}; a = a[k]; });
+    a[ks[ks.length - 1]] = v;
+  }
+
+  // ---------- Symbols ----------
+  function dots(n) {
+    let s = "";
+    for (let i = 0; i < 3; i++) s += `<circle cx="${4 + i * 8}" cy="5" r="3" ${i < n ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="1.2"'}/>`;
+    return `<svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true">${s}</svg>`;
+  }
+  const ICONS = {
+    framework: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 11 6 6 11 1 6Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+    design: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+    mission: '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="7" r="2.6" fill="currentColor"/></svg>',
+  };
+  function strengthMark(key) {
+    const s = C.STRENGTH[key];
+    if (!s) return "";
+    const icon = s.dots ? dots(s.dots) : ICONS[key] || "";
+    return `<span class="mark ${key}" title="${esc(s.label)}">${icon}${esc(s.short)}</span>`;
+  }
+  function bloomMark(level, prefix) {
+    if (!level) return "";
+    let bars = "";
+    for (let i = 1; i <= 6; i++) bars += `<rect x="${(i - 1) * 3.4}" y="${12 - i * 2}" width="2.6" height="${i * 2}" ${i <= level ? 'fill="currentColor"' : 'fill="currentColor" opacity=".22"'}/>`;
+    return `<span class="mark bloom" title="Bloom's revised taxonomy, level ${level} of 6">${`<svg width="21" height="12" viewBox="0 0 21 12" aria-hidden="true">${bars}</svg>`}${prefix || "Bloom"} ${level} · ${esc(K.BLOOM[level])}</span>`;
+  }
+  function millerMark(level, prefix) {
+    if (!level) return "";
+    // Pyramid with four bands; band 1 (knows) at the base.
+    const bands = [[0, 12, 16, 9], [2.25, 9, 13.75, 6], [4.5, 6, 11.5, 3], [6.75, 3, 9.25, 0]];
+    const paths = bands.map((b, i) => { const [l, yb, r, yt] = b; const lt = l + 2.25, rt = r - 2.25;
+      return `<path d="M${l} ${yb} L${r} ${yb} L${rt} ${yt} L${lt} ${yt}Z" fill="currentColor" opacity="${i + 1 === level ? 1 : .22}"/>`; }).join("");
+    return `<span class="mark miller" title="Miller's pyramid, level ${level} of 4">${`<svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">${paths}</svg>`}${prefix || "Miller"} · ${esc(K.MILLER[level])}</span>`;
+  }
+  function aiMark(level) {
+    if (!level) return "";
+    const L = C.AI_LEVELS[level - 1];
+    let s = "";
+    for (let i = 1; i <= 5; i++) s += `<rect x="${(i - 1) * 4}" y="${10 - i * 2}" width="3.2" height="${i * 2}" ${i <= level ? 'fill="currentColor"' : 'fill="currentColor" opacity=".22"'}/>`;
+    return `<span class="mark ai" title="AI Assessment Scale level ${level} of 5">${`<svg width="20" height="10" viewBox="0 0 20 10" aria-hidden="true">${s}</svg>`}AI ${level} · ${esc(L.label)}</span>`;
+  }
+  const STATUS = {
+    aligned: ["✓", "Aligned"], partial: ["◐", "Partly"], gap: ["✕", "Gap"], pending: ["○", "Not yet set"], note: ["i", "Consider"],
+    meets: ["✓", "Meets"], approaching: ["◐", "Approaching"], notyet: ["✕", "Not yet"],
+  };
+  const statusMark = (s, label) => `<span class="status ${s}"><span aria-hidden="true">${STATUS[s][0]}</span> ${esc(label || STATUS[s][1])}</span>`;
+
+  function hintKind(h) {
+    if (!h) return null;
+    if (h.kind) return h.kind;
+    const order = ["strong", "moderate", "limited", "framework", "design"];
+    const ks = (h.evidence || []).map(id => C.EVIDENCE[id] && C.EVIDENCE[id].strength).filter(Boolean);
+    return ks.sort((a, b) => order.indexOf(a) - order.indexOf(b))[0] || "framework";
+  }
+  function whyBtn(id, label) {
+    const h = ALL_HINTS[id];
+    if (!h) return "";
+    const mission = hintKind(h) === "mission";
+    return `<button type="button" class="why${mission ? " mission" : ""}" data-hint="${id}" aria-label="Why: ${esc(h.title)}">${esc(label || "Why")}</button>`;
+  }
+  function hintLine(id) {
+    const h = ALL_HINTS[id];
+    if (!h) return "";
+    return `<p class="hint-line">${strengthMark(hintKind(h))} <span>${esc(h.hint)}</span></p>`;
+  }
+
+  // ---------- Field builders ----------
+  let fid = 0;
+  function field(o) {
+    const id = "f" + (++fid);
+    const v = getPath(design, o.path);
+    let input;
+    if (o.type === "textarea") input = `<textarea id="${id}" data-path="${o.path}" rows="${o.rows || 3}" placeholder="${esc(o.placeholder || "")}">${esc(v)}</textarea>`;
+    else if (o.type === "select") input = `<select id="${id}" data-path="${o.path}"${o.num ? " data-num" : ""}><option value="">${esc(o.empty || "Choose…")}</option>${o.options.map(op => `<option value="${esc(op.value)}"${String(v) === String(op.value) ? " selected" : ""}>${esc(op.label)}</option>`).join("")}</select>`;
+    else input = `<input id="${id}" type="${o.type || "text"}" data-path="${o.path}"${o.type === "number" ? " data-num min=\"0\"" : ""} value="${esc(v)}" placeholder="${esc(o.placeholder || "")}">`;
+    return `<div class="field"><div class="label-row"><label for="${id}">${esc(o.label)}${o.optional ? ' <span class="optional">(optional)</span>' : ""}</label>${o.hint ? whyBtn(o.hint) : ""}</div>${o.hint && !o.noLine ? hintLine(o.hint) : ""}${input}${o.after || ""}</div>`;
+  }
+  const live = name => `<div class="analysis" data-live="${name}"></div>`;
+
+  // ---------- Steps ----------
+  const SCHOOLS = ["Allied Health Professions", "Behavioral Health", "Dentistry", "Medicine", "Nursing", "Pharmacy", "Public Health", "Religion", "Graduate Studies", "Other"];
+  const LEVELS = ["Undergraduate", "Graduate", "Professional (entry-level clinical)", "Residency or fellowship", "Continuing education"];
+  const lettersOpts = list => list.map(x => ({ value: x, label: x }));
+
+  const RENDER = {
+    course() {
+      return `
+      <div class="card">
+        <h2>Your course</h2>
+        ${hintLine("one_outcome")}
+        <div class="row">
+          ${field({ path: "course.name", label: "Course name", placeholder: "e.g. Pharmacotherapy II" })}
+          ${field({ path: "course.code", label: "Course code", optional: true, placeholder: "e.g. RXRX 742" })}
+        </div>
+        <div class="row">
+          ${field({ path: "course.school", label: "School", type: "select", options: lettersOpts(SCHOOLS) })}
+          ${field({ path: "course.level", label: "Level", type: "select", options: lettersOpts(LEVELS) })}
+          ${field({ path: "course.size", label: "Class size", type: "number" })}
+        </div>
+        ${field({ path: "course.learners", label: "Who are the learners?", type: "textarea", rows: 2, hint: "andragogy", placeholder: "e.g. Second-year pharmacy students starting ambulatory care rotations" })}
+      </div>
+      <div class="card">
+        <h2>One outcome to follow all the way through</h2>
+        ${hintLine("backward_design")}
+        ${field({ path: "outcome.text", label: "By the end, learners will be able to…", type: "textarea", rows: 3, hint: "outcome_formula", noLine: true, placeholder: "Action verb + what + context or standard" , after: live("outcome") })}
+        <div class="row">
+          ${field({ path: "outcome.bloom", label: "Level of thinking (Bloom)", type: "select", num: true, empty: "Use the suggestion", hint: "bloom", noLine: true, options: [1, 2, 3, 4, 5, 6].map(l => ({ value: l, label: `${l}. ${K.BLOOM[l]}` })) })}
+          ${field({ path: "outcome.miller", label: "Level of competence (Miller)", type: "select", num: true, hint: "miller", noLine: true, options: [1, 2, 3, 4].map(l => ({ value: l, label: `${l}. ${K.MILLER[l]}` })) })}
+        </div>
+        <div data-live="millerHelp"></div>
+      </div>
+      <div class="card">
+        ${field({ path: "outcome.others", label: "Other outcomes for this course", optional: true, type: "textarea", rows: 3, hint: "few_outcomes", placeholder: "One per line. You will focus on the outcome above.", after: live("others") })}
+      </div>`;
+    },
+
+    audit() {
+      const rows = C.AUDIT.map(a => `
+        <tr>
+          <td><span class="label">${esc(a.label)}</span> ${whyBtn(a.hint)}</td>
+          <td><select data-path="audit.${a.id}.status" aria-label="${esc(a.label)}: already in my session?">
+            ${["", "yes", "partly", "no"].map(v => `<option value="${v}"${getPath(design, `audit.${a.id}.status`) === v ? " selected" : ""}>${v ? v[0].toUpperCase() + v.slice(1) : "…"}</option>`).join("")}
+          </select></td>
+          <td><input data-path="audit.${a.id}.where" value="${esc(getPath(design, `audit.${a.id}.where`))}" aria-label="${esc(a.label)}: where or how"></td>
+          <td><input data-path="audit.${a.id}.change" value="${esc(getPath(design, `audit.${a.id}.change`))}" aria-label="${esc(a.label)}: one change I could make"></td>
+        </tr>`).join("");
+      return `
+      <div class="card">
+        ${field({ path: "audit.session", label: "Which session are you auditing?", placeholder: "e.g. Week 4: hypertension management" })}
+        <table class="grid stack">
+          <thead><tr><th>Strategy</th><th>Already in my session?</th><th>Where or how</th><th>One change I could make</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        ${live("audit")}
+      </div>
+      <div class="card">
+        <h2>Two changes you will make</h2>
+        <p class="muted">“In my session on ___, I currently ___. I will add ___ by ___.”</p>
+        ${field({ path: "audit.change1", label: "Change 1", type: "textarea", rows: 2 })}
+        ${field({ path: "audit.change2", label: "Change 2", type: "textarea", rows: 2 })}
+        <p class="hint-line">${strengthMark("design")} Self-check: Can you realistically make these next term? Does each connect to your outcome? Did you name what you will do, not only what you want to improve?</p>
+      </div>
+      <div class="card">
+        <h3>Myth or fact? ${whyBtn("neuromyth_styles")}</h3>
+        <p>“Students learn better when taught in their preferred learning style.”</p>
+        <details><summary>Reveal</summary><p><strong>Myth.</strong> Choose the format the content calls for, and offer more than one way to engage because it helps everyone.</p></details>
+      </div>`;
+    },
+
+    session() {
+      const s = design.session;
+      const segs = s.segments || [];
+      const methodOpts = Object.entries(K.ACTIVITIES).map(([k, a]) => `<option value="${k}">${esc(a.label)}</option>`).join("");
+      const rows = segs.map((g, i) => `
+        <tr>
+          <td><input class="seg-min" type="number" min="0" data-num data-path="session.segments.${i}.minutes" value="${esc(g.minutes)}" aria-label="Segment ${i + 1} minutes"></td>
+          <td><select data-path="session.segments.${i}.method" aria-label="Segment ${i + 1} method"><option value="">Method…</option>${methodOpts.replace(`value="${g.method}"`, `value="${g.method}" selected`)}</select></td>
+          <td><input data-path="session.segments.${i}.what" value="${esc(g.what)}" aria-label="Segment ${i + 1}: what learners do" placeholder="What learners do"></td>
+          <td><button type="button" class="btn link" data-action="removeSegment" data-i="${i}" aria-label="Remove segment ${i + 1}">Remove</button></td>
+        </tr>`).join("");
+      return `
+      <div class="card">
+        <h2>Modality ${whyBtn("modality")}</h2>
+        ${hintLine("modality")}
+        <div class="choices" role="group" aria-label="Modality">
+          ${C.MODALITIES.map(m => `<button type="button" class="choice" data-action="setModality" data-v="${m.id}" aria-pressed="${s.modality === m.id}"><span class="c-title">${esc(m.label)}</span><span class="c-sub">${esc(m.fit)}</span></button>`).join("")}
+        </div>
+        ${field({ path: "session.modalityReason", label: "Why this modality fits the outcome", type: "textarea", rows: 2 })}
+      </div>
+      <div class="card">
+        <h2>Timed outline ${whyBtn("method_fit")}</h2>
+        ${hintLine("active_why")}
+        <div class="row">${field({ path: "session.length", label: "Session length (minutes)", type: "number" })}</div>
+        <table class="grid stack">
+          <thead><tr><th>Min</th><th>Method</th><th>What learners do</th><th><span class="sr">Remove</span></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p><button type="button" class="btn small ghost" data-action="addSegment">Add segment</button></p>
+        <div data-live="timebar"></div>
+        ${live("session")}
+      </div>
+      <div class="card">
+        ${field({ path: "session.feedbackDuring", label: "How learners get feedback during the session", type: "textarea", rows: 2, hint: "plan_feedback" })}
+        ${field({ path: "session.cut", label: "What you will cut or move to pre-class", type: "textarea", rows: 2, hint: "protect_time" })}
+        ${field({ path: "session.tellWhy", label: "How you will tell learners why the activity is there", type: "textarea", rows: 2, hint: "feels_worse" })}
+        <div class="field"><div class="label-row"><span class="label">Accessibility checks</span>${whyBtn("udl")}</div>${hintLine("udl")}
+          <div class="weave">${["Captions or transcripts", "Real headings", "Alt text for images", "Another way to show learning"].map((a, i) =>
+            `<label><input type="checkbox" data-path="session.access.${i}"${getPath(design, `session.access.${i}`) ? " checked" : ""}> ${esc(a)}</label>`).join("")}</div>
+        </div>
+        ${s.modality === "async" || s.modality === "sync_online" || s.modality === "blended" ? `<p class="hint-line">${strengthMark("framework")} Online: plan teaching, social and cognitive presence. ${whyBtn("presence")}</p>` : ""}
+      </div>`;
+    },
+
+    assessment() {
+      const a = design.assessment;
+      const rub = a.rubric || [];
+      const rows = rub.map((r, i) => `
+        <tr>
+          <td><input data-path="assessment.rubric.${i}.criterion" value="${esc(r.criterion)}" aria-label="Criterion ${i + 1}" placeholder="e.g. Clinical reasoning"></td>
+          <td><input data-path="assessment.rubric.${i}.meets" value="${esc(r.meets)}" aria-label="Criterion ${i + 1}: what Meets looks like" placeholder="What Meets looks like"></td>
+          <td><button type="button" class="btn link" data-action="removeRubric" data-i="${i}" aria-label="Remove criterion ${i + 1}">Remove</button></td>
+        </tr>`).join("");
+      return `
+      <div class="card">
+        <h2>Practice before the graded task</h2>
+        ${field({ path: "assessment.formative", label: "Formative practice: what, when, stakes", type: "textarea", rows: 2, hint: "formative" })}
+      </div>
+      <div class="card">
+        <h2>The graded task</h2>
+        ${hintLine("authentic")}
+        ${field({ path: "assessment.type", label: "Assessment format", type: "select", hint: "authentic", noLine: true, options: Object.entries(K.ASSESSMENTS).map(([k, v]) => ({ value: k, label: v.label })), after: live("assessmentFit") })}
+        ${field({ path: "assessment.task", label: "What learners must do", type: "textarea", rows: 2 })}
+        ${field({ path: "assessment.whyMatches", label: "Why this task matches the outcome verb", type: "textarea", rows: 2 })}
+      </div>
+      <div class="card">
+        <h2>Rubric ${whyBtn("rubric_use")}</h2>
+        ${hintLine("rubric_observable")}
+        <table class="grid stack"><thead><tr><th>Criterion</th><th>Meets</th><th><span class="sr">Remove</span></th></tr></thead><tbody>${rows}</tbody></table>
+        <p><button type="button" class="btn small ghost" data-action="addRubric">Add criterion</button></p>
+        ${field({ path: "assessment.rubricShared", label: "When and how learners see the rubric and examples", type: "textarea", rows: 2, hint: "rubric_use", noLine: true })}
+      </div>
+      <div class="card">
+        <h2>Feedback</h2>
+        ${field({ path: "assessment.feedbackRoutine", label: "Feedback routine: when, what form, what learners do with it", type: "textarea", rows: 2, hint: "feedback_where_next" })}
+        ${field({ path: "assessment.feedbackSample", label: "Rewrite one comment you have given: a strength, a gap and a next step", type: "textarea", rows: 2, hint: "feedback_levels", noLine: true, after: live("feedback") })}
+        <div class="field"><div class="label-row"><span class="label">Workload plan</span>${whyBtn("feedback_scale")}</div>${hintLine("feedback_scale")}
+          <div class="weave">${C.WORKLOAD.map((w, i) => `<label><input type="checkbox" data-path="assessment.workload.${i}"${getPath(design, `assessment.workload.${i}`) ? " checked" : ""}> ${esc(w)}</label>`).join("")}</div>
+        </div>
+        ${field({ path: "assessment.fairness", label: "Fairness checks", type: "textarea", rows: 2, hint: "fairness", placeholder: "Consistent scoring, a clear review process, accommodations" })}
+      </div>`;
+    },
+
+    alignment() {
+      return `
+      <div class="card">
+        <h2>Outcome → practice → assessment ${whyBtn("alignment_chain")}</h2>
+        ${hintLine("alignment_chain")}
+        <div data-live="chain"></div>
+        ${live("alignmentIssues")}
+      </div>
+      <div class="card">
+        <h2>Checks a computer cannot make</h2>
+        <div class="weave" style="flex-direction:column">
+          <label><input type="checkbox" data-path="alignment.taughtAll"${design.alignment.taughtAll ? " checked" : ""}> The assessment covers nothing that is not in the outcome or the activities. ${whyBtn("pattern_never_taught")}</label>
+          <label><input type="checkbox" data-path="alignment.noOrphans"${design.alignment.noOrphans ? " checked" : ""}> Every activity and assessment in this session ties to an outcome.</label>
+        </div>
+        ${field({ path: "alignment.biggest", label: "“The biggest misalignment in my session is ___, and I will fix it by ___.”", type: "textarea", rows: 2 })}
+      </div>`;
+    },
+
+    ai() {
+      const ai = design.ai;
+      return `
+      <div class="card">
+        <h2>Start from the outcome ${whyBtn("ai_performance")}</h2>
+        ${hintLine("ai_performance")}
+        ${field({ path: "ai.withoutAI", label: "What must learners be able to do without AI?", type: "textarea", rows: 2 })}
+      </div>
+      <div class="card">
+        <h2>Level of AI use for the graded task ${whyBtn("ai_level_choose")}</h2>
+        ${hintLine("ai_level_choose")}
+        <div class="choices" role="group" aria-label="AI level">
+          ${C.AI_LEVELS.map(l => `<button type="button" class="choice" data-action="setAI" data-v="${l.level}" aria-pressed="${Number(ai.level) === l.level}"><span class="c-title">${aiMark(l.level)}</span><span class="c-sub">${esc(l.meaning)}</span><span class="c-sub"><em>Fits:</em> ${esc(l.fit)}</span></button>`).join("")}
+        </div>
+        <p class="hint-line">${strengthMark("framework")} The published scale has been revised; check the current wording before adopting it.</p>
+        ${field({ path: "ai.reason", label: "Why this level", type: "textarea", rows: 2 })}
+      </div>
+      <div class="card">
+        ${field({ path: "ai.visible", label: "How the assignment makes the learner's own thinking visible", type: "textarea", rows: 2, hint: "ai_visible" })}
+        ${field({ path: "ai.document", label: "What learners must document about AI use", type: "textarea", rows: 2, hint: "ai_document" })}
+        ${field({ path: "ai.verify", label: "Verification expectation for learners", type: "textarea", rows: 2, hint: "ai_verify" })}
+        ${field({ path: "ai.wording", label: "Syllabus or assignment wording", type: "textarea", rows: 4, hint: "ai_syllabus", after: `<p class="no-print"><button type="button" class="btn small ghost" data-action="insertWording">Start from the course template</button></p>` })}
+        ${field({ path: "ai.misuse", label: "How you will respond to suspected misuse", type: "textarea", rows: 2, hint: "ai_detectors" })}
+        ${live("ai")}
+        <p class="hint-line">${strengthMark("design")} Never enter patient identifiers into tools your institution has not approved. ${whyBtn("ai_privacy")}</p>
+      </div>`;
+    },
+
+    mission() {
+      const chosen = id => (design.mission.dimensions || []).find(d => d.id === id);
+      const themes = M.ANCHORS.themes.map(t => `
+        <div class="theme${t.current ? " current" : ""}">
+          <div class="eyebrow">${esc(t.who)}${t.current ? " · current theme" : ""}</div>
+          <div class="t-name">${esc(t.name)}</div>
+          <p>${esc(t.draft)}</p>
+          <span class="draft-flag">Draft wording</span>
+        </div>`).join("");
+      const dims = M.DIMENSIONS.map(d => {
+        const c = chosen(d.id);
+        const idx = (design.mission.dimensions || []).findIndex(x => x.id === d.id);
+        return `
+        <div class="card mission-card">
+          <button type="button" class="choice mission-choice" style="width:100%" data-action="toggleDim" data-v="${d.id}" aria-pressed="${!!c}">
+            <span class="c-title">${ICONS.mission} ${esc(d.label)}</span><span class="c-sub">${esc(d.short)}</span>
+          </button>
+          ${d.id === "identity" ? `<p class="hint-line">${strengthMark("framework")} Connects to Miller's pyramid. ${whyBtn("mission_identity")}</p>` : ""}
+          ${c ? `<div class="dim-detail">
+            <p><strong>Outcome:</strong> ${esc(d.outcome)}</p>
+            <p><strong>Activity:</strong> ${esc(d.activity)}</p>
+            <p><strong>Assessment:</strong> ${esc(d.assessment)}</p>
+            <p class="hint-line">${strengthMark("mission")} Example: ${esc(d.example)}</p>
+            <div class="weave" role="group" aria-label="Where ${esc(d.label)} lives in this design">
+              <span class="label">Where it lives:</span>
+              ${["outcome", "activity", "assessment"].map(k => `<label><input type="checkbox" data-path="mission.dimensions.${idx}.${k}"${c[k] ? " checked" : ""}> ${k === "outcome" ? "The outcome" : k === "activity" ? "An activity" : "The assessment"}</label>`).join("")}
+            </div>
+            ${field({ path: `mission.dimensions.${idx}.how`, label: "How, specifically", type: "textarea", rows: 2 })}
+          </div>` : ""}
+        </div>`;
+      }).join("");
+      return `
+      <div class="card mission-card">
+        <p><span class="draft-flag">${esc(M.REVIEW.status)}</span> <span class="muted">Reviewer: ${esc(M.REVIEW.reviewer)}. ${esc(M.REVIEW.note)}</span></p>
+        <p class="why-step">${esc(M.ANCHORS.mission.text)}. <span class="muted">(${esc(M.ANCHORS.mission.label)}; wording to confirm)</span></p>
+        <div class="theme-row">${themes}</div>
+        ${hintLine("mission_design_input")}
+        <p class="hint-line">${strengthMark("mission")} Mission hints state values, not research findings. ${whyBtn("mission_honest")}</p>
+      </div>
+      <h2>Choose one to three dimensions that genuinely fit ${whyBtn("mission_woven")}</h2>
+      ${hintLine("mission_woven")}
+      ${live("mission")}
+      ${dims}`;
+    },
+
+    plan() {
+      return `
+      <div class="card">
+        <h2>Evaluation and first step</h2>
+        ${field({ path: "evaluation.measure", label: "What you will look at to see whether it worked, and when", type: "textarea", rows: 2, hint: "evaluate_change" })}
+        <div class="row">
+          ${field({ path: "evaluation.firstStep", label: "The one change you will make first", hint: "first_step", noLine: true })}
+          ${field({ path: "evaluation.firstDate", label: "Date", type: "date" })}
+        </div>
+        ${field({ path: "evaluation.feasibility", label: "Time, resources and support you need", type: "textarea", rows: 2 })}
+      </div>
+      <div class="card">
+        <h2>Self-check against the reviewer's rubric ${whyBtn("capstone_rubric")}</h2>
+        ${hintLine("badge_threshold")}
+        <div data-live="selfcheck"></div>
+      </div>
+      <div class="card" id="planDoc">
+        <div class="label-row" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <h2 style="margin:0">Teaching Improvement Plan</h2>
+          <span class="no-print">${EMBEDDED
+            ? `<button type="button" class="btn small" data-action="copyPlan">Copy plan text</button>
+          <button type="button" class="btn small ghost" data-action="copyJSON">Copy design data</button>`
+            : `<button type="button" class="btn small" data-action="print">Print or save as PDF</button>
+          <button type="button" class="btn small ghost" data-action="export">Export JSON</button>`}
+          <button type="button" class="btn small ghost" data-action="import">Import JSON</button></span>
+        </div>
+        <p class="muted no-print" id="planMsg" role="status"></p>
+        <div data-live="plan"></div>
+      </div>`;
+    },
+  };
+
+  // ---------- Live regions ----------
+  function issueList(issues, okText) {
+    if (!issues.length) return okText ? `<p class="ok-line">✓ ${esc(okText)}</p>` : "";
+    return issues.map(i => `<div class="issue">${statusMark(i.severity)}<div>${esc(i.message)} ${i.hint ? `<button type="button" class="btn link" data-hint="${i.hint}">Why?</button>` : ""}</div></div>`).join("");
+  }
+  const activityLabel = id => (K.ACTIVITIES[id] || {}).label || id;
+
+  const LIVE = {
+    outcome() {
+      const t = design.outcome.text;
+      if (!has(t)) return `<p class="muted">Write your outcome, and the studio will check the verb and suggest a level.</p>`;
+      const r = K.analyzeOutcome(t);
+      const chips = [];
+      if (r.verbs.length) chips.push(`<span class="muted">Verbs:</span> ${r.verbs.map(v => `<strong>${esc(v)}</strong>`).join(", ")}`);
+      if (r.bloom) chips.push(bloomMark(r.bloom, "Suggested Bloom"));
+      if (r.millerFloor && !design.outcome.miller) chips.push(millerMark(r.millerFloor, "At least Miller"));
+      return `<div class="chips">${chips.join(" ")}</div>${issueList(r.issues, "Observable verb with what and context.")}`;
+    },
+    millerHelp() {
+      const m = Number(design.outcome.miller);
+      const typical = { 1: "Written exam, multiple-choice", 2: "Case-based or extended questions", 3: "Simulation, standardized patient, OSCE", 4: "Direct observation, workplace-based assessment" };
+      return m ? `<p class="hint-line">${millerMark(m)} Typical assessment: ${esc(typical[m])}.</p>` : "";
+    },
+    others() {
+      const n = String(design.outcome.others || "").split("\n").filter(has).length + (has(design.outcome.text) ? 1 : 0);
+      if (n > 8) return issueList([{ severity: "note", message: `${n} outcomes. Fewer, stronger outcomes are easier to teach and assess.`, hint: "few_outcomes" }]);
+      return n > 1 ? `<p class="muted">${n} course outcomes listed.</p>` : "";
+    },
+    audit() {
+      const no = C.AUDIT.filter(a => getPath(design, `audit.${a.id}.status`) === "no");
+      const set = C.AUDIT.filter(a => getPath(design, `audit.${a.id}.status`));
+      if (!set.length) return "";
+      const msgs = [];
+      if (no.some(a => a.id === "retrieval" || a.id === "spacing")) msgs.push({ severity: "note", message: "Retrieval and spacing have the strongest evidence and are cheap to add. Start there.", hint: "retrieval" });
+      return `<p class="muted">${set.length - no.length} of ${set.length} strategies at least partly present.</p>${issueList(msgs)}`;
+    },
+    timebar() {
+      const segs = (design.session.segments || []).filter(s => Number(s.minutes) > 0);
+      const total = K.sumMinutes(segs);
+      const length = Number(design.session.length) || total;
+      if (!total) return "";
+      const scale = Math.max(total, length);
+      const bars = segs.map(s => {
+        const a = K.ACTIVITIES[s.method];
+        const cls = !a ? "t-listen" : a.practice ? "t-do" : "t-listen";
+        return `<span class="${cls}" style="width:${(Number(s.minutes) / scale) * 100}%" title="${esc((a && a.label) || "Unspecified")}: ${s.minutes} min"></span>`;
+      }).join("");
+      const doing = segs.filter(s => K.ACTIVITIES[s.method] && K.ACTIVITIES[s.method].practice).reduce((n, s) => n + Number(s.minutes), 0);
+      return `<div class="timebar" role="img" aria-label="${doing} of ${total} minutes have learners doing something">${bars}</div>
+        <div class="legend-inline"><span><i class="sw" style="background:var(--accent)"></i>Learners doing: ${doing} min</span><span><i class="sw" style="background:var(--framework);opacity:.55"></i>Listening or watching: ${total - doing} min</span><span>Total ${total}${design.session.length ? ` of ${design.session.length}` : ""} min</span></div>`;
+    },
+    session() {
+      const r = K.analyzeSession(design.session);
+      const al = K.alignment(design);
+      const issues = r.issues.concat(al.practice.issues);
+      const methods = (design.session.segments || []).filter(s => s.method);
+      if (!methods.length) return "";
+      return `<div class="chips">${statusMark(al.practice.status, al.practice.status === "pending" ? "Practice: set an outcome first" : "Practice vs. outcome: " + STATUS[al.practice.status][1])}</div>${issueList(issues, "Practice and feedback are built into the session.")}`;
+    },
+    assessmentFit() {
+      const t = design.assessment.type;
+      if (!t) return "";
+      const a = K.ASSESSMENTS[t];
+      const al = K.alignment(design);
+      return `<div class="chips"><span class="muted">This format can show up to</span> ${bloomMark(a.bloomMax)} ${millerMark(a.millerMax)} ${statusMark(al.assessment.status, al.assessment.status === "pending" ? "Set an outcome first" : "Match: " + STATUS[al.assessment.status][1])}</div>${issueList(al.assessment.issues)}`;
+    },
+    feedback() {
+      const r = K.analyzeAssessment(design.assessment);
+      const fbIssues = r.issues.filter(i => i.code === "self_level" || i.code === "no_next_step");
+      return has(design.assessment.feedbackSample) ? issueList(fbIssues, "Specific, about the task, with a next step.") : "";
+    },
+    chain() {
+      const al = K.alignment(design);
+      const methods = (design.session.segments || []).map(s => s.method).filter(Boolean);
+      const uniq = [...new Set(methods)];
+      const t = design.assessment.type;
+      const conn = (st, label) => `<div class="connector"><span class="arrow" aria-hidden="true">→</span>${statusMark(st, label + ": " + STATUS[st][1])}</div>`;
+      return `<div class="chain">
+        <div class="link-box"><h3>Outcome</h3><p>${has(design.outcome.text) ? esc(design.outcome.text) : '<span class="muted">Not written yet</span>'}</p>
+          <div class="chips">${bloomMark(al.outcome.bloom)} ${millerMark(al.outcome.miller)}</div></div>
+        ${conn(al.practice.status, "Practice")}
+        <div class="link-box"><h3>Learning activity</h3><p>${uniq.length ? uniq.map(m => esc(activityLabel(m))).join(", ") : '<span class="muted">No methods yet</span>'}</p></div>
+        ${conn(al.assessment.status, "Assessment")}
+        <div class="link-box"><h3>Assessment</h3><p>${t ? esc(K.ASSESSMENTS[t].label) : '<span class="muted">Not chosen yet</span>'}</p>
+          ${has(design.assessment.task) ? `<p class="muted">${esc(design.assessment.task)}</p>` : ""}</div>
+      </div>
+      <p>Overall: ${statusMark(al.level.status, al.level.status === "pending" ? "Complete steps 1, 3 and 4 to see alignment" : "Level: " + STATUS[al.level.status][1])}</p>`;
+    },
+    alignmentIssues() {
+      const al = K.alignment(design);
+      const issues = al.practice.issues.concat(al.assessment.issues);
+      return al.level.status === "pending" ? "" : issueList(issues, "Outcome, practice and assessment sit at the same level.");
+    },
+    ai() { return issueList(K.analyzeAI(design).issues); },
+    mission() {
+      const r = K.analyzeMission(design);
+      if (!r.chosen) return `<p class="muted">No dimensions chosen yet.</p>`;
+      const many = r.chosen > 3 ? [{ severity: "note", message: "More than three. One dimension done well beats several mentioned.", hint: "mission_woven" }] : [];
+      return `<p>${statusMark(r.woven === r.chosen ? "aligned" : "partial", `${r.woven} of ${r.chosen} woven into the design`)}</p>${issueList(many.concat(dedupe(r.issues)))}`;
+    },
+    selfcheck() {
+      const e = K.capstoneEstimate(design);
+      const rows = e.criteria.map(c => `<tr><td>${esc(c.label)}</td><td>${statusMark(c.rating)}</td></tr>`).join("");
+      return `<table class="grid rubric-table"><thead><tr><th>Criterion</th><th>Estimate</th></tr></thead><tbody>${rows}</tbody></table>
+        <p style="margin-top:.6rem">${e.badgeLikely ? statusMark("meets", "Likely meets the badge standard") : statusMark("approaching", `${e.meets} of 5 Meets so far`)} <span class="muted">An estimate from your entries. A trained reviewer decides.</span></p>`;
+    },
+    plan() { return planHTML(); },
+  };
+  function dedupe(issues) { const seen = new Set(); return issues.filter(i => (seen.has(i.code) ? false : seen.add(i.code))); }
+
+  function planHTML() {
+    const d = design, c = d.course;
+    const sec = (n, title, body) => `<div class="plan-section"><h3>${n}. ${esc(title)}</h3>${body && body.trim() ? body : '<p class="empty">Not yet written.</p>'}</div>`;
+    const p = v => (has(v) ? `<p>${esc(v)}</p>` : "");
+    const segs = (d.session.segments || []).filter(s => s.method || s.what);
+    const rub = (d.assessment.rubric || []).filter(r => has(r.criterion));
+    const auditChanges = [d.audit.change1, d.audit.change2].filter(has);
+    const dims = (d.mission.dimensions || []).map(x => ({ x, def: M.DIMENSIONS.find(m => m.id === x.id) })).filter(o => o.def);
+    const access = ["Captions or transcripts", "Real headings", "Alt text for images", "Another way to show learning"].filter((a, i) => getPath(d, `session.access.${i}`));
+    return [
+      sec(1, "Course and learners", p([c.name, c.code, c.school, c.level, c.size ? `${c.size} learners` : "", d.session.modality ? (C.MODALITIES.find(m => m.id === d.session.modality) || {}).label : ""].filter(has).join(" · ")) + p(c.learners)),
+      sec(2, "Outcome", has(d.outcome.text) ? `<p>${esc(d.outcome.text)}</p><div class="chips">${bloomMark(K.alignment(d).outcome.bloom)} ${millerMark(Number(d.outcome.miller))}</div>` : ""),
+      sec(3, "Current state", p(d.audit.session) + (auditChanges.length ? `<ul>${auditChanges.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "")),
+      sec(4, "The change: session", p(d.session.modalityReason) + (segs.length ? `<ul>${segs.map(s => `<li>${esc(s.minutes || "?")} min · ${esc(activityLabel(s.method) || "")}${has(s.what) ? ": " + esc(s.what) : ""}</li>`).join("")}</ul>` : "") + (has(d.session.feedbackDuring) ? `<p><strong>Feedback:</strong> ${esc(d.session.feedbackDuring)}</p>` : "")),
+      sec(5, "The change: assessment", (d.assessment.type ? `<p><strong>${esc(K.ASSESSMENTS[d.assessment.type].label)}.</strong> ${esc(d.assessment.task || "")}</p>` : "") + p(d.assessment.whyMatches) + (rub.length ? `<ul>${rub.map(r => `<li><strong>${esc(r.criterion)}:</strong> ${esc(r.meets || "")}</li>`).join("")}</ul>` : "") + (has(d.assessment.feedbackRoutine) ? `<p><strong>Feedback routine:</strong> ${esc(d.assessment.feedbackRoutine)}</p>` : "")),
+      sec(6, "AI approach", (d.ai.level ? `<p>${aiMark(Number(d.ai.level))}</p>` : "") + p(d.ai.reason) + p(d.ai.document) + (has(d.ai.wording) ? `<blockquote>${esc(d.ai.wording)}</blockquote>` : "")),
+      sec(7, "Feasibility", p(d.evaluation.feasibility) + p(d.session.cut)),
+      sec(8, "Evaluation", p(d.evaluation.measure)),
+      sec(9, "First step", has(d.evaluation.firstStep) ? `<p>${esc(d.evaluation.firstStep)}${has(d.evaluation.firstDate) ? ` · ${esc(d.evaluation.firstDate)}` : ""}</p>` : ""),
+      sec(10, "Accessibility", access.length ? `<p>${access.map(esc).join(", ")}</p>` : ""),
+      `<div class="plan-section"><h3>${ICONS.mission} Mission lens: Scholarship for Service <span class="draft-flag">Proposed addition</span></h3>${dims.length ? `<ul>${dims.map(o => `<li><strong>${esc(o.def.label)}</strong>${["outcome", "activity", "assessment"].filter(k => o.x[k]).length ? ` (in ${["outcome", "activity", "assessment"].filter(k => o.x[k]).join(", ")})` : " (not yet woven in)"}${has(o.x.how) ? `: ${esc(o.x.how)}` : ""}</li>`).join("")}</ul>` : '<p class="empty">Not yet written.</p>'}</div>`,
+    ].join("");
+  }
+
+  function refreshLive() {
+    document.querySelectorAll("[data-live]").forEach(el => {
+      const fn = LIVE[el.dataset.live];
+      if (fn) el.innerHTML = fn();
+    });
+    renderNav();
+    renderWhy();
+  }
+
+  // ---------- Progress ----------
+  function progress(id) {
+    const d = design;
+    const checks = {
+      course: [d.course.name, d.course.learners, d.outcome.text, d.outcome.miller],
+      audit: [d.audit.session, ...C.AUDIT.map(a => getPath(d, `audit.${a.id}.status`)), d.audit.change1],
+      session: [d.session.modality, d.session.modalityReason, (d.session.segments || []).some(s => s.method) ? 1 : "", d.session.feedbackDuring],
+      assessment: [d.assessment.formative, d.assessment.type, d.assessment.task, (d.assessment.rubric || []).filter(r => has(r.criterion) && has(r.meets)).length >= 3 ? 1 : "", d.assessment.feedbackRoutine],
+      alignment: [K.alignment(d).level.status !== "pending" ? 1 : "", d.alignment.taughtAll ? 1 : "", d.alignment.biggest],
+      ai: [d.ai.withoutAI, d.ai.level, d.ai.reason, d.ai.wording],
+      mission: [K.analyzeMission(d).woven ? 1 : ""],
+      plan: [d.evaluation.measure, d.evaluation.firstStep, d.evaluation.firstDate],
+    }[id] || [];
+    const done = checks.filter(has).length;
+    return { done, total: checks.length, state: done === 0 ? "empty" : done === checks.length ? "done" : "started" };
+  }
+  function stepIssues(id) {
+    const d = design, al = K.alignment(d);
+    switch (id) {
+      case "course": return K.analyzeOutcome(d.outcome.text).issues;
+      case "session": return K.analyzeSession(d.session).issues.concat(al.practice.issues);
+      case "assessment": return K.analyzeAssessment(d.assessment).issues.concat(al.assessment.issues);
+      case "alignment": return al.practice.issues.concat(al.assessment.issues);
+      case "ai": return K.analyzeAI(d).issues;
+      case "mission": return dedupe(K.analyzeMission(d).issues);
+      default: return [];
+    }
+  }
+
+  function renderNav() {
+    $("#stepNav").innerHTML = C.STEPS.map(s => {
+      const pr = progress(s.id);
+      const gaps = stepIssues(s.id).filter(i => i.severity === "gap").length;
+      const cls = pr.state === "done" ? "done" : pr.state === "started" ? "started" : s.id === "mission" ? "mission" : "";
+      const meta = s.module ? C.MODULES[s.module].replace(/: .*/, "") : s.id === "mission" ? "Scholarship for Service" : "";
+      return `<li><a href="#${s.id}"${s.id === stepId ? ' aria-current="step"' : ""}>
+        <span class="step-num ${cls}" aria-hidden="true">${pr.state === "done" ? "✓" : s.n}</span>
+        <span>${esc(s.title)}${gaps ? ` <span class="step-flag" title="${gaps} gap(s)">✕${gaps}</span>` : ""}<span class="step-meta">${esc(meta)}</span>
+        <span class="sr">${pr.state === "done" ? "complete" : pr.state === "started" ? "in progress" : "not started"}${gaps ? `, ${gaps} gaps` : ""}</span></span></a></li>`;
+    }).join("");
+  }
+
+  // ---------- Why panel ----------
+  function hintCard(id) {
+    const h = ALL_HINTS[id];
+    if (!h) return "";
+    const kind = hintKind(h);
+    const src = h.source ? `<p class="source-chip">Source: ${esc(C.MODULES[h.source[0]])}${typeof h.source[1] === "number" ? `, Page ${h.source[1]}` : h.source[1] ? `, ${esc(h.source[1])}` : ""}</p>` : kind === "mission" ? `<p class="source-chip">Mission lens <span class="draft-flag">Draft for review</span></p>` : "";
+    const ev = (h.evidence || []).map(e => C.EVIDENCE[e]).filter(Boolean).map(e => `<div class="ev-row">${strengthMark(e.strength)} ${esc(e.claim)}. <span class="muted">${esc(e.support)}.</span>${e.caveat ? ` <span class="caveat">${esc(e.caveat)}</span>` : ""}</div>`).join("");
+    return `<div class="hint-card${kind === "mission" ? " mission" : ""}">
+      <h3>${esc(h.title)}</h3>
+      <p>${strengthMark(kind)}</p>
+      <p class="one-line">${esc(h.hint)}</p>
+      <p>${esc(h.deeper)}</p>
+      ${h.example ? `<div class="example">${esc(h.example)}</div>` : ""}
+      ${ev}
+      ${src}
+    </div>`;
+  }
+  function renderWhy() {
+    const s = C.STEPS.find(x => x.id === stepId);
+    const issues = dedupe(stepIssues(stepId));
+    const draftLen = stepDraftLength(stepId);
+    const coachReady = draftLen >= 40;
+    let coach = "";
+    if (stepId !== "plan") {
+      const res = coachState.step === stepId ? coachState : {};
+      coach = `<div class="panel-section"><h3>Coach ${whyBtn("try_first")}</h3>
+        ${coachState.available === false ? `<p class="muted">${EMBEDDED ? "The AI coach runs when the studio is hosted on its own server. This preview has every other feature." : "The AI coach runs on the studio's server (npm start with an API key). Everything else works without it."}</p>` : `
+        <p class="muted">${coachReady ? "Your draft is ready for a critique." : "Draft this step first. The coach critiques your thinking; it does not replace it."}</p>
+        <button type="button" class="btn small" data-action="coach" ${coachReady && !coachState.loading && coachState.available ? "" : "disabled"}>${coachState.loading && res.step ? "Thinking…" : "Ask the coach to critique this step"}</button>`}
+        ${res.error ? `<p class="status gap" style="margin-top:.5rem">${esc(res.error)}</p>` : ""}
+        ${res.result ? coachHTML(res.result) : ""}
+      </div>`;
+    }
+    $("#whyPanel").innerHTML = `
+      <h2>Why this step</h2>
+      <p class="why-step">${esc(s.why)}</p>
+      <p class="source-chip">${s.module != null ? esc(C.MODULES[s.module]) : '<span class="draft-flag">Mission lens · draft for review</span>'}</p>
+      ${focusHint ? `<div class="panel-section"><h3>You asked why</h3>${hintCard(focusHint)}</div>` : `<p class="muted">Select any <span class="why" style="pointer-events:none">Why</span> button to see the reasoning and the evidence behind it.</p>`}
+      ${issues.length ? `<div class="panel-section"><h3>Checks on this step</h3>${issueList(issues)}</div>` : ""}
+      ${coach}`;
+  }
+  function coachHTML(r) {
+    const kindLabel = { strength: ["aligned", "Strength"], gap: ["gap", "Gap"], question: ["note", "Question"], mission: ["note", "Mission"] };
+    return `<div class="coach-out">
+      ${has(r.summary) ? `<p>${esc(r.summary)}</p>` : ""}
+      <ul>${(r.observations || []).map(o => `<li>${statusMark(...(kindLabel[o.kind] || kindLabel.question))} ${esc(o.text)}${o.course_link ? ` <span class="muted">(${esc(o.course_link)})</span>` : ""}</li>`).join("")}</ul>
+      ${(r.questions || []).length ? `<p><strong>Questions to consider</strong></p><ul>${r.questions.map(q => `<li>${esc(q)}</li>`).join("")}</ul>` : ""}
+      <p class="muted">AI critique. Check it against your own judgment and the course.</p>
+    </div>`;
+  }
+  function stepDraftLength(id) {
+    const pick = {
+      course: [design.outcome.text, design.course.learners], audit: [design.audit.change1, design.audit.change2, ...C.AUDIT.map(a => getPath(design, `audit.${a.id}.change`))],
+      session: [design.session.modalityReason, design.session.feedbackDuring, ...(design.session.segments || []).map(s => s.what)],
+      assessment: [design.assessment.task, design.assessment.formative, design.assessment.feedbackRoutine, ...(design.assessment.rubric || []).map(r => r.meets)],
+      alignment: [design.alignment.biggest, design.outcome.text], ai: [design.ai.withoutAI, design.ai.reason, design.ai.wording],
+      mission: (design.mission.dimensions || []).map(d => d.how),
+    }[id] || [];
+    return pick.filter(has).join(" ").length;
+  }
+
+  // ---------- Coach ----------
+  async function checkCoach() {
+    try {
+      const r = await fetch("api/health", { cache: "no-store" });
+      const j = await r.json();
+      coachState.available = !!j.ai;
+    } catch (e) { coachState.available = false; }
+    renderWhy();
+  }
+  async function askCoach() {
+    const payload = { step: stepId, design: stripForCoach(design) };
+    const phi = K.scanForPHI(JSON.stringify(payload));
+    coachState = Object.assign(coachState, { step: stepId, result: null, error: null });
+    if (phi) { coachState.error = `This looks like it contains ${phi}. Remove patient or personal identifiers before asking the coach.`; renderWhy(); return; }
+    coachState.loading = true; renderWhy();
+    try {
+      const r = await fetch("api/coach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "The coach could not respond.");
+      coachState.result = j;
+    } catch (e) { coachState.error = e.message || "The coach could not respond."; }
+    coachState.loading = false; renderWhy();
+  }
+  function stripForCoach(d) {
+    const copy = JSON.parse(JSON.stringify(d));
+    delete copy.id; delete copy.updatedAt;
+    return copy;
+  }
+
+  // ---------- Render step ----------
+  function renderStep() {
+    const s = C.STEPS.find(x => x.id === stepId) || C.STEPS[0];
+    stepId = s.id;
+    fid = 0;
+    const idx = C.STEPS.indexOf(s);
+    const prev = C.STEPS[idx - 1], next = C.STEPS[idx + 1];
+    $("#main").innerHTML = `
+      <div class="step-head">
+        <div class="eyebrow">Step ${s.n} of ${C.STEPS.length}${s.module != null ? ` · ${esc(C.MODULES[s.module])}` : " · Mission lens"}</div>
+        <h1>${esc(s.title)}</h1>
+        <p class="produces">${esc(s.produces)}</p>
+      </div>
+      ${RENDER[s.id]()}
+      <div class="no-print" style="display:flex;justify-content:space-between;margin-top:1.5rem;gap:.5rem">
+        ${prev ? `<a class="btn ghost" href="#${prev.id}">← ${esc(prev.title)}</a>` : "<span></span>"}
+        ${next ? `<a class="btn" href="#${next.id}">${esc(next.title)} →</a>` : ""}
+      </div>`;
+    refreshLive();
+  }
+
+  function renderDesignSelect() {
+    const list = Object.values(db.designs).sort((a, b) => b.updatedAt - a.updatedAt);
+    $("#designSelect").innerHTML = list.map(d => `<option value="${d.id}"${d.id === design.id ? " selected" : ""}>${esc(d.course.name || d.title)}</option>`).join("");
+  }
+  function renderBanner() {
+    $("#sourceBanner").innerHTML = `Built on <strong>${esc(C.SOURCE.title)}</strong> by ${esc(C.SOURCE.owner)} · ${esc(C.SOURCE.status)} · Mission lens: <span class="draft-flag">draft for review</span> · Your work is saved in this browser only.`;
+  }
+  function renderLegend() {
+    $("#legend").innerHTML = `
+      <h2 id="legendTitle" style="margin-top:0">Symbols</h2>
+      <p class="muted">Every symbol answers a question. A word always accompanies the shape.</p>
+      <h3>How sure are we?</h3>
+      <div class="legend-grid">
+        ${["strong", "moderate", "limited", "framework", "design"].map(k => `${strengthMark(k)}<span>${esc(C.STRENGTH[k].label)}</span>`).join("")}
+      </div>
+      <h3>How does this form the whole person?</h3>
+      <div class="legend-grid">${strengthMark("mission")}<span>${esc(C.STRENGTH.mission.label)}. Mission hints never carry an evidence rating.</span></div>
+      <h3>What kind of thinking, competence and AI use?</h3>
+      <div class="legend-grid">
+        ${bloomMark(5)}<span>Bloom's revised taxonomy: remember → create</span>
+        ${millerMark(3)}<span>Miller's pyramid: knows → knows how → shows how → does</span>
+        ${aiMark(2)}<span>AI Assessment Scale: 1 (no AI) → 5 (AI exploration)</span>
+      </div>
+      <h3>Do the pieces line up?</h3>
+      <div class="legend-grid">
+        ${statusMark("aligned")}<span>Outcome, practice and assessment match</span>
+        ${statusMark("partial")}<span>Close; one piece is a level short</span>
+        ${statusMark("gap")}<span>A misalignment pattern from Module 2</span>
+        ${statusMark("note")}<span>Worth considering</span>
+      </div>
+      <h3>Why?</h3>
+      <div class="legend-grid"><span class="why" style="pointer-events:none">Why</span><span>Opens the reasoning, the course page and the evidence</span></div>
+      <form method="dialog" style="margin-top:1rem;text-align:right"><button class="btn">Close</button></form>`;
+  }
+
+  // ---------- Example ----------
+  function exampleDesign() {
+    const d = blankDesign("Example: hypertension");
+    Object.assign(d.course, { name: "Pharmacotherapy II (example)", code: "EXAMPLE 742", school: "Pharmacy", level: "Professional (entry-level clinical)", size: 80,
+      learners: "Second-year pharmacy students who start ambulatory care rotations next term." });
+    Object.assign(d.outcome, { text: "Select and justify a first-line treatment for a patient with hypertension and a comorbidity.", miller: 2,
+      others: "Explain the mechanism of each major antihypertensive class\nCounsel a patient starting an ACE inhibitor\nAdjust therapy for a patient with chronic kidney disease" });
+    d.audit = { session: "Week 4: hypertension management",
+      retrieval: { status: "no", where: "", change: "Open with three polling questions on last week's renal content" },
+      spacing: { status: "partly", where: "Revisited on the final exam", change: "Revisit in weeks 6 and 9" },
+      concrete: { status: "no", where: "Starts with drug classes", change: "Open with a patient case" },
+      problem: { status: "partly", where: "", change: "" }, load: { status: "partly", where: "62 slides", change: "Cut decorative slides" },
+      steps: { status: "no", where: "", change: "Narrate how I choose between classes" },
+      change1: "In my session on hypertension, I currently lecture through drug classes. I will add a patient case at the start by reordering my slides." };
+    d.session = { modality: "in_person", modalityReason: "Live case discussion with immediate feedback.", length: 50,
+      segments: [{ minutes: 40, method: "lecture", what: "Drug classes, mechanisms and guidelines" }, { minutes: 10, method: "case", what: "One case worked together at the end" }],
+      feedbackDuring: "", cut: "", tellWhy: "" };
+    d.assessment = { formative: "", type: "mcq_recall", task: "20 multiple-choice questions on drug classes", whyMatches: "",
+      rubric: [{ criterion: "Clinical reasoning", meets: "Good reasoning" }, {}, {}], workload: [], feedbackRoutine: "", feedbackSample: "Good job overall!" };
+    return d;
+  }
+
+  // ---------- Events ----------
+  document.addEventListener("input", e => {
+    const t = e.target;
+    if (!t.dataset || !t.dataset.path) return;
+    let v = t.type === "checkbox" ? t.checked : t.value;
+    if (t.hasAttribute("data-num") && v !== "") v = Number(v);
+    setPath(design, t.dataset.path, v);
+    save();
+    if (t.dataset.path === "course.name") renderDesignSelect();
+    refreshLive();
+  });
+
+  document.addEventListener("click", e => {
+    const h = e.target.closest("[data-hint]");
+    if (h && !h.closest("#legend")) {
+      focusHint = h.dataset.hint;
+      renderWhy();
+      if (window.matchMedia("(max-width: 1150px)").matches) $("#whyPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    const a = e.target.closest("[data-action]");
+    if (!a) return;
+    const act = a.dataset.action, i = Number(a.dataset.i), v = a.dataset.v;
+    switch (act) {
+      case "addSegment": design.session.segments = (design.session.segments || []).concat([{}]); save(); renderStep(); break;
+      case "removeSegment": design.session.segments.splice(i, 1); save(); renderStep(); break;
+      case "addRubric": design.assessment.rubric = (design.assessment.rubric || []).concat([{}]); save(); renderStep(); break;
+      case "removeRubric": design.assessment.rubric.splice(i, 1); save(); renderStep(); break;
+      case "setModality": design.session.modality = design.session.modality === v ? "" : v; save(); renderStep(); break;
+      case "setAI": design.ai.level = Number(design.ai.level) === Number(v) ? "" : Number(v); save(); renderStep(); break;
+      case "toggleDim": {
+        const list = design.mission.dimensions || (design.mission.dimensions = []);
+        const k = list.findIndex(x => x.id === v);
+        if (k >= 0) list.splice(k, 1); else list.push({ id: v });
+        focusHint = "mission_woven"; save(); renderStep(); break;
+      }
+      case "insertWording":
+        if (!has(design.ai.wording)) {
+          design.ai.wording = "AI tools may be used for [list allowed uses] in [named assignments]. They may not be used for [list restricted uses]. When you use AI, include a short note stating the tool, how you used it and what you changed. You are responsible for the accuracy of everything you submit. Using AI in ways not allowed for an assignment will be handled under [institutional policy]. If you are unsure, ask before you submit.";
+          save(); renderStep();
+        }
+        break;
+      case "coach": askCoach(); break;
+      case "copyPlan": copyText($("[data-live=plan]").innerText, "Plan copied. Paste it into a document or the Canvas submission box."); break;
+      case "copyJSON": copyText(JSON.stringify(design, null, 2), "Design data copied. Save it as a .json file to import later."); break;
+      case "print": window.print(); break;
+      case "export": {
+        const blob = new Blob([JSON.stringify(design, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url; link.download = `${(design.course.name || "course-design").replace(/[^\w-]+/g, "-")}.json`;
+        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        break;
+      }
+      case "import": $("#importFile").click(); break;
+      case "newDesign": switchTo(blankDesign()); break;
+      case "loadExample": switchTo(exampleDesign()); location.hash = "#alignment"; break;
+      case "legend": $("#legend").showModal(); break;
+    }
+  });
+
+  function flash(msg) {
+    const el = $("#planMsg") || $("#flash");
+    if (el) el.textContent = msg;
+  }
+  async function copyText(text, ok) {
+    try { await navigator.clipboard.writeText(text); flash(ok); }
+    catch (e) { flash("Copying is blocked here. Select the plan text and copy it yourself."); }
+  }
+  function switchTo(d) {
+    db.designs[d.id] = d; db.current = d.id; design = d; focusHint = null;
+    coachState = Object.assign(coachState, { result: null, error: null, step: null });
+    save(); renderDesignSelect(); renderStep();
+  }
+
+  $("#designSelect").addEventListener("change", e => {
+    db.current = e.target.value; design = db.designs[db.current]; focusHint = null; save(); renderStep();
+  });
+  $("#importFile").addEventListener("change", async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!d || typeof d !== "object" || !d.outcome) throw new Error("Not a Course Studio design file.");
+      d.id = uid();
+      switchTo(Object.assign(blankDesign(), d));
+    } catch (err) { flash((err.message || "Could not import that file.") + " Choose a file exported from Course Studio."); }
+    e.target.value = "";
+  });
+  const hintToggle = $("#hintToggle");
+  hintToggle.checked = db.prefs ? db.prefs.hints !== false : true;
+  document.body.classList.toggle("hints-off", !hintToggle.checked);
+  hintToggle.addEventListener("change", () => {
+    db.prefs = db.prefs || {}; db.prefs.hints = hintToggle.checked;
+    document.body.classList.toggle("hints-off", !hintToggle.checked); save();
+  });
+  window.addEventListener("hashchange", () => {
+    const id = location.hash.replace("#", "");
+    if (C.STEPS.some(s => s.id === id)) { stepId = id; focusHint = null; renderStep(); $("#main").focus({ preventScroll: true }); window.scrollTo(0, 0); }
+  });
+
+  renderBanner(); renderLegend(); renderDesignSelect(); renderStep(); checkCoach();
+})();
+</script>

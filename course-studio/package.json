@@ -1,0 +1,14 @@
+{
+  "name": "llu-course-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Proof of concept: a course design workbench that embeds Teaching Well in Higher Ed, with a mission lens.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/checks.test.js",
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0"
+  }
+}
