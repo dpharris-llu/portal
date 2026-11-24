@@ -33,8 +33,11 @@ words = open(os.path.join(here, '../src/words.txt')).read().split()
 inflected = lambda w: (w.endswith('s') and not w.endswith('ss')) or w.endswith('ed')
 rank = {w: i for i, w in enumerate(sorted([w for w in words if not inflected(w)], key=lambda w: pos.get(w, 10**9)))}
 irank = {w: i for i, w in enumerate(sorted([w for w in words if inflected(w)], key=lambda w: pos.get(w, 10**9)))}
+# Proper names that are also in the dictionary (JESSE, PETER, JAPAN...) are never answers.
+names = set(open(os.path.join(here, '../src/excluded-names.txt')).read().split())
 def weight(w):
     if w not in pos: return 0.0
+    if w in names: return 0.0
     if inflected(w): return 0.03 / (1 + math.exp((irank[w] - 1500) / 300))
     return 1 / (1 + math.exp((rank[w] - 2600) / 300))
 chars = '0123456789abcdefghijklmnopqrstuvwxyz'

@@ -140,9 +140,12 @@
     let guar;
     if (m.n === 1) guar = "Forced answer";
     else if (m.T === 1) guar = "No (last turn)";
-    else if (m.guaranteeAvailable === true) guar = m.fewestGuaranteed ? `Yes, within ${plural(m.fewestGuaranteed, "guess", "guesses")}` : "Yes, verified";
-    else if (m.guaranteeAvailable === false) guar = "No";
-    else guar = "Not checked this early";
+    else if (m.guaranteeAvailable === true) {
+      const f = m.fewestGuaranteed;
+      guar = !f ? "Yes, verified" : f.exact ? `Yes, in ${plural(f.t, "guess", "guesses")} (the minimum)` : `Yes, in at most ${plural(f.t, "guess", "guesses")}`;
+    }
+    else if (m.guaranteeAvailable === false) guar = "No (proven)";
+    else guar = m.n > 100 || m.T >= 5 ? "Not checked this early" : "None found";
     const win = u.winChance == null ? "" : `<div><dt>Win chance, rest of game</dt><dd>${u.winChance === 1 && u.guaranteed === true ? "100% (guaranteed)" : pct(u.winChance)}</dd></div>`;
     const facts = `<dl class="facts">
       <div><dt>Possible before</dt><dd>${m.n.toLocaleString()} (${m.plausibleBefore} likely)</dd></div>
@@ -165,7 +168,10 @@
     else if (m.reason === "lostGuarantee") lines.push(`<p class="flag">A guaranteed win was available with ${turnsLeftText(m.T)}, but ${W(u.word)} left a chance of running out of turns.</p>`);
     if (m.n === 1 && u.isCandidate) lines.push(`<p class="good">Only one word fit, and you played it.</p>`);
     else if (m.T === 1 && m.grade === "Optimal") lines.push(`<p class="good">Last turn, and you played the most likely answer.</p>`);
-    else if (m.grade === "Optimal") lines.push(`<p class="good">Among the best moves available here${!u.isCandidate && m.index > 0 ? ", even though it couldn't be the answer: it was the right moment to gather information" : ""}.</p>`);
+    else if (m.grade === "Optimal") {
+      lines.push(`<p class="good">Among the best moves available here${!u.isCandidate && m.index > 0 ? ", even though it couldn't be the answer: it was the right moment to gather information" : ""}.</p>`);
+      if (m.withinMargin) lines.push(`<p style="color:var(--muted)">${W(b.word)} scores marginally better (${b.eg.toFixed(2)} vs ${u.eg.toFixed(2)} guesses), but that gap is within the estimate's margin of error.</p>`);
+    }
     if (b && !m.isUserBest && m.grade !== "Optimal" && m.n > 1) {
       if (m.T === 1 || m.n === 1) lines.push(`<p><b>Better option:</b> ${W(b.word)}, the most likely remaining answer.</p>`);
       else {
@@ -190,15 +196,32 @@
     return `<div class="move">${head}${facts}<div class="move-body">${lines.join("")}</div></div>`;
   }
 
-  // Letter-level explanation: which letters did real work among the likely answers.
+  // Spot-by-spot explanation over the likely answers. Spots already confirmed green are never criticized:
+  // keeping them is what lets a guess be the answer.
   function letterNote(m) {
-    if (!m.bestLetters) return "";
-    const fmt = l => `${l.letter.toUpperCase()} (${pct(l.share)})`;
-    const weak = m.userLetters.filter(l => l.share < 0.08 || l.share > 0.95);
-    const useful = m.bestLetters.filter(l => l.share >= 0.12 && l.share <= 0.88);
-    if (!weak.length || !useful.length) return "";
-    const why = weak.map(l => l.share > 0.95 ? `${l.letter.toUpperCase()} is in nearly every likely answer, so it told you little` : `${l.letter.toUpperCase()} appears in only ${pct(l.share)} of the likely answers`);
-    return `Letter by letter: in ${W(m.user.word)}, ${why.join("; ")}. ${W(m.best.word)} tests ${useful.map(fmt).join(", ")}: letters that some likely answers have and others don't, so the colors split them. (Percent = share of likely answers containing the letter.)`;
+    if (!m.bestSlots) return "";
+    const L = s => `${s.letter.toUpperCase()} in spot ${s.spot}`;
+    const confirmed = s => s.green >= 0.98;
+    const flat = m.userSlots.filter(s => !confirmed(s) && s.bits < 0.25);
+    const work = m.bestSlots.filter(s => s.bits >= 0.6).sort((a, b) => b.bits - a.bits).slice(0, 3);
+    if (!flat.length || !work.length) return "";
+    const same = s => s.gray >= s.yellow && s.gray >= s.green ? `gray for ${pct(s.gray)}` : s.yellow >= s.green ? `yellow for ${pct(s.yellow)}` : `green for ${pct(s.green)}`;
+    const split = s => [s.green > 0.005 ? `green ${pct(s.green)}` : "", s.yellow > 0.005 ? `yellow ${pct(s.yellow)}` : "", s.gray > 0.005 ? `gray ${pct(s.gray)}` : ""].filter(Boolean).join(", ");
+    return `Spot by spot, weighted by how likely each answer is: in ${W(m.user.word)}, ${flat.map(s => `${L(s)} would show ${same(s)} of answers`).join("; ")}, so ${flat.length === 1 ? "that spot" : "those spots"} told you almost nothing. In ${W(m.best.word)}, ${work.map(s => `${L(s)} would be ${split(s)}`).join("; ")}: real splits.`;
+  }
+
+  // One concrete lesson from the costliest decision.
+  function lesson(t) {
+    const u = t.user, b = t.best;
+    const likely = t.plausibleBeforeList && t.plausibleBefore <= 8 ? `${plural(t.plausibleBefore, "likely answer")} left (${W(t.plausibleBeforeList.join(", "))})` : `${plural(t.n, "possible answer")} left (${t.plausibleBefore} likely)`;
+    const describe = (g, mine) => (g.isCandidate ? `${W(g.word)} could win right away ${g.solveChance < 0.005 ? "less than 1%" : pct(g.solveChance)} of the time` : `${W(g.word)} couldn't win right away`) +
+      ` and pinpoints the answer ${pct(g.pinpoint)} of the time`;
+    let text = `On guess ${t.index + 1}, with ${likely}: ${describe(u)}, while ${describe(b)}. That's about ${b.eg.toFixed(2)} guesses to finish on average instead of ${u.eg.toFixed(2)}.`;
+    if (u.isCandidate && !b.isCandidate) text += ` When the likely answers share most of their letters, a word that tests the letters where they differ usually beats guessing one of them.`;
+    else if (!u.isCandidate && b.isCandidate) text += ` When a possible answer also splits the rest well, play it: you get a chance to win now without giving up information.`;
+    else if (t.index === 0) text += ` Openers like ${W("raise, crate, slate")} cover the most common letters in their most common spots.`;
+    else text += ` Look for the word whose letters show different colors across the likely answers.`;
+    return text;
   }
 
   function summaryHTML(rev) {
@@ -244,8 +267,8 @@
       if (t.reason === "missedForced") improve = `On guess ${t.index + 1} only ${W(t.candidatesBefore[0])} fit. Before you type, check your word against every green, yellow and gray clue so far.`;
       else if (t.reason === "finalNotAnswer" || t.reason === "unlikelyFinal") improve = `On your final guess, play the most likely word that still fits: ${W(b.word)}.`;
       else if (t.reason === "noInfo") improve = `On guess ${t.index + 1}, ${W(t.user.word)} gave the same colors for every possible answer. ${W(b.word)} would have split them into ${b.groups} groups.`;
-      else if (t.bestGroups) improve = `On guess ${t.index + 1}, ${W(t.user.word)} left ${t.userGroups.filter(g => g.words.length > 1).map(g => W(g.words.join(" & "))).join(", ") || "some words"} together; ${W(b.word)} would have separated ${b.groups === t.n ? "all of them" : `them into ${b.groups} groups`}. With few words left, find the spots where they differ and test those letters.`;
-      else improve = (letterNote(t) || `On guess ${t.index + 1}, ${W(b.word)} would have needed about ${b.eg.toFixed(2)} guesses on average versus ${t.user.eg.toFixed(2)} for ${W(t.user.word)}.`) + (t.index === 0 ? ` Openers like ${W("raise, crate, slate")} cover the most common letters in their most common spots.` : "");
+      else if (t.bestGroups) improve = lesson(t) + ` Here ${W(t.user.word)} left ${t.userGroups.filter(g => g.words.length > 1).map(g => W(g.words.join(" & "))).join(", ") || "some words"} together; ${W(b.word)} would have separated ${b.groups === t.n ? "all of them" : `them into ${b.groups} groups`}.`;
+      else improve = lesson(t);
     } else {
       const near = ms.filter(m => !m.isUserBest && m.best && m.n > 1 && m.T > 1).sort((a, b) => b.cost - a.cost)[0];
       improve = near ? `Your closest call was guess ${near.index + 1}: ${W(near.best.word)} was marginally better than ${W(near.user.word)} (${near.best.eg.toFixed(2)} vs ${near.user.eg.toFixed(2)} guesses to finish).` : "Every move was the best available. Nothing to fix in this game.";

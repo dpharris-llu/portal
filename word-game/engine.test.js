@@ -96,4 +96,24 @@ test("Full game review runs and grades every move", () => {
   rev.moves.forEach(m => assert(m.grade && m.luck));
   console.log("   review time", Date.now() - t, "ms");
 });
+test("Fewest guaranteed guesses is exact on small lists (GEESE position)", () => {
+  // After RAISE and MOUSE with GEESE as the answer: 17 possible words, 4 turns left.
+  // An exhaustive check shows a win can be guaranteed within 3 guesses (e.g. CESSE), but not 2.
+  const set = "cense cesse dense desse feese fesse geese gesse jesse leese lense neese peyse phese sense tense these".split(" ");
+  const t0 = Date.now();
+  const a = weighted.analyzeWords(set, 4, "geese", "geese");
+  console.log("   exhaustive check", Date.now() - t0, "ms");
+  assert.strictEqual(a.fewestGuaranteed.t, 3);
+  assert.strictEqual(a.fewestGuaranteed.exact, true);
+});
+test("Names are never likely answers", () => {
+  const w = x => likelihood[words.indexOf(x)];
+  assert(w("jesse") < 0.01 && w("peter") < 0.01);
+  const secret = fs.readFileSync(path.join(__dirname, "src/secret-words.txt"), "utf8").split(" ");
+  assert(!secret.includes("jesse"));
+});
+test("Near-ties within the margin don't lower the grade", () => {
+  const a = weighted.analyzeWords(SET, 3, "flame");
+  assert.strictEqual(a.grade, "Optimal");
+});
 console.log(passed + " tests passed");

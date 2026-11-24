@@ -13,6 +13,8 @@
   const GRADES = ["Poor", "Weak", "Fair", "Good", "Excellent", "Optimal"];
   const PLAUSIBLE = 0.5; // also the bar for a "common" guess word
   const MIN_WEIGHT = 0.002; // a possible word is never impossible, only unlikely
+  const EXACT_LIMIT = 30;    // up to this many possible answers, 3-guess guarantees are searched exhaustively
+  const MARGIN = 0.08;       // expected-guess differences this small are within the estimate's error
 
   // Estimated further guesses needed once the likely answers are spread over `k` effective words
   // (including the guess that solves). Exact for k = 1 and k = 2, a calibrated estimate above that.
@@ -137,10 +139,19 @@
           budget -= G * n; if (budget < 0) throw OUT_OF_BUDGET;
           for (let gi = 0; gi < G; gi++) if (splitsFully(gi, set)) { res = true; break; }
         }
+      } else if (t === 3 && n <= EXACT_LIMIT) {
+        // Exhaustive: every permitted guess, most promising first. Each bucket check (t = 2) is exact too,
+        // so a false here is a proof.
+        budget -= G * n; if (budget < 0) throw OUT_OF_BUDGET;
+        const sc = scanAll(set);
+        res = false;
+        for (const gi of topBy(sc, bySafety, G)) { if (guaranteesAfter(gi, set, 3) === true) { res = true; break; } }
       } else {
         budget -= G * n; if (budget < 0) throw OUT_OF_BUDGET;
         const sc = scanAll(set);
-        const tries = [...new Set([...topBy(sc, bySafety, t >= 4 ? 2 : 4), ...topBy(sc, byInfo, t >= 4 ? 1 : 2)])];
+        // Small lists: their sub-lists get exhaustive 3-guess checks, so it's affordable to try more guesses here.
+        const wide = n <= EXACT_LIMIT;
+        const tries = [...new Set([...topBy(sc, bySafety, wide ? 3 : t >= 4 ? 2 : 4), ...topBy(sc, byInfo, wide ? 1 : t >= 4 ? 1 : 2)])];
         res = null; // a found strategy is a proof; a miss stays undetermined
         for (const gi of tries) { if (guaranteesAfter(gi, set, t) === true) { res = true; break; } }
       }
@@ -165,32 +176,42 @@
       try { return fn(); } catch (e) { if (e === OUT_OF_BUDGET) return null; throw e; }
     }
     // Fewest guesses (this one included) that can guarantee a finish, searched up to `maxT`.
+    // Returns { t, exact, provenUpTo }. t: fewest guesses found that guarantee a finish (null if none found).
+    // exact: every smaller number was proven impossible. provenUpTo: largest t proven impossible.
     function minGuaranteed(set, maxT) {
-      if (set.length === 1) return 1;
-      for (let t = 2; t <= maxT; t++) {
-        const r = guarded(() => canSolve(set, t), 3e7);
-        if (r === true) return t;
-        if (r === null) return null;
+      if (set.length === 1) return { t: 1, exact: true, provenUpTo: 0 };
+      let exact = true, provenUpTo = 1;
+      for (let t = 2; t <= Math.min(maxT, 3); t++) { // 4+ is covered by checking the strongest moves
+        const r = guarded(() => canSolve(set, t), set.length <= EXACT_LIMIT ? 4e8 : 3e7);
+        if (r === true) return { t, exact, provenUpTo };
+        if (r === false && exact) provenUpTo = t; else exact = false;
       }
-      return null;
+      return { t: null, exact, provenUpTo };
     }
 
-    // How often each letter of a guess appears among the likely answers (share by likelihood).
-    function letterShares(gi, set, W) {
-      const out = [], seen = new Set();
+    // Color each spot of a guess would show, across the answers weighted by likelihood.
+    function slotInfo(gi, set, W) {
+      const g = new Float64Array(5), y = new Float64Array(5), x = new Float64Array(5);
+      for (const a of set) {
+        let p = pattern(gi, a); const w = weight[a];
+        for (let i = 4; i >= 0; i--) { const d = p % 3; p = (p - d) / 3; if (d === 2) g[i] += w; else if (d === 1) y[i] += w; else x[i] += w; }
+      }
+      const out = [];
       for (let i = 0; i < 5; i++) {
-        const c = gCodes[gi * 5 + i];
-        if (seen.has(c)) continue; seen.add(c);
-        let inWord = 0, atSpot = 0;
-        for (const a of set) {
-          let has = false;
-          for (let k = 0; k < 5; k++) if (aCodes[a * 5 + k] === c) { has = true; break; }
-          if (has) inWord += weight[a];
-          if (aCodes[a * 5 + i] === c) atSpot += weight[a];
-        }
-        out.push({ letter: String.fromCharCode(97 + c), spot: i + 1, share: inWord / W, spotShare: atSpot / W });
+        const pr = [g[i] / W, y[i] / W, x[i] / W];
+        const bits = -pr.reduce((s, q) => s + (q > 0 ? q * Math.log2(q) : 0), 0);
+        out.push({ letter: guesses[gi][i], spot: i + 1, green: pr[0], yellow: pr[1], gray: pr[2], bits });
       }
       return out;
+    }
+    // Chance that, after this guess, the answer is known: solved, or at most one likely word left.
+    function pinpoint(gi, set, W) {
+      let known = 0;
+      for (const [p, b] of buckets(gi, set).entries()) {
+        let bw = 0, likely = 0; for (const a of b) { bw += weight[a]; if (weight[a] >= PLAUSIBLE) likely++; }
+        if (p === SOLVED || likely <= 1) known += bw;
+      }
+      return known / W;
     }
 
     const VERIFY_LIMIT = 400;
@@ -220,15 +241,16 @@
 
       // Strict guarantees, over every possible word
       let guaranteeAvailable = null, fewest = null;
-      if (n === 1) { guaranteeAvailable = true; fewest = 1; user.guaranteed = user.isCandidate; alts.forEach(a => a.guaranteed = a.isCandidate); }
+      if (n === 1) { guaranteeAvailable = true; fewest = { t: 1, exact: true }; user.guaranteed = user.isCandidate; alts.forEach(a => a.guaranteed = a.isCandidate); }
       else if (T === 1) { guaranteeAvailable = false; user.guaranteed = false; alts.forEach(a => a.guaranteed = false); }
       else if (T === 2) {
         user.guaranteed = user.groups === n;
         alts.forEach(a => a.guaranteed = a.groups === n);
         guaranteeAvailable = n <= 243 && sc ? sc.groups.some(g => g === n) : false;
-        fewest = guaranteeAvailable ? 2 : null;
+        fewest = guaranteeAvailable ? { t: 2, exact: true } : null;
       } else if (n <= VERIFY_LIMIT && !(T >= 5 && n > 100)) {
         fewest = minGuaranteed(set, T);
+        const proven = fewest.provenUpTo;
         user.guaranteed = guarded(() => guaranteesAfter(userGi, set, T), 4e7);
         // Common words are all checked; rarer ones until three verified options are known.
         alts.sort((a, b) => (a.common < PLAUSIBLE) - (b.common < PLAUSIBLE) || a.eg - b.eg);
@@ -240,15 +262,16 @@
         }
         alts = alts.filter(a => a.guaranteed !== undefined);
         // Fewest guesses that can guarantee a finish: also try the strongest moves with fewer turns.
-        if (fewest === null && n <= 150) {
+        if (fewest.t === null && n <= 150) {
           const tryList = alts.slice().sort((a, b) => a.worst - b.worst).slice(0, 4);
-          for (let t = 3; t <= Math.min(T, 4) && fewest === null; t++) {
-            memo.clear();
-            for (const a of tryList) if (guarded(() => guaranteesAfter(a.gi, set, t), 1e7) === true) { fewest = t; break; }
+          for (let t = Math.max(3, proven + 1); t <= Math.min(T, 4) && fewest.t === null; t++) {
+            for (const a of tryList) if (guarded(() => guaranteesAfter(a.gi, set, t), 1e7) === true) { fewest = { t, exact: proven === t - 1, provenUpTo: proven }; break; }
           }
-          memo.clear();
         }
-        guaranteeAvailable = fewest !== null || user.guaranteed === true || alts.some(a => a.guaranteed === true) ? true : null;
+        const anyFound = fewest.t !== null || user.guaranteed === true || alts.some(a => a.guaranteed === true);
+        guaranteeAvailable = anyFound ? true : proven >= T ? false : null; // false only when proven impossible
+        if (fewest.t === null && anyFound) fewest = { t: T, exact: proven === T - 1, provenUpTo: proven };
+        if (fewest.t === null) fewest = null;
       } else { user.guaranteed = null; alts.forEach(a => a.guaranteed = null); }
 
       // Choose the best move for this stage
@@ -270,6 +293,8 @@
       // The strongest rare word is reported separately when it is meaningfully better.
       const bestOverall = ranked[0];
       const best = ranked.find(a => a.common >= PLAUSIBLE) || bestOverall;
+      user.pinpoint = pinpoint(userGi, set, W);
+      if (best) best.pinpoint = best.gi === userGi ? user.pinpoint : pinpoint(best.gi, set, W);
       const isUserBest = best && best.gi === userGi;
       const rareBetter = bestOverall && best && bestOverall.gi !== best.gi && bestOverall.gi !== userGi && best.eg - bestOverall.eg > 0.03 ? bestOverall : null;
 
@@ -300,15 +325,16 @@
           grade = loss >= 0.25 || d > 0.8 ? "Poor" : "Weak"; cost = 1 + Math.max(loss, d);
         } else if (T === 2) {
           // Two turns left: judge both the chance of finishing and the expected number of guesses.
-          const loss = Math.max(0, best.pWin2 - user.pWin2), d = Math.max(0, user.eg - best.eg);
+          const loss = Math.max(0, best.pWin2 - user.pWin2), d = Math.max(0, user.eg - best.eg - MARGIN);
           const byWin = isUserBest || loss <= 0.01 ? 5 : loss <= 0.05 ? 4 : loss <= 0.12 ? 3 : loss <= 0.25 ? 2 : 1;
           const byEg = isUserBest || d <= 0.02 ? 5 : d <= 0.08 ? 4 : d <= 0.2 ? 3 : d <= 0.4 ? 2 : d <= 0.8 ? 1 : 0;
           grade = GRADES[Math.min(byWin, byEg)];
           cost = Math.max(loss * 2, d);
         } else {
-          const d = Math.max(0, user.eg - best.eg);
+          // Differences inside the estimate's margin of error don't lower the grade.
+          const d = Math.max(0, user.eg - best.eg - MARGIN);
           grade = isUserBest || d <= 0.02 ? "Optimal" : d <= 0.08 ? "Excellent" : d <= 0.2 ? "Good" : d <= 0.4 ? "Fair" : d <= 0.8 ? "Weak" : "Poor";
-          cost = d;
+          cost = Math.max(0, user.eg - best.eg);
         }
       }
 
@@ -356,8 +382,9 @@
         plausibleAfterList: after && actual !== SOLVED ? plausibleList(after).slice(0, 10) : null,
         userGroups: n <= 10 ? groupsOf(userGi) : null,
         bestGroups: n <= 10 && best && !isUserBest ? groupsOf(best.gi) : null,
-        userLetters: letterShares(userGi, set, W),
-        bestLetters: best && !isUserBest ? letterShares(best.gi, set, W) : null,
+        userSlots: slotInfo(userGi, set, W),
+        bestSlots: best && !isUserBest ? slotInfo(best.gi, set, W) : null,
+        withinMargin: !!(best && !isUserBest && user.eg - best.eg > 0.02 && user.eg - best.eg <= MARGIN),
         isUserBest,
       };
     }
