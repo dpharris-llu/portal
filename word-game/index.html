@@ -111,6 +111,25 @@ button:focus-visible { outline: 3px solid var(--near); outline-offset: 2px; }
 .key.wide { grid-column: span 2; font-family: var(--font-body); font-weight: 600; font-size: 0.85rem; text-transform: none; }
 .counts { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
 
+.review { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; }
+.review h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; }
+.review .lead { margin: 0; color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
+.move { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.move:first-of-type { border-top: none; padding-top: 0; }
+.mini { display: flex; gap: 3px; align-self: start; }
+.mini span { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 3px; font-family: var(--font-display); font-size: 0.75rem; text-transform: uppercase; color: var(--on-color); }
+.mini .hit { background: var(--hit); } .mini .near { background: var(--near); } .mini .miss { background: var(--miss); }
+.move-body { min-width: 0; display: flex; flex-direction: column; gap: 5px; font-size: 0.88rem; line-height: 1.45; }
+.move-body p { margin: 0; }
+.grade { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 99px; color: var(--on-color); margin-right: 6px; vertical-align: 1px; }
+.g-top { background: var(--hit); } .g-ok { background: var(--near); } .g-low { background: #b4442f; } .g-win { background: var(--hit); }
+.flag { color: #b4442f; }
+.flag::before { content: "✗ "; font-weight: 700; }
+.good::before { content: "✓ "; font-weight: 700; color: var(--hit); }
+.words { font-family: var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.8rem; overflow-wrap: anywhere; }
+.summary { border-top: 2px solid var(--ink); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; line-height: 1.5; }
+.summary h3 { margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.summary ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
 .score { width: 100%; border-top: 1px solid var(--line); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; }
 .score h2 { margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
 .score-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -138,6 +157,8 @@ button:focus-visible { outline: 3px solid var(--near); outline-offset: 2px; }
   <div class="board" id="board" aria-label="Guess board" role="grid"></div>
 
   <div class="status" id="status" aria-live="polite"><p class="msg">Type a five-letter word and press Enter.</p></div>
+
+  <section class="review" id="review" aria-label="Game review" hidden></section>
 
   <section class="tray" aria-label="Alphabet">
     <div class="tray-head">
@@ -250,6 +271,155 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
       if (res[i] !== "hit" && left[guess[i]] > 0) { res[i] = "near"; left[guess[i]]--; }
     }
     return res;
+  }
+
+  // ---------- Move-by-move review ----------
+  const enc = w => Uint8Array.from(w, ch => ch.charCodeAt(0) - 97);
+  const ANS_CODES = ANSWERS.map(enc);
+  const PR = new Uint8Array(5), PC = new Uint8Array(26), BUCKET = new Int32Array(243);
+  function pat(g, a) {
+    for (let i = 0; i < 5; i++) { PC[a[i]] = 0; PC[g[i]] = 0; }
+    for (let i = 0; i < 5; i++) { if (g[i] === a[i]) PR[i] = 2; else { PR[i] = 0; PC[a[i]]++; } }
+    let p = 0;
+    for (let i = 0; i < 5; i++) {
+      if (PR[i] !== 2 && PC[g[i]] > 0) { PR[i] = 1; PC[g[i]]--; }
+      p = p * 3 + PR[i];
+    }
+    return p;
+  }
+  // How well a guess splits the remaining words: expected words left afterwards (lower is better) and bits of information.
+  function evaluate(gCode, cands) {
+    BUCKET.fill(0);
+    for (const c of cands) BUCKET[pat(gCode, ANS_CODES[c])]++;
+    let sq = 0, ent = 0; const n = cands.length;
+    for (let i = 0; i < 243; i++) { const k = BUCKET[i]; if (k) { sq += k * k; ent += k * Math.log2(k); } }
+    return { left: sq / n, bits: Math.log2(n) - ent / n };
+  }
+  function bestGuesses(cands, howMany) {
+    const candSet = new Set(cands);
+    const scored = [];
+    for (let gi = 0; gi < ANSWERS.length; gi++) {
+      const e = evaluate(ANS_CODES[gi], cands);
+      // A word that could itself be the answer gets a small bonus: it might win outright.
+      scored.push({ word: ANSWERS[gi], bits: e.bits, left: e.left, cand: candSet.has(gi), rank: e.bits + (candSet.has(gi) ? 1 / cands.length : 0) });
+    }
+    scored.sort((a, b) => b.rank - a.rank);
+    return scored.slice(0, howMany);
+  }
+  let openerCache = null;
+
+  function analyzeGame(guesses, answer) {
+    const ansCode = enc(answer);
+    let cands = ANSWERS.map((_, i) => i);
+    const greens = {}, present = {}, wrongSpots = {}, gray = new Set();
+    const moves = [];
+    guesses.forEach((g, idx) => {
+      const gCode = enc(g);
+      const n = cands.length;
+      const obs = pat(gCode, ansCode);
+      const fb = score(g, answer);
+      const isCand = cands.includes(ANSWERS.indexOf(g));
+      const mine = evaluate(gCode, cands);
+      let best;
+      if (idx === 0 && openerCache) best = openerCache;
+      else best = bestGuesses(cands, 3);
+      if (idx === 0) openerCache = best;
+      // Clues from earlier guesses that this guess ignored
+      const flags = [];
+      for (const [pos, ch] of Object.entries(greens)) if (g[pos] !== ch) flags.push(`Spot ${+pos + 1} was already known to be ${ch.toUpperCase()}, but you played ${g[pos].toUpperCase()} there.`);
+      for (const [ch, min] of Object.entries(present)) {
+        const have = [...g].filter(x => x === ch).length;
+        if (have < min) flags.push(`Left out ${ch.toUpperCase()}, which you already knew was in the word.`);
+      }
+      for (let i = 0; i < 5; i++) if ((wrongSpots[g[i]] || new Set()).has(i)) flags.push(`Put ${g[i].toUpperCase()} in spot ${i + 1} again, where it was already shown yellow (wrong spot).`);
+      const reused = [...new Set(g)].filter(ch => gray.has(ch));
+      if (reused.length) flags.push(`Used ${reused.map(c => c.toUpperCase()).join(", ")} again, already ruled out (gray).`);
+      const after = cands.filter(c => pat(gCode, ANS_CODES[c]) === obs);
+      moves.push({ g, fb, n, m: after.length, mine, best, isCand, flags, solved: g === answer, candsBefore: n <= 8 ? cands.map(c => ANSWERS[c]) : null });
+      // Learn from this guess's colors
+      const seenHitNear = {};
+      for (let i = 0; i < 5; i++) {
+        const ch = g[i];
+        if (fb[i] === "hit") { greens[i] = ch; seenHitNear[ch] = (seenHitNear[ch] || 0) + 1; }
+        else if (fb[i] === "near") { (wrongSpots[ch] = wrongSpots[ch] || new Set()).add(i); seenHitNear[ch] = (seenHitNear[ch] || 0) + 1; }
+      }
+      for (const [ch, k] of Object.entries(seenHitNear)) present[ch] = Math.max(present[ch] || 0, k);
+      for (let i = 0; i < 5; i++) if (fb[i] === "miss" && !seenHitNear[g[i]] && !present[g[i]]) gray.add(g[i]);
+      cands = after;
+    });
+    return moves;
+  }
+
+  function gradeOf(mv) {
+    if (mv.solved && mv.n === 1) return ["g-win", "Clean finish"];
+    if (mv.solved) return ["g-win", "Solved"];
+    if (mv.n === 1) return ["g-low", "Missed"];
+    const ratio = mv.best[0].bits > 0 ? mv.mine.bits / mv.best[0].bits : 1;
+    if (ratio >= 0.93) return ["g-top", "Excellent"];
+    if (ratio >= 0.8) return ["g-ok", "Good"];
+    if (ratio >= 0.6) return ["g-ok", "Fair"];
+    return ["g-low", "Weak"];
+  }
+
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  const U = w => `<span class="words">${w}</span>`;
+
+  function renderReview() {
+    const el = document.getElementById("review");
+    if (!state.done || !state.guesses.length) { el.hidden = true; el.innerHTML = ""; return; }
+    el.hidden = false;
+    el.innerHTML = `<h2>Game review</h2><p class="lead">Working through your moves…</p>`;
+    setTimeout(() => {
+      const moves = analyzeGame(state.guesses, state.answer);
+      let html = `<h2>Game review</h2><p class="lead">How each guess narrowed down the possible answers, compared with the best guess available at that moment. "Words left" counts the common five-letter words that still fit every clue.</p>`;
+      const grades = [];
+      moves.forEach((mv, i) => {
+        const [cls, label] = gradeOf(mv); grades.push(label);
+        const tiles = [...mv.g].map((ch, k) => `<span class="${mv.fb[k]}">${ch}</span>`).join("");
+        const lines = [];
+        lines.push(`<p><span class="grade ${cls}">${label}</span><b>Guess ${i + 1}:</b> ${plural(mv.n, "word")} could still be the answer.</p>`);
+        if (mv.candsBefore && mv.n > 1) lines.push(`<p>They were: ${U(mv.candsBefore.join(", "))}</p>`);
+        if (mv.solved) {
+          lines.push(mv.n === 1 ? `<p class="good">Only one word fit, and you found it.</p>` : mv.n <= 3 ? `<p class="good">You picked the right one out of ${mv.n}. Nice.</p>` : `<p class="good">Bold guess with ${mv.n} options open, and it paid off. Some luck helped here.</p>`);
+        } else if (mv.n === 1) {
+          lines.push(`<p class="flag">Only ${U(state.answer)} fit the clues at this point. Before guessing, check every green, yellow and gray letter against your word.</p>`);
+        } else {
+          const b = mv.best[0];
+          lines.push(`<p>Your guess cut the list to <b>${mv.m}</b>. On average it would leave about <b>${mv.mine.left.toFixed(1)}</b> words.</p>`);
+          if (b.word === mv.g) lines.push(`<p class="good">This was the best guess available.</p>`);
+          else lines.push(`<p>Best option: ${U(b.word)}, leaving about <b>${b.left.toFixed(1)}</b> on average${b.cand ? " (and it could have been the answer)" : ""}. Others: ${U(mv.best.slice(1).map(x => x.word).join(", "))}.</p>`);
+          if (!mv.isCand && i > 0) lines.push(`<p>${U(mv.g)} couldn't be the answer given your clues. That's fine as a scouting guess to test new letters, as long as it splits the list well.</p>`);
+          const luck = mv.m < mv.mine.left * 0.5 ? "Lucky: the colors came out better than average." : mv.m > mv.mine.left * 1.8 ? "Unlucky: the colors came out worse than average." : "";
+          if (luck) lines.push(`<p>${luck}</p>`);
+        }
+        mv.flags.slice(0, 3).forEach(f => lines.push(`<p class="flag">${f}</p>`));
+        if (mv.flags.length > 3) lines.push(`<p class="flag">Plus ${mv.flags.length - 3} more clues not used.</p>`);
+        html += `<div class="move"><div class="mini">${tiles}</div><div class="move-body">${lines.join("")}</div></div>`;
+      });
+
+      // Summary and coaching
+      const tips = [];
+      const allFlags = moves.flatMap(m => m.flags);
+      const ignoredGreen = allFlags.filter(f => f.startsWith("Spot")).length;
+      const leftOut = allFlags.filter(f => f.startsWith("Left out")).length;
+      const sameSpot = allFlags.filter(f => f.startsWith("Put")).length;
+      const reusedGray = allFlags.filter(f => f.startsWith("Used")).length;
+      const first = moves[0];
+      const firstRatio = first.best[0].bits ? first.mine.bits / first.best[0].bits : 1;
+      if (!first.solved && firstRatio < 0.85) tips.push(`Start stronger. Your opener ${U(first.g)} left about ${first.mine.left.toFixed(0)} words on average; ${U(first.best[0].word)} leaves about ${first.best[0].left.toFixed(0)}. Good openers use five different common letters (E, A, R, O, T, L, I, S, N).`);
+      if (reusedGray) tips.push("Don't spend letters you've already ruled out. Every gray letter in a guess is a wasted slot.");
+      if (sameSpot) tips.push("When a letter is yellow, move it to a new spot next time. Repeating the same spot tells you nothing new.");
+      if (leftOut || ignoredGreen) tips.push("Once only a few words fit, keep your greens in place and include every yellow. Leaving them out only makes sense early on, when you deliberately test five fresh letters.");
+      const missed = moves.filter(m => m.n === 1 && !m.solved).length;
+      if (missed) tips.push(`On ${plural(missed, "turn")} only one word fit, but you guessed something else. When the list gets short, stop and list every word that fits before you type.`);
+      const midWeak = moves.slice(1).filter(m => !m.solved && m.n > 2 && m.best[0].bits && m.mine.bits / m.best[0].bits < 0.7).length;
+      if (midWeak) tips.push("In the middle of the game, with many words still possible, pick a word that tests several untried letters, even one you know can't be the answer. It usually narrows the field faster than guessing a long shot.");
+      if (!tips.length) tips.push("Solid game. To go further, try to pick the second guess that best splits the remaining words, not just one that fits the clues.");
+      const outcome = state.won ? `Solved in ${plural(state.guesses.length, "guess")}.` : `Not solved. The word was ${U(state.answer)}.`;
+      const counts = ["Excellent", "Good", "Fair", "Weak", "Missed"].map(k => [k, grades.filter(g => g === k).length]).filter(([, n]) => n).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(", ");
+      html += `<div class="summary"><h3>Summary</h3><p>${outcome}${counts ? " Moves: " + counts + "." : ""}</p><h3>To improve</h3><ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul></div>`;
+      el.innerHTML = html;
+    }, 30);
   }
 
   function freshState() {
@@ -383,6 +553,7 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
       }
       paintAlpha();
       paintStats();
+      renderReview();
     }, delay);
   }
 
@@ -408,6 +579,7 @@ const VALID_STR = "aahed aalii aargh aaron aarti abaca abaci aback abacs abaft a
     paintCurrent();
     paintAlpha();
     paintStats();
+    renderReview();
     if (state.done) {
       if (state.won) say(`Solved in ${state.guesses.length} ${state.guesses.length === 1 ? "guess" : "guesses"}.`, { again: true });
       else say("Out of guesses. The word was:", { word: true, again: true });
