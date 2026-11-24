@@ -1,5 +1,40 @@
 # Living Well with Type 2 Diabetes
 
+This folder has two versions:
+
+| File | What it is |
+|------|------------|
+| `index.html` | **v1, the course.** 60-minute self-paced course (saved at commit `c19c03d`). |
+| `my-plan.html` | **v2, the course plus a personal plan.** Same course, with "Make it yours" questions in every part. Answers build a printable personal diabetes management plan. About 75 minutes. |
+
+## v2: Personal plan edition (`my-plan.html`)
+
+- **Where answers go:** they stay in the learner's browser only. Nothing is sent anywhere. Every question is optional. The two versions save progress separately.
+- **Medical details:** the learner reports them, and the plan marks them "confirm with your care team." The plan never suggests changing a medicine.
+- **What it asks about:** age, other health conditions, last A1C, how they check blood sugar, personal goals, eating pattern (vegan through meat-eater), home cuisines, who cooks, food insecurity (one Hunger Vital Sign item), sugary drinks, schedule and shift work, current activity, physical limits, activities they enjoy, a safe place to walk, diabetes medicines, trouble taking medicines, fast sugar and glucagon (asked only if they take insulin or a sulfonylurea), living alone, driving, phone numbers, tobacco, transportation, costs, how overwhelmed they feel, PHQ-2, faith practices (Sabbath, fasting, prayer, faith community), and the support they want.
+- **The plan has these sections:**
+  - About me
+  - My numbers
+  - My eating plan, with meal ideas matched to their eating pattern and home cuisines
+  - My activity plan, adjusted for physical limits
+  - My medicines, with tips for each medicine they take
+  - My safety plan: the low blood sugar steps appear in full only if they take insulin or a sulfonylurea, and the sick-day steps match their medicines
+  - My checkups
+  - Coping and support
+  - Faith and rest, shown only if they opt in, plus a fasting safety box whenever they pick fasting
+  - My first step this week
+  - Questions for my care team, written from their answers
+  - A care team sign-off box
+- **Print:** "Print or save my plan (PDF)" prints only the plan.
+
+### Extra review items for v2
+
+- [ ] PHQ-2 handling: a score of 3 or more shows a "please tell your care team" message, plus 988. Confirm this fits LLUH's behavioral health workflow.
+- [ ] Food insecurity follow-up (211 and SNAP). Add LLUH food programs if you have them.
+- [ ] Fasting safety box (based on the IDF-DAR 2021 Ramadan guidelines). Have Spiritual Care review it.
+- [ ] Meal ideas for each cuisine. Have a dietitian review them.
+- [ ] The logic that writes the care team questions, and the medicine tips.
+
 A 60-minute, self-paced, interactive learning page for adults with type 2 diabetes and their families.
 
 - **Audience:** patients with type 2 diabetes and their family members or helpers
