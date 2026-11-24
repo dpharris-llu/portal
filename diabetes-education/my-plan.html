@@ -33,6 +33,7 @@
   --faith: #5b3f8a;
   --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   --radius: 14px;
+  --il-bg: #e6f2e8; --il-sky: #d7ecfa; --il-frame: #ffffff; --il-mat: #f3ece0; --il-ground: #cfe8c4; --il-path: #eadfca;
   --fs: 18px;
 }
 @media (prefers-color-scheme: dark) {
@@ -43,6 +44,7 @@
     --warn: #f3c460; --warn-soft: #3a2f12; --bad: #ff8a8f; --bad-soft: #3d1a1c;
     --info-soft: #182a3d; --info: #8ec0f5; --faith-soft: #2a2238; --faith: #c7b0ee;
     --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --il-bg: #1f3329; --il-sky: #23384a; --il-frame: #2c3a32; --il-mat: #2a332e; --il-ground: #284433; --il-path: #4a4336;
   }
 }
 :root[data-theme="dark"] {
@@ -52,6 +54,7 @@
   --warn: #f3c460; --warn-soft: #3a2f12; --bad: #ff8a8f; --bad-soft: #3d1a1c;
   --info-soft: #182a3d; --info: #8ec0f5; --faith-soft: #2a2238; --faith: #c7b0ee;
   --shadow: 0 1px 2px rgba(0,0,0,.4);
+  --il-bg: #1f3329; --il-sky: #23384a; --il-frame: #2c3a32; --il-mat: #2a332e; --il-ground: #284433; --il-path: #4a4336;
 }
 html.large { --fs: 21px; }
 * { box-sizing: border-box; }
@@ -223,6 +226,11 @@ input[type="range"] { width: 100%; max-width: 420px; accent-color: var(--primary
 
 footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size: .8rem; color: var(--muted); }
 
+/* Illustrations */
+.art { display: block; width: 100%; height: auto; margin: .4rem auto 1rem; }
+.art-hero { max-width: 620px; margin-top: 0; }
+.card .art:not(.art-hero) { max-width: 560px; }
+
 /* Make it yours */
 .card.mine { border: 2px solid var(--accent); background: linear-gradient(var(--accent-soft), var(--surface) 140px); }
 .card.mine h3 { margin-top: .2rem; }
@@ -341,6 +349,106 @@ dialog#camDlg::backdrop { background: rgba(0,0,0,.45); }
 <!-- ============ 0. WELCOME ============ -->
 <section class="module" data-id="welcome" data-title="Welcome" data-min="6">
   <div class="card">
+    <svg class="art art-hero" viewBox="0 0 640 340" role="img" aria-labelledby="artWelT artWelD">
+      <title id="artWelT">A family sharing a healthy meal</title>
+      <desc id="artWelD">A grandmother, a father, a mother, and a child smile around a table with a big salad, bean tacos, brown rice and beans, fruit, and water.</desc>
+      <path d="M30 200 C20 80 160 22 320 30 C490 38 625 70 612 196 C600 300 470 330 320 330 C170 330 40 318 30 200 Z" fill="var(--il-bg)"/>
+      <!-- window -->
+      <rect x="64" y="44" width="116" height="84" rx="12" fill="var(--il-sky)"/>
+      <circle cx="150" cy="68" r="13" fill="#f6c453"/>
+      <path d="M122 44 V128 M64 86 H180" stroke="var(--il-frame)" stroke-width="7"/>
+      <!-- hanging plant -->
+      <path d="M548 14 V66" stroke="#8a6a4a" stroke-width="2"/>
+      <path d="M526 66 h44 l-7 28 h-30 z" fill="#c9774e"/>
+      <ellipse cx="524" cy="104" rx="7" ry="13" fill="#4f9d5d" transform="rotate(25 524 104)"/>
+      <ellipse cx="572" cy="106" rx="7" ry="13" fill="#3f8f5a" transform="rotate(-25 572 106)"/>
+      <ellipse cx="540" cy="118" rx="6" ry="12" fill="#5fae6a" transform="rotate(10 540 118)"/>
+      <ellipse cx="560" cy="122" rx="6" ry="12" fill="#4f9d5d" transform="rotate(-10 560 122)"/>
+      <ellipse cx="548" cy="62" rx="16" ry="9" fill="#5fae6a"/>
+      <!-- heart -->
+      <path d="M320 62 c-7-12-26-8-24 6 c2 12 24 24 24 24 s22-12 24-24 c2-14-17-18-24-6z" fill="#e07a5f" opacity=".85"/>
+
+      <!-- Grandmother -->
+      <circle cx="132" cy="104" r="14" fill="#d9d9d9"/>
+      <path d="M80 250 C80 196 102 176 132 176 C162 176 184 196 184 250 Z" fill="#7c5cbf"/>
+      <path d="M118 178 L132 196 L146 178" fill="none" stroke="#f3ede2" stroke-width="5" stroke-linejoin="round"/>
+      <rect x="124" y="158" width="16" height="22" rx="6" fill="#e0ac69"/>
+      <circle cx="132" cy="142" r="28" fill="#e0ac69"/>
+      <path d="M104 142 C102 112 162 112 160 142 C154 124 110 124 104 142 Z" fill="#d9d9d9"/>
+      <circle cx="121" cy="144" r="7.5" fill="none" stroke="#3a2a20" stroke-width="2"/>
+      <circle cx="143" cy="144" r="7.5" fill="none" stroke="#3a2a20" stroke-width="2"/>
+      <path d="M128.5 144 h7" stroke="#3a2a20" stroke-width="2"/>
+      <circle cx="121" cy="144" r="2.2" fill="#3a2a20"/><circle cx="143" cy="144" r="2.2" fill="#3a2a20"/>
+      <path d="M123 157 Q132 164 141 157" fill="none" stroke="#3a2a20" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="113" cy="154" r="4" fill="#e8907a" opacity=".55"/><circle cx="151" cy="154" r="4" fill="#e8907a" opacity=".55"/>
+
+      <!-- Father -->
+      <path d="M196 250 C196 190 220 166 256 166 C292 166 316 190 316 250 Z" fill="#2f8f83"/>
+      <rect x="247" y="148" width="18" height="22" rx="6" fill="#8d5524"/>
+      <circle cx="256" cy="128" r="31" fill="#8d5524"/>
+      <path d="M225 126 C222 92 290 92 287 126 C282 106 230 106 225 126 Z" fill="#22140c"/>
+      <circle cx="245" cy="130" r="3.4" fill="#1a0f08"/><circle cx="267" cy="130" r="3.4" fill="#1a0f08"/>
+      <path d="M244 143 Q256 153 268 143" fill="none" stroke="#1a0f08" stroke-width="2.8" stroke-linecap="round"/>
+
+      <!-- Mother -->
+      <path d="M350 128 C346 84 424 84 420 128 L426 208 C410 216 360 216 344 208 Z" fill="#3b2314"/>
+      <path d="M330 250 C330 196 352 174 385 174 C418 174 440 196 440 250 Z" fill="#e07a5f"/>
+      <rect x="377" y="154" width="16" height="22" rx="6" fill="#c68642"/>
+      <circle cx="385" cy="134" r="29" fill="#c68642"/>
+      <path d="M356 132 C354 102 416 100 414 130 C402 112 372 112 356 132 Z" fill="#3b2314"/>
+      <circle cx="357" cy="146" r="3.5" fill="#f2c14e"/><circle cx="413" cy="146" r="3.5" fill="#f2c14e"/>
+      <circle cx="374" cy="136" r="3.2" fill="#1a0f08"/><circle cx="396" cy="136" r="3.2" fill="#1a0f08"/>
+      <path d="M374 148 Q385 157 396 148" fill="none" stroke="#1a0f08" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="366" cy="146" r="4" fill="#d9755f" opacity=".5"/><circle cx="404" cy="146" r="4" fill="#d9755f" opacity=".5"/>
+
+      <!-- Child -->
+      <path d="M466 250 C466 214 482 198 506 198 C530 198 546 214 546 250 Z" fill="#f2c14e"/>
+      <path d="M476 226 H536" stroke="#e5a92f" stroke-width="6"/>
+      <rect x="499" y="184" width="14" height="18" rx="5" fill="#f1c27d"/>
+      <circle cx="506" cy="168" r="24" fill="#f1c27d"/>
+      <circle cx="486" cy="156" r="9" fill="#6b3e1e"/><circle cx="496" cy="147" r="10" fill="#6b3e1e"/>
+      <circle cx="510" cy="145" r="10" fill="#6b3e1e"/><circle cx="523" cy="151" r="9" fill="#6b3e1e"/><circle cx="528" cy="162" r="6" fill="#6b3e1e"/>
+      <circle cx="497" cy="170" r="3" fill="#3a2a20"/><circle cx="515" cy="170" r="3" fill="#3a2a20"/>
+      <path d="M496 180 Q506 190 516 180" fill="#b5523f"/>
+      <circle cx="489" cy="178" r="3.5" fill="#e8907a" opacity=".55"/><circle cx="523" cy="178" r="3.5" fill="#e8907a" opacity=".55"/>
+
+      <!-- Table -->
+      <rect x="26" y="240" width="588" height="20" rx="10" fill="#c98b4f"/>
+      <rect x="40" y="258" width="560" height="62" rx="8" fill="#b5763d"/>
+      <rect x="40" y="258" width="560" height="10" fill="#a76a33"/>
+      <!-- hands -->
+      <ellipse cx="104" cy="242" rx="11" ry="7" fill="#e0ac69"/><ellipse cx="226" cy="242" rx="12" ry="7" fill="#8d5524"/>
+      <ellipse cx="420" cy="242" rx="11" ry="7" fill="#c68642"/><ellipse cx="534" cy="242" rx="9" ry="6" fill="#f1c27d"/>
+      <!-- water glasses -->
+      <rect x="140" y="214" width="16" height="28" rx="3" fill="#d6ecfa" stroke="#9cc8e6" stroke-width="2"/>
+      <rect x="142" y="224" width="12" height="16" fill="#a9d4f2"/>
+      <rect x="474" y="216" width="15" height="26" rx="3" fill="#d6ecfa" stroke="#9cc8e6" stroke-width="2"/>
+      <rect x="476" y="226" width="11" height="14" fill="#a9d4f2"/>
+      <!-- taco plate -->
+      <ellipse cx="190" cy="242" rx="46" ry="9" fill="#ffffff" stroke="#e2dccf" stroke-width="2"/>
+      <path d="M160 238 a17 17 0 0 1 34 0 Z" fill="#f2c14e"/>
+      <path d="M165 233 q12 -9 24 0" stroke="#4caf50" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M186 238 a17 17 0 0 1 34 0 Z" fill="#f4cc63"/>
+      <path d="M191 233 q12 -9 24 0" stroke="#3b2314" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="198" cy="231" r="2.5" fill="#e4572e"/><circle cx="208" cy="231" r="2.5" fill="#e4572e"/>
+      <!-- salad bowl -->
+      <circle cx="292" cy="226" r="13" fill="#7cc36b"/><circle cx="312" cy="218" r="15" fill="#4caf50"/>
+      <circle cx="334" cy="220" r="14" fill="#2e7d32"/><circle cx="350" cy="228" r="11" fill="#7cc36b"/>
+      <circle cx="304" cy="226" r="6" fill="#e4572e"/><circle cx="338" cy="230" r="6" fill="#e4572e"/>
+      <path d="M322 214 l10 -12" stroke="#f08a24" stroke-width="5" stroke-linecap="round"/>
+      <path d="M268 232 Q320 290 372 232 Z" fill="#ffffff" stroke="#e2dccf" stroke-width="2"/>
+      <path d="M282 246 Q320 262 358 246" stroke="#7cc36b" stroke-width="3" fill="none"/>
+      <!-- rice and beans plate -->
+      <ellipse cx="438" cy="242" rx="44" ry="9" fill="#ffffff" stroke="#e2dccf" stroke-width="2"/>
+      <ellipse cx="424" cy="235" rx="18" ry="9" fill="#e3cf9f"/>
+      <circle cx="418" cy="233" r="1.6" fill="#c9a46b"/><circle cx="428" cy="236" r="1.6" fill="#c9a46b"/><circle cx="424" cy="230" r="1.6" fill="#c9a46b"/>
+      <ellipse cx="452" cy="236" rx="15" ry="8" fill="#6b2f2f"/>
+      <circle cx="448" cy="233" r="2" fill="#8f4545"/><circle cx="456" cy="236" r="2" fill="#8f4545"/>
+      <!-- fruit bowl -->
+      <circle cx="560" cy="226" r="10" fill="#e4572e"/><circle cx="576" cy="226" r="10" fill="#f39c34"/>
+      <path d="M558 214 q6 -8 10 -2" stroke="#4f9d5d" stroke-width="3" fill="none"/>
+      <path d="M544 230 Q568 262 592 230 Z" fill="#ffffff" stroke="#e2dccf" stroke-width="2"/>
+    </svg>
     <div class="eyebrow">Part 1 · About 6 minutes</div>
     <h2>Welcome. You are not alone.</h2>
     <p>About <strong>1 in 10 people</strong> in the United States has diabetes. Most of them have type 2. Many live long, full, active lives. With the right tools and support, you can too.</p>
@@ -575,6 +683,73 @@ dialog#camDlg::backdrop { background: rgba(0,0,0,.45); }
   <div class="card">
     <div class="eyebrow">Part 4 · About 11 minutes</div>
     <h2>Healthy, plant-forward eating</h2>
+    <svg class="art" viewBox="0 0 640 260" role="img" aria-labelledby="artEatT artEatD">
+      <title id="artEatT">A balanced, plant-forward plate</title>
+      <desc id="artEatD">A plate seen from above. Half is vegetables: broccoli, carrots, red peppers, and tomatoes. One quarter is beans and tofu. One quarter is brown rice and sweet potato. A glass of water sits beside it.</desc>
+      <path d="M40 140 C30 50 170 14 320 18 C480 22 618 52 606 140 C596 230 470 250 320 248 C170 246 50 236 40 140 Z" fill="var(--il-bg)"/>
+      <!-- placemat + utensils -->
+      <rect x="150" y="26" width="300" height="210" rx="22" fill="var(--il-mat)"/>
+      <rect x="168" y="70" width="6" height="120" rx="3" fill="#9aa3a8"/>
+      <path d="M161 70 v-26 M168 70 v-26 M175 70 v-26 M182 70 v-26" stroke="#9aa3a8" stroke-width="3" stroke-linecap="round"/>
+      <path d="M160 66 h24 v8 h-24 z" fill="#9aa3a8"/>
+      <rect x="426" y="50" width="8" height="150" rx="4" fill="#9aa3a8"/>
+      <!-- plate -->
+      <circle cx="300" cy="131" r="98" fill="#ffffff" stroke="#e2dccf" stroke-width="5"/>
+      <circle cx="300" cy="131" r="84" fill="none" stroke="#f0ebe1" stroke-width="2"/>
+      <path d="M300 49 A82 82 0 0 0 300 213 Z" fill="#eaf6e4"/>
+      <path d="M300 131 L300 49 A82 82 0 0 1 382 131 Z" fill="#f7eedf"/>
+      <path d="M300 131 L382 131 A82 82 0 0 1 300 213 Z" fill="#f8f0de"/>
+      <path d="M300 50 V212 M300 131 H381" stroke="#e2dccf" stroke-width="2"/>
+      <!-- veggies: broccoli -->
+      <g><rect x="250" y="88" width="7" height="18" rx="3" fill="#8bc34a"/>
+        <circle cx="246" cy="86" r="9" fill="#2e7d32"/><circle cx="258" cy="82" r="10" fill="#388e3c"/><circle cx="262" cy="92" r="8" fill="#2e7d32"/></g>
+      <g><rect x="262" y="152" width="7" height="18" rx="3" fill="#8bc34a"/>
+        <circle cx="258" cy="150" r="9" fill="#388e3c"/><circle cx="270" cy="146" r="10" fill="#2e7d32"/><circle cx="274" cy="156" r="8" fill="#388e3c"/></g>
+      <!-- carrots -->
+      <circle cx="240" cy="124" r="9" fill="#f08a24"/><circle cx="240" cy="124" r="4" fill="#f6ad5c"/>
+      <circle cx="258" cy="120" r="8" fill="#f08a24"/><circle cx="258" cy="120" r="3.5" fill="#f6ad5c"/>
+      <circle cx="240" cy="160" r="8" fill="#f08a24"/><circle cx="240" cy="160" r="3.5" fill="#f6ad5c"/>
+      <!-- peppers -->
+      <rect x="270" y="110" width="26" height="8" rx="4" fill="#e4572e" transform="rotate(-25 283 114)"/>
+      <rect x="272" y="128" width="24" height="8" rx="4" fill="#f2c14e" transform="rotate(20 284 132)"/>
+      <rect x="236" y="178" width="26" height="8" rx="4" fill="#e4572e" transform="rotate(15 249 182)"/>
+      <!-- more veggies: green beans, peas, another broccoli -->
+      <g fill="#6ab04c"><rect x="226" y="136" width="30" height="6" rx="3" transform="rotate(-10 241 139)"/><rect x="228" y="145" width="28" height="6" rx="3" transform="rotate(-4 242 148)"/><rect x="262" y="176" width="28" height="6" rx="3" transform="rotate(-35 276 179)"/></g>
+      <g fill="#8bc34a"><circle cx="276" cy="94" r="4.5"/><circle cx="285" cy="98" r="4.5"/><circle cx="280" cy="104" r="4.5"/><circle cx="252" cy="196" r="4.5"/><circle cx="260" cy="202" r="4.5"/></g>
+      <g><rect x="262" y="70" width="6" height="14" rx="3" fill="#8bc34a" transform="rotate(-15 265 77)"/>
+        <circle cx="262" cy="68" r="8" fill="#388e3c"/><circle cx="272" cy="66" r="8" fill="#2e7d32"/></g>
+      <g><rect x="282" y="150" width="6" height="14" rx="3" fill="#8bc34a"/>
+        <circle cx="280" cy="148" r="7" fill="#2e7d32"/><circle cx="290" cy="146" r="7" fill="#388e3c"/></g>
+      <!-- tomatoes + greens -->
+      <circle cx="290" cy="80" r="7" fill="#e4572e"/><circle cx="286" cy="190" r="7" fill="#e4572e"/>
+      <ellipse cx="232" cy="104" rx="10" ry="5" fill="#7cc36b" transform="rotate(-30 232 104)"/>
+      <ellipse cx="280" cy="200" rx="10" ry="5" fill="#7cc36b" transform="rotate(20 280 200)"/>
+      <!-- protein: tofu + beans -->
+      <rect x="318" y="72" width="18" height="18" rx="4" fill="#f3e3b3" stroke="#e2cf91" stroke-width="2"/>
+      <rect x="340" y="82" width="18" height="18" rx="4" fill="#f3e3b3" stroke="#e2cf91" stroke-width="2"/>
+      <rect x="320" y="96" width="18" height="18" rx="4" fill="#f3e3b3" stroke="#e2cf91" stroke-width="2"/>
+      <g fill="#6b2f2f"><ellipse cx="350" cy="112" rx="5" ry="3.5"/><ellipse cx="361" cy="118" rx="5" ry="3.5"/><ellipse cx="346" cy="122" rx="5" ry="3.5"/><ellipse cx="364" cy="106" rx="5" ry="3.5"/></g>
+      <g fill="#2b2b2b"><ellipse cx="356" cy="124" rx="4.5" ry="3"/><ellipse cx="338" cy="120" rx="4.5" ry="3"/></g>
+      <!-- carbs: brown rice + sweet potato -->
+      <ellipse cx="330" cy="160" rx="24" ry="16" fill="#e3cf9f"/>
+      <g fill="#c9a46b"><circle cx="322" cy="156" r="1.8"/><circle cx="332" cy="152" r="1.8"/><circle cx="340" cy="160" r="1.8"/><circle cx="326" cy="166" r="1.8"/><circle cx="336" cy="168" r="1.8"/></g>
+      <path d="M346 182 q20 -30 30 -32 q4 18 -18 40 z" fill="#e9823a"/>
+      <path d="M350 180 q16 -22 24 -26" stroke="#f6b26b" stroke-width="3" fill="none"/>
+      <!-- water glass -->
+      <rect x="470" y="70" width="44" height="100" rx="8" fill="#e6f3fc" stroke="#9cc8e6" stroke-width="3"/>
+      <rect x="474" y="92" width="36" height="74" rx="5" fill="#b9dcf4"/>
+      <rect x="480" y="100" width="12" height="12" rx="2" fill="#ffffff" opacity=".7"/>
+      <circle cx="514" cy="80" r="14" fill="#f6e05e"/><circle cx="514" cy="80" r="9" fill="#faf0a0"/>
+      <!-- apple -->
+      <circle cx="540" cy="196" r="20" fill="#e4572e"/>
+      <path d="M540 177 q2 -10 8 -12" stroke="#6b3e1e" stroke-width="3" fill="none"/>
+      <ellipse cx="552" cy="170" rx="8" ry="4" fill="#4f9d5d" transform="rotate(-20 552 170)"/>
+      <!-- herbs -->
+      <ellipse cx="96" cy="190" rx="9" ry="16" fill="#5fae6a" transform="rotate(-30 96 190)"/>
+      <ellipse cx="112" cy="204" rx="8" ry="14" fill="#4f9d5d" transform="rotate(20 112 204)"/>
+      <ellipse cx="84" cy="88" rx="7" ry="13" fill="#7cc36b" transform="rotate(35 84 88)"/>
+    </svg>
+
     <div class="goals"><strong>Goals for this part</strong>
       <ul><li>Use the plate method</li><li>Know which foods have carbs</li><li>Read a food label</li></ul>
     </div>
@@ -676,6 +851,69 @@ dialog#camDlg::backdrop { background: rgba(0,0,0,.45); }
   <div class="card">
     <div class="eyebrow">Part 5 · About 6 minutes</div>
     <h2>Moving more</h2>
+    <svg class="art" viewBox="0 0 640 260" role="img" aria-labelledby="artActT artActD">
+      <title id="artActT">Friends out for a walk in the park</title>
+      <desc id="artActD">A woman walks and a man in a wheelchair rolls beside her along a park path on a sunny day, with trees and a small dog trotting ahead.</desc>
+      <path d="M30 130 C20 40 170 10 320 14 C480 18 622 46 610 130 C600 214 470 246 320 246 C170 246 40 226 30 130 Z" fill="var(--il-bg)"/>
+      <circle cx="530" cy="62" r="26" fill="#f6c453"/>
+      <g stroke="#f6c453" stroke-width="4" stroke-linecap="round">
+        <path d="M530 22 v-8 M530 110 v-8 M490 62 h-8 M578 62 h-8 M502 34 l-6 -6 M558 34 l6 -6 M502 90 l-6 6 M558 90 l6 6"/></g>
+      <path d="M190 52 q6 -6 12 0 q6 -6 12 0" stroke="#5a6b7a" stroke-width="2.5" fill="none"/>
+      <path d="M230 36 q5 -5 10 0 q5 -5 10 0" stroke="#5a6b7a" stroke-width="2.5" fill="none"/>
+      <!-- hills + path -->
+      <path d="M34 168 C140 132 250 150 330 146 C430 140 520 128 608 150 L606 232 C500 250 140 252 52 230 Z" fill="var(--il-ground)"/>
+      <path d="M60 224 C200 196 420 200 600 214 L596 236 C420 228 200 226 70 244 Z" fill="var(--il-path)"/>
+      <!-- trees -->
+      <rect x="92" y="110" width="12" height="70" rx="5" fill="#8a6a4a"/>
+      <circle cx="98" cy="96" r="34" fill="#4f9d5d"/><circle cx="76" cy="112" r="22" fill="#5fae6a"/><circle cx="120" cy="114" r="22" fill="#3f8f5a"/>
+      <rect x="566" y="120" width="10" height="56" rx="4" fill="#8a6a4a"/>
+      <circle cx="571" cy="110" r="26" fill="#5fae6a"/><circle cx="555" cy="124" r="16" fill="#4f9d5d"/>
+      <!-- flowers -->
+      <g><circle cx="160" cy="196" r="4" fill="#e07a5f"/><circle cx="176" cy="190" r="4" fill="#f2c14e"/><circle cx="470" cy="190" r="4" fill="#e07a5f"/><circle cx="486" cy="196" r="4" fill="#7c5cbf"/></g>
+
+      <!-- Walker -->
+      <path d="M244 160 L228 210" stroke="#3d4a6b" stroke-width="13" stroke-linecap="round"/>
+      <path d="M254 160 L276 206" stroke="#46557a" stroke-width="13" stroke-linecap="round"/>
+      <ellipse cx="224" cy="214" rx="12" ry="6" fill="#2b2b2b"/><ellipse cx="282" cy="210" rx="12" ry="6" fill="#2b2b2b"/>
+      <path d="M244 112 L226 146" stroke="#8d5524" stroke-width="9" stroke-linecap="round"/>
+      <path d="M232 104 C232 98 260 96 262 104 L266 162 C258 168 240 168 234 162 Z" fill="#2f8f83"/>
+      <path d="M254 114 L276 140" stroke="#8d5524" stroke-width="9" stroke-linecap="round"/>
+      <rect x="242" y="88" width="12" height="14" rx="4" fill="#8d5524"/>
+      <circle cx="250" cy="78" r="17" fill="#8d5524"/>
+      <path d="M234 76 C232 56 268 54 268 74 C262 64 242 64 234 76 Z" fill="#22140c"/>
+      <circle cx="232" cy="68" r="7" fill="#22140c"/>
+      <circle cx="257" cy="78" r="2.6" fill="#1a0f08"/>
+      <path d="M255 87 q5 3 9 -1" stroke="#1a0f08" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M233 60 C238 46 268 48 270 66 L276 68 C270 72 236 70 233 60 Z" fill="#f2c14e"/>
+
+      <!-- Wheelchair user -->
+      <circle cx="372" cy="186" r="32" fill="none" stroke="#4a5560" stroke-width="6"/>
+      <circle cx="372" cy="186" r="24" fill="none" stroke="#9aa3a8" stroke-width="2"/>
+      <path d="M372 154 V218 M340 186 H404 M349 163 L395 209 M395 163 L349 209" stroke="#9aa3a8" stroke-width="1.5"/>
+      <circle cx="372" cy="186" r="4" fill="#4a5560"/>
+      <circle cx="420" cy="210" r="8" fill="none" stroke="#4a5560" stroke-width="4"/>
+      <path d="M352 126 L356 172 L412 172 L420 204" stroke="#4a5560" stroke-width="5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M368 166 L404 170" stroke="#3d4a6b" stroke-width="13" stroke-linecap="round"/>
+      <path d="M404 170 L410 196" stroke="#3d4a6b" stroke-width="11" stroke-linecap="round"/>
+      <ellipse cx="416" cy="200" rx="10" ry="5" fill="#2b2b2b"/>
+      <path d="M358 120 C358 112 384 110 386 120 L384 170 L362 170 Z" fill="#e07a5f"/>
+      <path d="M380 128 L392 160 L378 176" stroke="#f1c27d" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="366" y="98" width="12" height="14" rx="4" fill="#f1c27d"/>
+      <circle cx="373" cy="90" r="16" fill="#f1c27d"/>
+      <path d="M358 88 C356 70 392 68 390 86 C384 78 364 78 358 88 Z" fill="#a0522d"/>
+      <circle cx="380" cy="90" r="2.5" fill="#3a2a20"/>
+      <path d="M378 99 q5 3 9 -1" stroke="#3a2a20" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+      <!-- Dog -->
+      <path d="M470 194 L466 212 M478 196 L478 214 M500 196 L502 214 M508 192 L514 210" stroke="#a5672f" stroke-width="5" stroke-linecap="round"/>
+      <ellipse cx="490" cy="188" rx="26" ry="13" fill="#c98b4f"/>
+      <path d="M465 184 q-12 -10 -8 -22" stroke="#c98b4f" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="518" cy="174" r="13" fill="#c98b4f"/>
+      <ellipse cx="512" cy="166" rx="6" ry="10" fill="#a5672f" transform="rotate(25 512 166)"/>
+      <circle cx="530" cy="177" r="3" fill="#2b2b2b"/><circle cx="522" cy="172" r="2" fill="#2b2b2b"/>
+      <path d="M520 182 q4 4 8 1" stroke="#2b2b2b" stroke-width="1.8" fill="none"/>
+    </svg>
+
     <div class="goals"><strong>Goals for this part</strong>
       <ul><li>Know the activity goal</li><li>Stay safe while active</li></ul>
     </div>
