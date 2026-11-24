@@ -19,7 +19,7 @@
     2: ["explain", "describe", "summarize", "classify", "discuss", "paraphrase", "illustrate", "outline", "restate", "report"],
     3: ["apply", "use", "demonstrate", "perform", "calculate", "administer", "execute", "implement", "solve",
       "compute", "conduct", "operate", "practice", "measure", "counsel", "communicate", "educate", "teach",
-      "document", "dose", "examine", "obtain", "elicit", "carry"],
+      "document", "dose", "examine", "obtain", "elicit", "carry", "adjust", "modify", "titrate", "monitor", "adapt", "convert"],
     4: ["analyze", "analyse", "differentiate", "distinguish", "interpret", "compare", "contrast", "categorize",
       "diagnose", "investigate", "deconstruct", "relate", "infer"],
     5: ["evaluate", "appraise", "critique", "justify", "judge", "defend", "assess", "prioritize", "recommend",
@@ -137,15 +137,10 @@
   }
 
   // Module 2, Pages 4 and 5: constructive alignment and the five misalignment patterns.
-  function alignment(design) {
-    const o = (design && design.outcome) || {};
-    const bloom = Number(o.bloom) || analyzeOutcome(o.text).bloom;
-    const miller = Number(o.miller) || null;
-    const methods = ((design.session && design.session.segments) || []).map(s => s.method).filter(Boolean);
+  // One chain: an outcome's level, the methods that practice it, the assessment formats that show it.
+  function chainStatus(bloom, miller, methods, assessmentTypes) {
     const act = levelOf(methods, ACTIVITIES);
-    const type = design.assessment && design.assessment.type;
-    const asm = type && ASSESSMENTS[type] ? { bloom: ASSESSMENTS[type].bloomMax, miller: ASSESSMENTS[type].millerMax } : null;
-
+    const asm = levelOf(assessmentTypes, ASSESSMENTS);
     const out = {
       outcome: { bloom, miller },
       practice: { status: "pending", issues: [] },
@@ -195,6 +190,113 @@
       out.level.status = worst.includes("gap") ? "gap" : worst.includes("partial") ? "partial" : "aligned";
     }
     return out;
+  }
+
+  function outcomeLevel(o) {
+    const x = o || {};
+    return { bloom: Number(x.bloom) || analyzeOutcome(x.text).bloom, miller: Number(x.miller) || null };
+  }
+
+  // Single-chain view, used for the capstone's focus outcome.
+  function alignment(design) {
+    const d = design || {};
+    const lv = outcomeLevel(d.outcome);
+    const methods = ((d.session && d.session.segments) || []).map(s => s.method).filter(Boolean);
+    const type = d.assessment && d.assessment.type;
+    return chainStatus(lv.bloom, lv.miller, methods, type ? [type] : []);
+  }
+
+  // ---------- Course level ----------
+  const worst = list => (list.includes("gap") ? "gap" : list.includes("partial") ? "partial" : list.every(s => s === "aligned") && list.length ? "aligned" : "pending");
+
+  // The alignment matrix: every outcome against the weeks that practice it and the assessments that show it.
+  function courseMatrix(course) {
+    const c = course || {};
+    const outcomes = (c.outcomes || []).filter(o => String(o.text || "").trim());
+    const weeks = (c.weeks || []).filter(w => w && (String(w.topic || "").trim() || (w.outcomes || []).length || (w.methods || []).length));
+    const assessments = (c.assessments || []).filter(a => a && (String(a.name || "").trim() || a.type));
+    const rows = outcomes.map(o => {
+      const lv = outcomeLevel(o);
+      const ws = weeks.filter(w => (w.outcomes || []).includes(o.id));
+      const as = assessments.filter(a => (a.outcomes || []).includes(o.id));
+      const methods = [...new Set(ws.flatMap(w => w.methods || []))];
+      const chain = chainStatus(lv.bloom, lv.miller, methods, as.map(a => a.type).filter(Boolean));
+      const issues = chain.practice.issues.concat(chain.assessment.issues);
+      const oa = analyzeOutcome(o.text);
+      if (oa.issues.some(i => i.code === "vague_verb")) issues.unshift(issue("vague_outcome", "gap", "The verb does not say what learners will do, so it cannot be aligned. Rewrite it in step 2.", "outcome_verb"));
+      else if (!lv.bloom) issues.unshift(issue("no_level", "partial", "Set a Bloom level for this outcome in step 2. Its verb did not suggest one.", "bloom"));
+      if (!ws.length) {
+        chain.practice.status = "gap";
+        issues.unshift(issue("never_practiced", "gap", "No week practices this outcome yet. Tag the weeks where learners work on it.", "alignment_chain"));
+      } else if (!methods.length) {
+        issues.unshift(issue("no_methods", "partial", "The weeks for this outcome have no learning methods yet.", "method_fit"));
+      }
+      if (!as.length) {
+        chain.assessment.status = "gap";
+        issues.push(issue("never_assessed", "gap", "No assessment shows this outcome. An outcome you never assess is a hope, not an outcome.", "alignment_chain"));
+      }
+      const summ = as.filter(a => !a.formative);
+      const form = as.filter(a => a.formative);
+      if (summ.length && !form.length) issues.push(issue("no_formative", "partial", "Graded only. Add a low-stakes attempt with feedback before the graded one.", "formative"));
+      else if (summ.length && form.length) {
+        const firstGraded = Math.min(...summ.map(a => Number(a.week) || 99));
+        if (!form.some(a => (Number(a.week) || 0) <= firstGraded)) issues.push(issue("formative_late", "partial", "The practice attempt comes after the first graded one. Move it earlier.", "formative"));
+      }
+      const nums = [...new Set(ws.map(w => Number(w.n)).filter(Boolean))].sort((a, b) => a - b);
+      if (nums.length === 1 && weeks.length >= 4) issues.push(issue("not_spaced", "note", `Taught in week ${nums[0]} only. Revisit it in later weeks.`, "spacing"));
+      const status = issues.some(i => i.code === "vague_outcome") ? "gap" : worst([chain.practice.status, chain.assessment.status]);
+      return { outcome: o, bloom: lv.bloom, miller: lv.miller, weeks: nums, assessments: as, chain, issues, status };
+    });
+    const orphans = assessments.filter(a => !(a.outcomes || []).length).map(a => issue("orphan_assessment", "partial",
+      `"${a.name || "Untitled assessment"}" is tied to no outcome. Tie it to one, or consider cutting it.`, "pattern_never_taught"));
+    const weekOrphans = weeks.filter(w => String(w.topic || "").trim() && !(w.outcomes || []).length).map(w => issue("orphan_week", "note",
+      `Week ${w.n} (${w.topic}) serves no outcome yet.`, "alignment_chain"));
+    const issues = [];
+    if (outcomes.length > 8) issues.push(issue("too_many", "note", `${outcomes.length} outcomes. Fewer, stronger outcomes are easier to teach and assess.`, "few_outcomes"));
+    return { rows, orphans, weekOrphans, issues, status: rows.length ? worst(rows.map(r => r.status)) : "pending" };
+  }
+
+  // Assessment weights and stakes (Module 4, Page 1).
+  function analyzeWeights(course) {
+    const as = ((course && course.assessments) || []).filter(a => a && (a.name || a.type));
+    const issues = [];
+    const total = as.reduce((n, a) => n + (Number(a.weight) || 0), 0);
+    if (as.length && total !== 100) issues.push(issue("weights_total", "partial", `Weights add up to ${total}%, not 100%.`, "weights"));
+    const big = as.filter(a => (Number(a.weight) || 0) >= 40);
+    big.forEach(a => issues.push(issue("high_stakes", "note", `"${a.name}" carries ${a.weight}% of the grade. Learners need practice and feedback before an event this large.`, "formative")));
+    if (as.length && !as.some(a => a.formative)) issues.push(issue("no_formative_course", "partial", "No low-stakes practice anywhere in the course.", "formative"));
+    return { total, issues };
+  }
+
+  // Term workload against the federal credit-hour definition: about 1 hour in class and 2 hours
+  // outside class per credit per week. LLU programs mostly run on quarters.
+  function analyzeWorkload(course) {
+    const c = (course && course.course) || {};
+    const credits = Number(c.credits) || 0;
+    const nWeeks = Number(c.weeks) || 0;
+    const weeks = (course && course.weeks) || [];
+    const classHours = weeks.reduce((n, w) => n + (Number(w.classMinutes) || 0) / 60, 0);
+    const outHours = weeks.reduce((n, w) => n + (Number(w.outHours) || 0), 0);
+    const asmHours = ((course && course.assessments) || []).reduce((n, a) => n + (Number(a.hours) || 0), 0);
+    const planned = Math.round(classHours + outHours + asmHours);
+    const expected = credits && nWeeks ? credits * 3 * nWeeks : 0;
+    const issues = [];
+    if (expected && planned > expected * 1.15) issues.push(issue("over_workload", "partial",
+      `About ${planned} hours planned against roughly ${expected} expected for ${credits} credits over ${nWeeks} weeks. Cut something to make room.`, "workload"));
+    else if (expected && planned && planned < expected * 0.6) issues.push(issue("under_workload", "note",
+      `About ${planned} hours planned against roughly ${expected} expected. Is some learner work not yet listed?`, "workload"));
+    return { credits, weeks: nWeeks, classHours: Math.round(classHours), outHours: Math.round(outHours), asmHours: Math.round(asmHours), planned, expected, issues };
+  }
+
+  // AI level per assessment, chosen from the outcomes it shows (Module 5, Page 2).
+  function analyzeAssessmentAI(a, outcomes) {
+    const linked = (outcomes || []).filter(o => ((a && a.outcomes) || []).includes(o.id));
+    const miller = Math.max(0, ...linked.map(o => Number(o.miller) || 0));
+    const issues = [];
+    const level = Number(a && a.aiLevel) || 0;
+    if (a && !a.formative && level >= 3 && miller >= 3) issues.push(issue("ai_core_skill", "partial",
+      `"${a.name}" assesses a skill learners must show on their own. Consider no AI for this graded task, with AI allowed in practice.`, "ai_level_choose"));
+    return { level, miller, issues };
   }
 
   const sumMinutes = segs => (segs || []).reduce((n, s) => n + (Number(s.minutes) || 0), 0);
@@ -274,10 +376,12 @@
     const chosen = (m.dimensions || []).filter(d => d && d.id);
     const issues = [];
     if (!chosen.length) return { chosen: 0, woven: 0, issues };
-    const woven = chosen.filter(d => d.outcome || d.activity || d.assessment);
-    chosen.filter(d => !(d.outcome || d.activity || d.assessment)).forEach(d => issues.push(issue("bolted_on", "partial",
+    const lives = d => d.outcome || d.activity || d.assessment || (d.outcomes || []).length || (d.weeks || []).length || (d.assessments || []).length;
+    const assessed = d => d.assessment || (d.assessments || []).length;
+    const woven = chosen.filter(lives);
+    chosen.filter(d => !lives(d)).forEach(d => issues.push(issue("bolted_on", "partial",
       "Chosen, but not yet in the outcome, an activity or the assessment. Mission that lives only in a list is bolted on, not woven in.", "mission_woven")));
-    if (woven.length && !woven.some(d => d.assessment)) issues.push(issue("mission_unassessed", "note",
+    if (woven.length && !woven.some(assessed)) issues.push(issue("mission_unassessed", "note",
       "What we value, we make visible. Could one rubric criterion or reflection prompt show this growth?", "mission_assessed"));
     return { chosen: chosen.length, woven: woven.length, issues };
   }
@@ -333,7 +437,7 @@
 
   const api = {
     BLOOM, MILLER, ASSESSMENTS, ACTIVITIES, PERFORMANCE_VERBS,
-    analyzeOutcome, alignment, analyzeSession, analyzeAssessment, analyzeAI, analyzeMission,
+    analyzeOutcome, outcomeLevel, chainStatus, alignment, courseMatrix, analyzeWeights, analyzeWorkload, analyzeAssessmentAI, analyzeSession, analyzeAssessment, analyzeAI, analyzeMission,
     scanForPHI, capstoneEstimate, sumMinutes,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

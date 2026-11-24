@@ -22,7 +22,7 @@ const SYSTEM = `You are the coach inside Course Studio, a course design workbenc
 The studio embeds the faculty development course "Teaching Well in Higher Ed" (Learning Innovation). Ground every observation in that course's guidance, which is provided with each request.
 
 How you help:
-- Critique the faculty member's own draft. Do not rewrite their design for them or hand them a finished outcome, rubric or plan. The course warns that offloading the thinking to AI can raise performance without raising learning, and that applies to faculty too. You may give one short example phrase when it makes a point clearer.
+- Critique the faculty member's own draft of their course. Do not rewrite their course for them or hand them a finished outcome, rubric or plan. The course warns that offloading the thinking to AI can raise performance without raising learning, and that applies to faculty too. You may give one short example phrase when it makes a point clearer.
 - Be specific to their course and discipline. Name what is already strong before what is missing.
 - Tie each observation to the course: name the module, framework or misalignment pattern it comes from (for example "Module 2: outcome higher than the assessment" or "Miller: shows how").
 - Be honest about evidence in the way the course is. Do not overstate. Do not cite studies, authors or statistics that are not in the guidance provided, and never invent a citation.
@@ -65,7 +65,7 @@ function guidanceFor(stepId) {
       lines.push(`- ${h.title}: ${h.hint} ${h.deeper}${ev ? ` [Evidence: ${ev}]` : ""}`);
     });
   }
-  if (stepId === "alignment" || stepId === "course") {
+  if (stepId === "alignment" || stepId === "outcomes" || stepId === "assessments") {
     ["alignment_chain", "pattern_outcome_above", "pattern_instruction_below", "pattern_wrong_tool", "pattern_never_taught", "miller", "bloom"].forEach(id => {
       const h = COURSE.HINTS[id];
       lines.push(`- ${h.title}: ${h.hint} ${h.deeper}`);
@@ -79,25 +79,27 @@ function guidanceFor(stepId) {
   return lines.join("\n");
 }
 
-function automatedChecks(design) {
-  const al = Checks.alignment(design);
+function automatedChecks(course) {
+  const m = Checks.courseMatrix(course);
   const all = [].concat(
-    Checks.analyzeOutcome(design.outcome && design.outcome.text).issues,
-    Checks.analyzeSession(design.session).issues, al.practice.issues, al.assessment.issues,
-    Checks.analyzeAssessment(design.assessment).issues, Checks.analyzeAI(design).issues, Checks.analyzeMission(design).issues);
-  return all.map(i => `- [${i.severity}] ${i.message}`).join("\n") || "- none";
+    ...(course.outcomes || []).map((o, i) => Checks.analyzeOutcome(o.text).issues.map(x => Object.assign({}, x, { who: "O" + (i + 1) }))),
+    ...m.rows.map(r => r.issues.map(x => Object.assign({}, x, { who: (r.outcome.text || "").slice(0, 40) }))),
+    m.orphans, m.issues, Checks.analyzeWeights(course).issues, Checks.analyzeWorkload(course).issues,
+    Checks.analyzeSession(course.session).issues, Checks.analyzeMission(course).issues,
+    ...(course.assessments || []).map(a => Checks.analyzeAssessmentAI(a, course.outcomes).issues));
+  return all.map(i => `- [${i.severity}]${i.who ? " " + i.who + ":" : ""} ${i.message}`).join("\n") || "- none";
 }
 
 async function coach(body) {
   const stepId = String(body.step || "");
-  const design = body.design && typeof body.design === "object" ? body.design : {};
-  const raw = JSON.stringify(design);
-  if (raw.length > 60000) return { status: 413, json: { error: "That design is too large to send to the coach." } };
+  const course = body.course && typeof body.course === "object" ? body.course : {};
+  const raw = JSON.stringify(course);
+  if (raw.length > 120000) return { status: 413, json: { error: "That course is too large to send to the coach." } };
   const phi = Checks.scanForPHI(raw);
   if (phi) return { status: 400, json: { error: `This looks like it contains ${phi}. Remove identifiers before asking the coach.` } };
   if (!COURSE.STEPS.some(s => s.id === stepId)) return { status: 400, json: { error: "Unknown step." } };
 
-  const user = `<course_guidance>\n${guidanceFor(stepId)}\n</course_guidance>\n\n<automated_checks>\n${automatedChecks(design)}\n</automated_checks>\n\n<design step="${stepId}">\n${JSON.stringify(design, null, 2)}\n</design>\n\nCritique the "${stepId}" step of this design. The automated checks have already been shown to the faculty member, so add what they cannot see rather than repeating them.`;
+  const user = `<course_guidance>\n${guidanceFor(stepId)}\n</course_guidance>\n\n<automated_checks>\n${automatedChecks(course)}\n</automated_checks>\n\n<course step="${stepId}">\n${JSON.stringify(course, null, 2)}\n</course>\n\nCritique the "${stepId}" step of this course design. The automated checks have already been shown to the faculty member, so add what they cannot see rather than repeating them.`;
 
   try {
     const response = await client.beta.messages.create({
@@ -133,7 +135,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === "/api/coach" && req.method === "POST") {
     if (!aiEnabled()) return send(res, 503, { error: "The coach is not configured on this server." });
     let data = "";
-    req.on("data", c => { data += c; if (data.length > 200000) req.destroy(); });
+    req.on("data", c => { data += c; if (data.length > 400000) req.destroy(); });
     req.on("end", async () => {
       let body;
       try { body = JSON.parse(data); } catch (e) { return send(res, 400, { error: "Invalid request." }); }

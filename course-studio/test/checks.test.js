@@ -140,4 +140,93 @@ test("capstone: an empty plan is not badge-ready; a complete aligned plan is", (
   assert(e.badgeLikely);
 });
 
+// ---------- Course level ----------
+const course = () => ({
+  course: { credits: 4, weeks: 10, term: "quarter" },
+  outcomes: [
+    { id: "a", text: "Select and justify a first-line treatment for a patient with hypertension and a comorbidity.", miller: 2 },
+    { id: "b", text: "Counsel a patient starting a new antihypertensive medication, using teach-back.", miller: 3 },
+    { id: "c", text: "Adjust drug therapy for a patient with chronic kidney disease using current guidelines.", miller: 2 },
+  ],
+  weeks: [
+    { n: 1, topic: "Choosing therapy", outcomes: ["a"], methods: ["case"], classMinutes: 200, outHours: 8 },
+    { n: 2, topic: "Counseling", outcomes: ["b"], methods: ["lecture"], classMinutes: 200, outHours: 8 },
+    { n: 3, topic: "Comorbidities", outcomes: ["a"], methods: ["tbl"], classMinutes: 200, outHours: 8 },
+    { n: 4, topic: "Review", outcomes: [], methods: ["lecture"], classMinutes: 200, outHours: 8 },
+  ],
+  assessments: [
+    { id: "q", name: "Practice cases", type: "written_case", week: 1, weight: 10, formative: true, outcomes: ["a"] },
+    { id: "m", name: "Midterm", type: "written_case", week: 3, weight: 40, outcomes: ["a"] },
+    { id: "f", name: "Final", type: "mcq_case", week: 4, weight: 40, outcomes: ["b"] },
+    { id: "r", name: "Reflection", type: "essay", week: 4, weight: 5, outcomes: [] },
+  ],
+});
+test("matrix: an outcome with practice and matching evidence is aligned", () => {
+  const m = C.courseMatrix(course());
+  const a = m.rows.find(r => r.outcome.id === "a");
+  assert.strictEqual(a.status, "aligned");
+  assert.deepStrictEqual(a.weeks, [1, 3]);
+  assert(!a.issues.some(i => i.code === "not_spaced"));
+});
+test("matrix: lecture-only practice and a written test for a 'shows how' outcome", () => {
+  const b = C.courseMatrix(course()).rows.find(r => r.outcome.id === "b");
+  assert.strictEqual(b.chain.practice.status, "gap");
+  assert(b.issues.some(i => i.code === "wrong_tool"));
+  assert(b.issues.some(i => i.code === "no_formative"));
+  assert(b.issues.some(i => i.code === "not_spaced"));
+});
+test("matrix: never practiced, never assessed, orphans", () => {
+  const m = C.courseMatrix(course());
+  const c = m.rows.find(r => r.outcome.id === "c");
+  assert(c.issues.some(i => i.code === "never_practiced") && c.issues.some(i => i.code === "never_assessed"));
+  assert.strictEqual(c.status, "gap");
+  assert.strictEqual(m.orphans.length, 1);
+  assert(m.orphans[0].message.includes("Reflection"));
+  assert.strictEqual(m.weekOrphans.length, 1);
+  assert.strictEqual(m.status, "gap");
+});
+test("matrix: practice that comes after the first graded attempt is flagged", () => {
+  const d = course();
+  d.assessments[0].week = 5;
+  const a = C.courseMatrix(d).rows.find(r => r.outcome.id === "a");
+  assert(a.issues.some(i => i.code === "formative_late"));
+});
+test("weights: total and high stakes", () => {
+  const w = C.analyzeWeights(course());
+  assert.strictEqual(w.total, 95);
+  assert(w.issues.some(i => i.code === "weights_total"));
+  assert.strictEqual(w.issues.filter(i => i.code === "high_stakes").length, 2);
+});
+test("workload: 4 quarter credits over 10 weeks is about 120 hours", () => {
+  const d = course();
+  const w = C.analyzeWorkload(d);
+  assert.strictEqual(w.expected, 120);
+  assert.strictEqual(w.planned, Math.round(4 * 200 / 60 + 32));
+  assert(w.issues.some(i => i.code === "under_workload"));
+  d.weeks.forEach(x => { x.outHours = 40; });
+  assert(C.analyzeWorkload(d).issues.some(i => i.code === "over_workload"));
+});
+test("AI per assessment: graded performance task at level 3+ is flagged, practice is not", () => {
+  const d = course();
+  assert(C.analyzeAssessmentAI({ name: "Final", outcomes: ["b"], aiLevel: 4 }, d.outcomes).issues.length === 1);
+  assert(C.analyzeAssessmentAI({ name: "Drill", formative: true, outcomes: ["b"], aiLevel: 4 }, d.outcomes).issues.length === 0);
+  assert(C.analyzeAssessmentAI({ name: "Plan", outcomes: ["a"], aiLevel: 3 }, d.outcomes).issues.length === 0);
+});
+test("mission: course-level links count as woven", () => {
+  const r = C.analyzeMission({ mission: { dimensions: [{ id: "service", weeks: ["3"] }, { id: "equity", outcomes: [], weeks: [], assessments: [] }] } });
+  assert.strictEqual(r.woven, 1);
+  assert(r.issues.some(i => i.code === "bolted_on") && r.issues.some(i => i.code === "mission_unassessed"));
+});
+test("matrix: vague outcomes and outcomes without a level say so", () => {
+  const d = course();
+  d.outcomes.push({ id: "v", text: "Understand the mechanisms of the major antihypertensive classes." });
+  d.outcomes.push({ id: "w", text: "Reconcile medication lists for patients moving between care settings." });
+  d.weeks[0].outcomes.push("v", "w");
+  const m = C.courseMatrix(d);
+  assert(m.rows.find(r => r.outcome.id === "v").issues.some(i => i.code === "vague_outcome"));
+  assert.strictEqual(m.rows.find(r => r.outcome.id === "v").status, "gap");
+  assert(m.rows.find(r => r.outcome.id === "w").issues.some(i => i.code === "no_level"));
+  assert.strictEqual(C.analyzeOutcome("Adjust drug therapy for a patient with chronic kidney disease").bloom, 3);
+});
+
 console.log(`\n${passed} tests passed`);

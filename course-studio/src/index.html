@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to the design step</a>
+<a class="skip" href="#foundations">Skip to the course steps</a>
 <header class="top">
   <div class="brand">
     <span class="brand-mark" aria-hidden="true"></span>
@@ -17,9 +17,10 @@
     </div>
   </div>
   <div class="top-actions">
-    <label class="design-pick"><span class="sr">Current design</span><select id="designSelect"></select></label>
+    <label class="design-pick"><span class="sr">Current course</span><select id="designSelect"></select></label>
     <button class="btn ghost" data-action="newDesign">New</button>
     <button class="btn ghost" data-action="loadExample">Load example</button>
+    <button class="btn ghost" data-action="learning" id="learnBtn" aria-haspopup="dialog">Learning</button>
     <button class="btn ghost" data-action="legend" aria-haspopup="dialog">Symbols</button>
     <label class="toggle"><input type="checkbox" id="hintToggle" checked> <span>Show hints</span></label>
   </div>
@@ -32,6 +33,7 @@
 </div>
 <p class="sr" id="flash" role="status"></p>
 <dialog id="legend" aria-labelledby="legendTitle"></dialog>
+<dialog id="learning" aria-label="Your learning"></dialog>
 <input type="file" id="importFile" accept="application/json" hidden>
 <script src="content/course.js"></script>
 <script src="content/mission.js"></script>
