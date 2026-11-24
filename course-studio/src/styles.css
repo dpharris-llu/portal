@@ -1,30 +1,35 @@
 /* Course Studio. Layout: step rail | design form | "why" panel. Collapses to one column on phones.
    Every symbol pairs a shape with a word, so color is never the only signal. */
 :root {
-  --bg: #f4f2ee;
+  /* LLUH organization colors (styleguide.lluh.org): Regent Red #A30234 (PMS 1955 C), Platinum Gray #666666 (PMS 425 C).
+     Regent Red is the brand accent. Platinum Gray anchors the neutrals and secondary text.
+     Status and mission colors use other hues so a warning never looks like a brand element. */
+  --regent-red: #A30234;
+  --platinum: #666666;
+  --bg: #f3f3f3;
   --surface: #ffffff;
-  --surface-2: #faf8f5;
-  --ink: #1d2327;
-  --muted: #5b6469;
-  --line: #d9d4cc;
-  --accent: #1f5f73;
+  --surface-2: #f8f8f8;
+  --ink: #232323;
+  --muted: var(--platinum);
+  --line: #d4d4d4;
+  --accent: var(--regent-red);
   --accent-ink: #ffffff;
-  --accent-soft: #e2eef1;
+  --accent-soft: #f8e6ec;
   --strong: #2f6b45;
-  --moderate: #8a6512;
-  --limited: #9a4a2b;
-  --framework: #4b5a8a;
-  --design: #5b6469;
-  --mission: #7a3d6e;
-  --mission-soft: #f4e9f1;
+  --moderate: #7c650a;
+  --limited: #a64b12;
+  --framework: #3f5a78;
+  --design: var(--platinum);
+  --mission: #5e3a96;
+  --mission-soft: #efe9f8;
   --ok: #2f6b45;
   --ok-soft: #e4f0e7;
-  --partial: #8a6512;
-  --partial-soft: #f6ecd5;
-  --gap: #a33a2a;
-  --gap-soft: #f7e1dc;
-  --note: #4b5a8a;
-  --note-soft: #e7eaf4;
+  --partial: #7c650a;
+  --partial-soft: #f5efd2;
+  --gap: #a8400b;
+  --gap-soft: #fbe8dc;
+  --note: #3f5a78;
+  --note-soft: #e6ecf3;
   --radius: 10px;
   --shadow: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
   --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -32,21 +37,21 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #15191b; --surface: #1d2326; --surface-2: #232a2e; --ink: #e8e6e1; --muted: #a3aaae; --line: #353e43;
-    --accent: #7fc1d3; --accent-ink: #10181b; --accent-soft: #20353c;
-    --strong: #8cc9a0; --moderate: #e0b85c; --limited: #e79a7c; --framework: #a9b5e3; --design: #a3aaae;
-    --mission: #e0a3d2; --mission-soft: #3a2636;
-    --ok: #8cc9a0; --ok-soft: #1f3327; --partial: #e0b85c; --partial-soft: #3a301a;
-    --gap: #ef8f7d; --gap-soft: #3d221d; --note: #a9b5e3; --note-soft: #252b40; color-scheme: dark;
+    --bg: #151515; --surface: #1e1e1e; --surface-2: #252525; --ink: #ececec; --muted: #ababab; --line: #3a3a3a;
+    --accent: #f27d99; --accent-ink: #1c070d; --accent-soft: #3b1a23;
+    --strong: #8cc9a0; --moderate: #dcc25e; --limited: #f0a06e; --framework: #a7bdd8; --design: #ababab;
+    --mission: #c7a8f2; --mission-soft: #2c2340;
+    --ok: #8cc9a0; --ok-soft: #1f3327; --partial: #dcc25e; --partial-soft: #352f17;
+    --gap: #f59a63; --gap-soft: #3d2617; --note: #a7bdd8; --note-soft: #222c38; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #15191b; --surface: #1d2326; --surface-2: #232a2e; --ink: #e8e6e1; --muted: #a3aaae; --line: #353e43;
-  --accent: #7fc1d3; --accent-ink: #10181b; --accent-soft: #20353c;
-  --strong: #8cc9a0; --moderate: #e0b85c; --limited: #e79a7c; --framework: #a9b5e3; --design: #a3aaae;
-  --mission: #e0a3d2; --mission-soft: #3a2636;
-  --ok: #8cc9a0; --ok-soft: #1f3327; --partial: #e0b85c; --partial-soft: #3a301a;
-  --gap: #ef8f7d; --gap-soft: #3d221d; --note: #a9b5e3; --note-soft: #252b40; color-scheme: dark;
+  --bg: #151515; --surface: #1e1e1e; --surface-2: #252525; --ink: #ececec; --muted: #ababab; --line: #3a3a3a;
+  --accent: #f27d99; --accent-ink: #1c070d; --accent-soft: #3b1a23;
+  --strong: #8cc9a0; --moderate: #dcc25e; --limited: #f0a06e; --framework: #a7bdd8; --design: #ababab;
+  --mission: #c7a8f2; --mission-soft: #2c2340;
+  --ok: #8cc9a0; --ok-soft: #1f3327; --partial: #dcc25e; --partial-soft: #352f17;
+  --gap: #f59a63; --gap-soft: #3d2617; --note: #a7bdd8; --note-soft: #222c38; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -66,10 +71,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* Header */
 .top { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; align-items: center; justify-content: space-between;
-  padding: .75rem 1.25rem; background: var(--surface); border-bottom: 1px solid var(--line); }
+  padding: .75rem 1.25rem; background: var(--surface); border-bottom: 1px solid var(--line); border-top: 4px solid var(--accent); }
 .brand { display: flex; align-items: center; gap: .7rem; }
 .brand-mark { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--accent); position: relative; flex: none; }
-.brand-mark::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--mission); opacity: .85; }
+.brand-mark::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--muted); }
 .brand-name { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; }
 .brand-sub { color: var(--muted); font-size: .82rem; }
 .top-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
@@ -95,7 +100,7 @@ main:focus { outline: none; }
 .steps a { position: relative; display: grid; grid-template-columns: 26px 1fr; gap: .5rem; align-items: center; text-decoration: none; color: var(--ink);
   padding: .5rem .55rem; border-radius: 8px; }
 .steps a:hover { background: var(--surface); }
-.steps a[aria-current="step"] { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
+.steps a[aria-current="step"] { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent), var(--shadow); }
 .step-num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 700;
   border: 2px solid var(--line); background: var(--surface); }
 .step-num.done { background: var(--ok); border-color: var(--ok); color: var(--surface); }

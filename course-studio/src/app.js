@@ -476,7 +476,7 @@
       const methods = (design.session.segments || []).map(s => s.method).filter(Boolean);
       const uniq = [...new Set(methods)];
       const t = design.assessment.type;
-      const conn = (st, label) => `<div class="connector"><span class="arrow" aria-hidden="true">→</span>${statusMark(st, label + ": " + STATUS[st][1])}</div>`;
+      const conn = (st, label) => `<div class="connector"><span class="arrow" aria-hidden="true">→</span><span class="eyebrow">${label}</span>${statusMark(st)}</div>`;
       return `<div class="chain">
         <div class="link-box"><h3>Outcome</h3><p>${has(design.outcome.text) ? esc(design.outcome.text) : '<span class="muted">Not written yet</span>'}</p>
           <div class="chips">${bloomMark(al.outcome.bloom)} ${millerMark(al.outcome.miller)}</div></div>
