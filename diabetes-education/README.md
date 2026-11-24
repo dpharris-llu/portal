@@ -34,6 +34,12 @@ This folder has two versions:
   - mood and notes
 
   A **My week** summary shows badges and progress toward their personal activity goal. The weekly summary also appears in the plan, and any logged lows are added to the care team questions. Learners can print their week, or print a blank paper log if they don't use a phone.
+- **Camera tools** (in My daily log):
+  - **📷 Read a food label:** reads the Nutrition Facts panel on the device using Tesseract.js, an open-source text reader. The learner checks the numbers, picks how many servings they ate and which meal, and the food is added to that meal with its carbs. Each food also gets encouraging notes (good fiber, good protein, little added sugar, or gentle tips for high sodium or large carb portions).
+  - **🔎 Scan a barcode:** decodes the barcode on the device (the browser's built-in scanner on Android, or the ZXing library on iPhone and elsewhere), or the learner types the numbers. Only the barcode number is sent to Open Food Facts. The results are shown for the learner to check.
+  - **📷 Read my meter:** a seven-segment LCD reader runs first. It finds the screen and tries small rotations and slant corrections, and only accepts a reading the attempts agree on. Tesseract is the fallback. The learner always confirms the number before it is saved.
+  - Photos are never uploaded. The reader libraries download from cdn.jsdelivr.net the first time they are used.
+  - The tools never calculate insulin doses. Learners on insulin see a reminder to follow their care team's plan.
 - **Tone:** encouraging throughout. Missed doses, high numbers and hard days get supportive wording and practical next steps, never blame. Safety rules (nothing by mouth if someone has passed out, never share insulin pens) stay clearly stated.
 - **Print:** "Print or save my plan (PDF)" prints only the plan.
 
@@ -44,6 +50,8 @@ This folder has two versions:
 - [ ] Fasting safety box (based on the IDF-DAR 2021 Ramadan guidelines). Have Spiritual Care review it.
 - [ ] Meal ideas for each cuisine. Have a dietitian review them.
 - [ ] The logic that writes the care team questions, and the medicine tips.
+- [ ] Camera tools: try them on real phones (iPhone Safari and Android Chrome) with your patients' common meters and with real food packages. Testing so far used generated test images, and a stand-in for the Open Food Facts lookup because the network here blocks it.
+- [ ] Privacy/compliance sign-off on the barcode lookup (sends only the barcode number to Open Food Facts) and on loading the reader libraries from a public CDN. Alternatively, host the libraries on an LLUH server.
 - [ ] Missed-dose wording ("check the medicine label or ask your pharmacist").
 - [ ] Blood sugar labels in the log (before meals/waking 80–130, after meals <180, bedtime/other 70–180, below 70 = low).
 
