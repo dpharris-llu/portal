@@ -25,6 +25,16 @@ This folder has two versions:
   - My first step this week
   - Questions for my care team, written from their answers
   - A care team sign-off box
+- **Family and support (Part 1):** who lives with them, their support circle, main helpers, whether family knows about the diabetes, how they want help (reminders, cooking, being active, appointments, emergencies, encouragement, rides and costs, or "on my own for now"), whether they care for others, family history, and an emergency contact. This builds a **My support team** section that turns each kind of help into a concrete suggestion.
+- **My daily log** (📝 in the header and side menu): for each day, the learner logs
+  - food (what they ate, plus taps for half-plate veggies, whole grains, plant protein, water)
+  - activity minutes
+  - medicines (from their medicine answers, plus any they add, like blood pressure pills)
+  - blood sugar readings, each with a friendly label
+  - mood and notes
+
+  A **My week** summary shows badges and progress toward their personal activity goal. The weekly summary also appears in the plan, and any logged lows are added to the care team questions. Learners can print their week, or print a blank paper log if they don't use a phone.
+- **Tone:** encouraging throughout. Missed doses, high numbers and hard days get supportive wording and practical next steps, never blame. Safety rules (nothing by mouth if someone has passed out, never share insulin pens) stay clearly stated.
 - **Print:** "Print or save my plan (PDF)" prints only the plan.
 
 ### Extra review items for v2
@@ -34,6 +44,8 @@ This folder has two versions:
 - [ ] Fasting safety box (based on the IDF-DAR 2021 Ramadan guidelines). Have Spiritual Care review it.
 - [ ] Meal ideas for each cuisine. Have a dietitian review them.
 - [ ] The logic that writes the care team questions, and the medicine tips.
+- [ ] Missed-dose wording ("check the medicine label or ask your pharmacist").
+- [ ] Blood sugar labels in the log (before meals/waking 80–130, after meals <180, bedtime/other 70–180, below 70 = low).
 
 A 60-minute, self-paced, interactive learning page for adults with type 2 diabetes and their families.
 

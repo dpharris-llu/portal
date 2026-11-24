@@ -245,6 +245,23 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
 .review-box { border: 2px dashed var(--border); padding: .8rem 1rem; border-radius: 12px; margin-top: 1rem; }
 .review-box .line { border-bottom: 1px solid var(--muted); height: 1.8rem; margin-bottom: .4rem; }
 
+/* Log */
+.loglist { list-style: none; padding: 0; margin: .6rem 0 0; }
+.loglist li { display: flex; gap: .6rem; align-items: center; justify-content: space-between; padding: .4rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.loglist .x { min-height: 32px; padding: .1rem .6rem; font-size: .8rem; }
+.meal { border-bottom: 1px solid var(--border); padding: .6rem 0 .8rem; }
+.meal input[type=text] { max-width: 100%; }
+.tag-ok, .tag-low, .tag-high { font-size: .8rem; padding: .1rem .5rem; border-radius: 99px; }
+.tag-ok { background: var(--good-soft); }
+.tag-low { background: var(--warn-soft); }
+.tag-high { background: var(--info-soft); }
+.cheer { font-size: 1rem; color: var(--primary); font-weight: 700; margin: .8rem 0 0; }
+.badges { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+.badge { background: var(--primary-soft); border: 1px solid var(--primary); border-radius: 99px; padding: .25rem .75rem; font-size: .85rem; }
+.trackbtn { margin-top: .4rem; }
+#printPlan table { font-size: .75rem; }
+#printPlan td, #printPlan th { border: 1px solid #999; height: 2.2rem; }
+
 /* Print plan */
 #printPlan { display: none; }
 @media print {
@@ -284,6 +301,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     </div>
     <div class="top-tools">
       <button class="btn-small btn-primary" id="viewPlanBtn">📋 My plan</button>
+      <button class="btn-small" id="viewLogBtn">📝 My log</button>
       <button class="btn-small" id="sizeBtn" aria-pressed="false" title="Make text larger">A+ Larger text</button>
       <label class="toggle"><input type="checkbox" id="faithToggle" checked> Show reflection moments</label>
     </div>
@@ -366,6 +384,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     Good health is more than numbers. It includes body, mind, relationships, and spirit. Many people find strength in faith, prayer, or quiet reflection. Take a breath. Think of one person or one hope that makes this worth doing.
   </aside>
   <div class="card mine" data-form="welcome"></div>
+  <div class="card mine" data-form="family"></div>
 </section>
 
 <!-- ============ 1. UNDERSTANDING ============ -->
@@ -529,6 +548,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
       Learn how to use the meter or CGM app. Many CGMs let a family member "follow" numbers and get an alert for lows — if the person with diabetes agrees. Ask about numbers with care, not blame: "How are your numbers? Anything I can help with?"
     </div>
   </div>
+  <div class="callout key"><strong>📝 Track it</strong>Add your blood sugar numbers to your daily log. Over a week, patterns become easy to see.<br><button type="button" class="btn-small trackbtn" data-open-log>Open my daily log</button></div>
   <div class="card mine" data-form="monitor"></div>
   <div class="card"><div class="eyebrow">Check your learning</div><div data-quiz="monitor"></div></div>
 </section>
@@ -584,7 +604,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     <h3>Drinks</h3>
     <ul>
       <li><strong>Best:</strong> water, sparkling water, unsweetened tea, or coffee with little or no sugar.</li>
-      <li><strong>Limit:</strong> regular soda, sweet tea, energy drinks, and juice. One 20-ounce soda has about 16 teaspoons of sugar.</li>
+      <li><strong>Save for now and then:</strong> regular soda, sweet tea, energy drinks, and juice. One 20-ounce soda has about 16 teaspoons of sugar, so swapping even one a day makes a real difference.</li>
       <li><strong>Alcohol:</strong> if you drink, talk with your care team first. Alcohol can cause low blood sugar, especially with insulin or sulfonylurea pills.</li>
     </ul>
 
@@ -629,6 +649,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
       Before you eat, pause for a moment — to give thanks, to pray, or just to breathe. Eating slowly and with attention helps you notice when you are full and enjoy your food more.
     </aside>
   </div>
+  <div class="callout key"><strong>📝 Track it</strong>Write down your meals in your daily log. Notice which meals help your blood sugar and energy — and celebrate the veggie plates!<br><button type="button" class="btn-small trackbtn" data-open-log>Open my daily log</button></div>
   <div class="card mine" data-form="eating"></div>
   <div class="card"><div class="eyebrow">Check your learning</div><div data-quiz="eating"></div></div>
 </section>
@@ -686,6 +707,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
       Bodies need both movement and rest. Many people find that a weekly day of rest — such as a Sabbath — and time in nature lower stress and renew their spirit. Aim for 7–9 hours of sleep each night.
     </aside>
   </div>
+  <div class="callout key"><strong>📝 Track it</strong>Log your activity minutes. Watching them add up toward your weekly goal feels great.<br><button type="button" class="btn-small trackbtn" data-open-log>Open my daily log</button></div>
   <div class="card mine" data-form="active"></div>
   <div class="card"><div class="eyebrow">Check your learning</div><div data-quiz="active"></div></div>
 </section>
@@ -708,7 +730,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
         <tr><td>GLP-1 medicines</td><td>semaglutide, dulaglutide, liraglutide, tirzepatide*</td><td>Help the body release insulin after meals, slow digestion, and lower appetite.</td><td>Most are weekly shots; one is a pill. May cause nausea at first. Some protect the heart and kidneys.</td></tr>
         <tr><td>SGLT2 inhibitors</td><td>empagliflozin, dapagliflozin, canagliflozin</td><td>Help the kidneys remove extra sugar in the urine.</td><td>Protect the heart and kidneys. Drink water. Keep the genital area clean. May need to pause when sick.</td></tr>
         <tr><td>DPP-4 inhibitors</td><td>sitagliptin, linagliptin</td><td>Help your body make more insulin after meals.</td><td>Usually gentle, with few side effects.</td></tr>
-        <tr><td>Sulfonylureas</td><td>glipizide, glimepiride</td><td>Make the pancreas release more insulin.</td><td><strong>Can cause low blood sugar.</strong> Don't skip meals.</td></tr>
+        <tr><td>Sulfonylureas</td><td>glipizide, glimepiride</td><td>Make the pancreas release more insulin.</td><td><strong>Can cause low blood sugar.</strong> Regular meals help keep you steady.</td></tr>
         <tr><td>Insulin</td><td>long-acting and mealtime insulins</td><td>Replaces the insulin your body cannot make.</td><td><strong>Can cause low blood sugar.</strong> Very effective.</td></tr>
       </tbody>
     </table></div>
@@ -744,6 +766,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
       Help set up a pill box or reminders. Go to an appointment and bring questions. Learn which medicines can cause lows, so you know what to watch for.
     </div>
   </div>
+  <div class="callout key"><strong>📝 Track it</strong>Tap each medicine in your daily log when you take it. It's an easy way to remember — and to show your care team.<br><button type="button" class="btn-small trackbtn" data-open-log>Open my daily log</button></div>
   <div class="card mine" data-form="meds"></div>
   <div class="card"><div class="eyebrow">Check your learning</div><div data-quiz="meds"></div></div>
 </section>
@@ -771,7 +794,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
       <li><strong>Still below 70?</strong> Repeat steps 1 and 2.</li>
       <li><strong>Back above 70?</strong> Eat a meal or snack if your next meal is more than an hour away.</li>
     </ol>
-    <p style="font-size:.9rem">Avoid chocolate or foods with fat to treat a low — fat slows the sugar down.</p>
+    <p style="font-size:.9rem">Choose fast sugar, like tablets or juice, to treat a low. Chocolate and other foods with fat work more slowly.</p>
 
     <div class="activity">
       <div class="eyebrow">Try it</div>
@@ -979,6 +1002,13 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     <p class="feedback" id="planOut" aria-live="polite"></p>
   </div>
 
+  <div class="card">
+    <div class="eyebrow">Keep going</div>
+    <h3 style="margin-top:.2rem">Your daily log</h3>
+    <p>Use <strong>My daily log</strong> to track your food, activity, medicines, and blood sugar. It cheers on your progress each week, and your weekly summary appears in your plan.</p>
+    <button type="button" class="btn-primary" data-open-log>📝 Open my daily log</button>
+  </div>
+
   <div class="card plan-card" id="myPlanCard">
     <div class="eyebrow">Your personal plan</div>
     <h2 id="myPlanTitle">My Diabetes Plan</h2>
@@ -1004,6 +1034,87 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     <div class="eyebrow">Well done</div>
     <h2>You finished Living Well with Type 2 Diabetes</h2>
     <p>You took an important step for your health — and for the people who love you.</p>
+  </div>
+</section>
+
+<!-- ============ DAILY LOG ============ -->
+<section class="module" data-id="log" data-title="My daily log" data-min="0" data-icon="📝">
+  <div class="card">
+    <div class="eyebrow">Your tracker</div>
+    <h2>My daily log</h2>
+    <p>Write down what you eat, how you move, your medicines, and your blood sugar. <strong>Logging is not about being perfect.</strong> It helps you notice what makes you feel your best. Every entry counts, even a short one.</p>
+    <p class="confirm">Your log is saved only on this device. Print a copy to bring to your visits.</p>
+    <div class="inline" style="align-items:center">
+      <button type="button" id="logPrev" aria-label="Previous day">‹ Day before</button>
+      <input type="date" id="logDate" aria-label="Log date" style="max-width:190px">
+      <button type="button" id="logNext" aria-label="Next day">Next day ›</button>
+      <button type="button" class="btn-small" id="logToday">Today</button>
+    </div>
+    <p class="cheer" id="logCheer" aria-live="polite"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">🍽️ Food</h3>
+    <p class="hint">Write what you ate, then tap anything that was part of your meal.</p>
+    <div id="logFood"></div>
+    <p class="feedback" id="foodMsg" aria-live="polite"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">🚶 Activity</h3>
+    <div class="inline">
+      <div><label class="field" for="actLogType">Activity</label>
+        <select id="actLogType" style="max-width:220px"><option>Walking</option><option>Dancing</option><option>Swimming or water exercise</option><option>Chair exercises</option><option>Gardening or yard work</option><option>Biking</option><option>Strength exercises</option><option>Housework</option><option>Playing with kids</option><option>Other</option></select></div>
+      <div><label class="field" for="actLogMin">Minutes</label><input type="number" id="actLogMin" min="1" max="600" value="10" style="max-width:110px"></div>
+      <button type="button" class="btn-primary" id="actLogAdd">Add</button>
+    </div>
+    <ul class="loglist" id="actLogList"></ul>
+    <p class="feedback" id="actLogMsg" aria-live="polite"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">💊 Medicines</h3>
+    <p class="hint">Tap each medicine when you take it. You can add other medicines too, like blood pressure or cholesterol pills.</p>
+    <div class="checklist" id="medLog"></div>
+    <div class="inline" style="margin-top:.6rem">
+      <div><label class="field" for="medAddName">Add a medicine to track</label><input type="text" id="medAddName" placeholder="e.g. lisinopril (blood pressure)" style="max-width:300px"></div>
+      <button type="button" id="medAddBtn">Add</button>
+    </div>
+    <p class="feedback" id="medLogMsg" aria-live="polite"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">🩸 Blood sugar</h3>
+    <div class="inline">
+      <div><label class="field" for="bgLogWhen">When</label>
+        <select id="bgLogWhen" style="max-width:220px"><option value="wake">When I woke up</option><option value="before">Before a meal</option><option value="after">1–2 hours after a meal</option><option value="bed">At bedtime</option><option value="other">Other time</option></select></div>
+      <div><label class="field" for="bgLogVal">mg/dL</label><input type="number" id="bgLogVal" min="20" max="600" inputmode="numeric" style="max-width:110px"></div>
+      <button type="button" class="btn-primary" id="bgLogAdd">Add</button>
+    </div>
+    <ul class="loglist" id="bgLogList"></ul>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">💛 How I feel today</h3>
+    <div class="chips" id="moodChips" role="group" aria-label="Mood">
+      <button type="button" class="chip" data-mood="5" aria-pressed="false">😄 Great</button>
+      <button type="button" class="chip" data-mood="4" aria-pressed="false">🙂 Good</button>
+      <button type="button" class="chip" data-mood="3" aria-pressed="false">😐 Okay</button>
+      <button type="button" class="chip" data-mood="2" aria-pressed="false">😕 Not great</button>
+      <button type="button" class="chip" data-mood="1" aria-pressed="false">😢 Hard day</button>
+    </div>
+    <label class="field" for="logNote">Notes (stress, sleep, feeling sick, a win to celebrate…)</label>
+    <textarea id="logNote" placeholder="Optional"></textarea>
+    <p class="feedback" id="moodMsg" aria-live="polite"></p>
+  </div>
+
+  <div class="card plan-card">
+    <h3 style="margin-top:0">🌟 My week</h3>
+    <div id="logWeek"></div>
+    <div class="inline no-print" style="margin-top:1rem">
+      <button type="button" class="btn-primary" id="printWeek">Print my week</button>
+      <button type="button" id="printBlank">Print a blank paper log</button>
+    </div>
   </div>
 </section>
 
@@ -1071,7 +1182,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     var b = document.createElement("button");
     b.type = "button";
     var isLesson = s.dataset.min !== "0";
-    b.innerHTML = '<span class="num">' + (isLesson ? (i + 1) : "ⓘ") + '</span><span>' + esc(s.dataset.title) + '</span>' + (isLesson ? '<span class="mins">' + s.dataset.min + ' min</span>' : "");
+    b.innerHTML = '<span class="num">' + (isLesson ? (i + 1) : (s.dataset.icon || "ⓘ")) + '</span><span>' + esc(s.dataset.title) + '</span>' + (isLesson ? '<span class="mins">' + s.dataset.min + ' min</span>' : "");
     b.addEventListener("click", function () { go(i); $("#moduleNav").classList.remove("open"); $("#navToggle").setAttribute("aria-expanded", "false"); });
     li.appendChild(b); navList.appendChild(li);
   });
@@ -1090,7 +1201,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     $("#prevBtn").disabled = i === 0;
     var last = sections[i].dataset.id === "sources";
     var isWrap = sections[i].dataset.id === "wrap";
-    $("#nextBtn").textContent = isWrap ? "Finish ✓" : last ? "Back to start" : "Mark done & next →";
+    $("#nextBtn").textContent = isWrap ? "Finish ✓" : last ? "Back to start" : sections[i].dataset.min === "0" ? "Next →" : "Mark done & next →";
     window.scrollTo(0, 0);
     if (focus !== false) $("#main").focus({ preventScroll: true });
     updateProgress();
@@ -1205,7 +1316,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (!right && el.dataset.mode) btns[item.a].classList.add("correct");
     var fb = $(".feedback", box);
     fb.className = "feedback show " + (right ? "good" : "bad");
-    fb.innerHTML = (right ? "<strong>Correct.</strong> " : (el.dataset.mode ? "<strong>Not quite.</strong> " : "<strong>Not quite — try again.</strong> ")) + esc(item.why);
+    fb.innerHTML = (right ? "<strong>Correct.</strong> " : (el.dataset.mode ? "<strong>Good try!</strong> Here's the answer: " : "<strong>Good try — give it another go.</strong> ")) + esc(item.why);
   }
   $$("[data-quiz]").forEach(renderQuiz);
 
@@ -1299,7 +1410,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     $$("button", row).forEach(function (x) { x.classList.remove("correct", "wrong"); x.style.background = ""; });
     b.style.background = ok ? "var(--good-soft)" : "var(--bad-soft)";
     var fb = $(".feedback", row); fb.className = "feedback show " + (ok ? "good" : "bad");
-    fb.textContent = (ok ? "Correct! " : "Not quite. ") + m.why;
+    fb.textContent = (ok ? "Correct! " : "Good try! ") + m.why;
   });
 
   /* ---------- Glucose checker ---------- */
@@ -1314,7 +1425,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     else if (when === "before" && v < 80) { cls = "warn"; msg = "<strong>A little below the common before-meal goal (80–130).</strong> Not a low, but watch for symptoms. Tell your team if this happens often."; }
     else if (when === "before" && v <= 130) { cls = "good"; msg = "<strong>On target.</strong> This is in the common before-meal goal of 80–130. Nice work."; }
     else if (when === "after" && v < 180) { cls = "good"; msg = "<strong>On target.</strong> This is in the common after-meal goal of less than 180."; }
-    else if (v < 250) { cls = "warn"; msg = "<strong>Above goal.</strong> Drink water, take medicines as prescribed, and take a short walk if you feel well. Look for a pattern — what did you eat? Were you stressed or sick?"; }
+    else if (v < 250) { cls = "warn"; msg = "<strong>A bit above goal — that happens to everyone.</strong> Drink water, take medicines as prescribed, and take a short walk if you feel well. Get curious, not worried — what did you eat? Were you stressed or sick?"; }
     else if (v < 300) { cls = "warn"; msg = "<strong>High.</strong> Drink water and check again in a few hours. Call your care team if it stays over 250 for more than a day, or if you are sick."; }
     else { cls = "bad"; msg = "<strong>Very high.</strong> Check again. If it is over 300 two times in a row, call your care team. Get care right away if you are vomiting, very confused, or breathing fast."; }
     out.className = "feedback show " + cls; out.innerHTML = msg;
@@ -1392,7 +1503,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (t >= 150) msg += "You've reached the 150-minute goal. 🎉 Remember to add strength activities 2–3 times a week.";
     else if (t >= 75) msg += "Great progress — you're over halfway to 150. Add a few minutes each week.";
     else msg += "A great place to start. Every minute counts. Try adding 5 minutes a week.";
-    if (d < 3) msg += " Tip: spread activity out so you don't go more than 2 days in a row without moving.";
+    if (d < 3) msg += " Tip: spreading activity across the week helps your body use insulin better every day.";
     $("#actOut").innerHTML = msg;
   }
   ["#actType", "#actMin", "#actDays"].forEach(function (id) { $(id).addEventListener("input", actCalc); });
@@ -1466,7 +1577,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     $$("button", box).forEach(function (x) { x.classList.remove("correct", "wrong"); });
     b.classList.add(o[1] ? "correct" : "wrong");
     var fb = $(".feedback", box); fb.className = "feedback show " + (o[1] ? "good" : "bad");
-    fb.innerHTML = (o[1] ? "<strong>Good choice.</strong> " : "<strong>Not the best choice.</strong> ") + esc(o[2]);
+    fb.innerHTML = (o[1] ? "<strong>Good choice.</strong> " : "<strong>Here's a safer choice.</strong> ") + esc(o[2]);
   });
 
   /* ---------- Care checklist ---------- */
@@ -1496,7 +1607,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     $$("button", row).forEach(function (y) { y.style.background = ""; });
     b.style.background = ok ? "var(--good-soft)" : "var(--bad-soft)";
     var fb = $(".feedback", row); fb.className = "feedback show " + (ok ? "good" : "bad");
-    fb.textContent = (ok ? "Yes. " : "Think again. ") + x.why;
+    fb.textContent = (ok ? "Yes! " : "Let's look at that one again. ") + x.why;
   });
 
   /* ---------- Teach-back ---------- */
@@ -1536,6 +1647,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
   function arr(k) { return Array.isArray(P[k]) ? P[k] : []; }
   function has(k, v) { return arr(k).indexOf(v) > -1; }
   function anyOf(k, vals) { return vals.some(function (v) { return has(k, v); }); }
+  function isAlone() { return has("household", "alone"); }
   function hypo() { return anyOf("meds", ["su", "basal", "bolus"]); }
   function onInsulin() { return anyOf("meds", ["basal", "bolus"]); }
   var YN = [["yes", "Yes"], ["no", "No"]];
@@ -1545,8 +1657,18 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     welcome: { title: "Make it yours: About you", intro: "These answers help shape your plan. Skip any question you like.", fields: [
       { k: "name", type: "text", label: "What name should your plan use?", ph: "Optional" },
       { k: "age", type: "one", label: "Your age", opts: [["u40", "Under 40"], ["40", "40–64"], ["65", "65–74"], ["75", "75 or older"]] },
-      { k: "helpers", type: "text", label: "Who helps you with your health?", ph: "e.g. my wife Ana, my son, my neighbor" },
       { k: "faith", type: "one", label: "Would you like faith-based encouragement in your plan?", opts: [["yes", "Yes, please"], ["no", "No, thank you"]] }
+    ]},
+    family: { title: "Make it yours: Your family and support", intro: "Diabetes is easier with people in your corner. These answers help your plan bring them in, in the way you want.", fields: [
+      { k: "household", type: "many", label: "Who lives with you?", opts: [["partner", "Spouse or partner"], ["kids", "Children under 18"], ["adultkids", "Adult children"], ["parents", "Parents or older relatives"], ["relatives", "Other relatives"], ["friends", "Friends or roommates"], ["alone", "I live alone"]], only: "alone" },
+      { k: "circle", type: "many", label: "Who is in your support circle?", hint: "Pick anyone you can count on.", opts: [["partner", "Spouse or partner"], ["children", "Children"], ["parents", "Parents"], ["siblings", "Brothers or sisters"], ["relatives", "Other relatives"], ["friends", "Friends"], ["neighbors", "Neighbors"], ["church", "Faith community"], ["work", "Coworkers"], ["caregiver", "A paid caregiver"], ["group", "A support group (in person or online)"], ["few", "I don't have much support right now"]], only: "few" },
+      { k: "helpers", type: "text", label: "Who are the main people who help you?", ph: "e.g. my wife Ana, my son David" },
+      { k: "familyKnows", type: "one", label: "Do the people close to you know about your diabetes?", opts: [["yes", "Yes"], ["some", "Some of them"], ["no", "Not yet"]] },
+      { k: "helpWays", type: "many", label: "How would you like family or friends to help?", opts: [["remind", "Remind me about medicines"], ["cook", "Cook or eat healthy with me"], ["move", "Be active with me"], ["visits", "Come to appointments"], ["emergency", "Learn what to do in an emergency"], ["listen", "Listen and encourage me"], ["practical", "Help with rides or costs"], ["self", "I'd rather manage on my own for now"]] },
+      { k: "caregiving", type: "one", label: "Do you take care of others (children, parents, a partner)?", opts: YN },
+      { k: "famHistory", type: "one", label: "Does anyone else in your family have diabetes or prediabetes?", opts: [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]] },
+      { k: "emergName", type: "text", label: "Emergency contact name", ph: "Optional" },
+      { k: "emergPhone", type: "text", label: "Emergency contact phone", ph: "Optional" }
     ]},
     understand: { title: "Make it yours: Your health", intro: "", fields: [
       { k: "years", type: "one", label: "How long have you had diabetes?", opts: [["new", "Less than 1 year"], ["1to5", "1–5 years"], ["5plus", "More than 5 years"], ["unsure", "Not sure"]] },
@@ -1582,7 +1704,6 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     problems: { title: "Make it yours: Safety", intro: "", fields: [
       { k: "fastSugar", type: "one", label: "Do you keep fast sugar (glucose tablets or juice) close by?", opts: YN, show: hypo },
       { k: "glucagon", type: "one", label: "Do you have glucagon (nose spray or ready-to-use shot)?", opts: [["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]], show: hypo },
-      { k: "alone", type: "one", label: "Do you live alone?", opts: YN },
       { k: "drive", type: "one", label: "Do you drive?", opts: YN },
       { k: "teamPhone", type: "text", label: "Care team phone number", ph: "For your printed plan" },
       { k: "pharmPhone", type: "text", label: "Pharmacy phone number", ph: "For your printed plan" }
@@ -1682,8 +1803,8 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     met: ["Metformin", "Helps your liver release less sugar.", "Take with food. Ask about checking your vitamin B12 over time."],
     glp: ["GLP-1 or GIP/GLP-1 medicine", "Helps your body release insulin after meals and lowers appetite.", "Eat smaller meals and stop when full to ease nausea. Take your weekly shot on the same day each week."],
     sglt: ["SGLT2 inhibitor", "Removes extra sugar through the urine and protects the heart and kidneys.", "Drink water. Keep the genital area clean. Tell your team about itching, burning, or pain."],
-    dpp: ["DPP-4 inhibitor", "Helps your body make more insulin after meals.", "Usually gentle. Tell your team about bad stomach pain or joint pain."],
-    su: ["Sulfonylurea", "Makes the pancreas release more insulin.", "Can cause lows. Take with meals as directed. Don't skip meals."],
+    dpp: ["DPP-4 inhibitor", "Helps your body make more insulin after meals.", "Usually gentle. Tell your team about strong stomach pain or joint pain."],
+    su: ["Sulfonylurea", "Makes the pancreas release more insulin.", "Can cause lows. Take with meals as directed. Eating regular meals keeps you steady."],
     tzd: ["Pioglitazone", "Helps your body use insulin better.", "Tell your team about swelling in your legs, fast weight gain, or shortness of breath."],
     basal: ["Long-acting insulin", "Keeps blood sugar steady all day and night.", "Take at the same time every day. Do not stop it on sick days unless your team says so."],
     bolus: ["Mealtime insulin", "Covers the rise in blood sugar from meals.", "Take with meals as directed. If you skip a meal, follow your team's plan for that dose."]
@@ -1722,6 +1843,9 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (P.pattern === "vegan" || has("meds", "met")) q.push("Should my vitamin B12 level be checked?");
     if ((has("cond", "heart") || has("cond", "kidney")) && !anyOf("meds", ["glp", "sglt"])) q.push("Would a diabetes medicine that also protects the heart or kidneys be right for me?");
     if (older && hypo()) q.push("Are my goals right for my age? How can I avoid lows and falls?");
+    if (has("circle", "few") || P.overwhelm === "often") q.push("Are there support groups or classes where I can meet others with diabetes?");
+    if (has("helpWays", "visits")) q.push("Can my family member join my visits and learn with me?");
+    if (logLows() > 0) q.push("I logged " + logLows() + " low blood sugar reading" + (logLows() > 1 ? "s" : "") + " this past week. Can we look at why?");
     if (has("support", "exercise")) q.push("Is there an exercise program you recommend?");
     return q;
   }
@@ -1766,6 +1890,30 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (arr("cond").length && !has("cond", "none")) about.push("<strong>Other health conditions:</strong> " + labels("cond").map(esc).join(", "));
     h += sec("🌱", "About me", about.length ? li(about) : '<p class="plan-empty">Not answered yet.</p>');
 
+    /* Support team */
+    var st = [], who = P.helpers ? esc(P.helpers) : "your family or friends";
+    var circle = labels("circle").filter(function (x) { return x !== "I don't have much support right now"; });
+    if (P.helpers) st.push("<strong>My main helpers:</strong> " + esc(P.helpers));
+    if (circle.length) st.push("<strong>My support circle:</strong> " + circle.map(esc).join(", ") + ". That's a team worth celebrating!");
+    if (has("circle", "few")) st.push("<strong>Building support takes time — and it's worth it.</strong> A diabetes education class or support group is a great place to meet people who understand. Your care team, faith community, or a neighbor can be part of your circle too.");
+    if (arr("household").length && !isAlone()) st.push("You live with others. Healthy changes are easier when the whole household joins in — and they help everyone's health.");
+    var HW = {
+      remind: "<strong>Reminders:</strong> ask " + who + " to send a friendly text, or check your pill box with you each evening.",
+      cook: "<strong>Cooking together:</strong> plan the week's meals with " + who + " using the meal ideas in this plan. Make one healthy meal for everyone.",
+      move: "<strong>Moving together:</strong> set a regular time to walk, dance, or garden with " + who + ". It's more fun with company.",
+      visits: "<strong>Appointments:</strong> invite " + who + " to your next visit. Bring the \"Questions for my care team\" list below.",
+      emergency: "<strong>Emergencies:</strong> show " + who + " the Rule of 15 and the signs of a low" + (hypo() ? ", and where the glucagon is kept" : "") + ".",
+      listen: "<strong>Encouragement:</strong> tell " + who + " what kind of support feels good to you — like praise for effort, not questions about every bite.",
+      practical: "<strong>Rides and costs:</strong> ask " + who + " for rides to visits or help looking into cost programs."
+    };
+    arr("helpWays").forEach(function (k) { if (HW[k]) st.push(HW[k]); });
+    if (has("helpWays", "self")) st.push("You'd like to manage on your own for now — that's okay. When you're ready, sharing this plan can make things easier. It's still wise to tell one person what to do if you have a low.");
+    if (P.familyKnows === "no" || P.familyKnows === "some") st.push("<strong>Sharing the news:</strong> telling people can feel hard. You could start with one person you trust. You might say: \"I have diabetes. I'm learning to manage it, and here's how you can help.\"");
+    if (P.caregiving === "yes") st.push("<strong>You care for others.</strong> Taking care of yourself is part of taking care of them. Pack your own meals and medicines, and ask for help or a break when you need it.");
+    if (P.famHistory === "yes") st.push("<strong>Family health:</strong> diabetes runs in families. Encourage your relatives to ask their doctor about a diabetes check — your story could help them.");
+    if (P.emergName || P.emergPhone) st.push("<strong>Emergency contact:</strong> " + esc(P.emergName || "") + " " + esc(P.emergPhone || ""));
+    h += sec("🤝", "My support team", st.length ? li(st) : '<p class="plan-empty">Answer "Your family and support" in Part 1 to fill this in.</p>');
+
     /* Numbers */
     var n = '<div class="table-scroll"><table><tbody>' +
       "<tr><th>Before meals</th><td>" + (P.tBefore ? esc(P.tBefore) : "80–130 mg/dL*") + "</td></tr>" +
@@ -1780,7 +1928,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (!isNaN(a1c)) {
       if (a1c < 7) nb.push("Your last A1C was <strong>" + a1c + "%</strong>. That's at or below a common goal — keep it up!");
       else if (a1c < 9) nb.push("Your last A1C was <strong>" + a1c + "%</strong>. Every step down lowers your risk. This plan can help.");
-      else nb.push("Your last A1C was <strong>" + a1c + "%</strong>. Please talk with your care team soon about your plan. Small steps make a big difference.");
+      else nb.push("Your last A1C was <strong>" + a1c + "%</strong>. Your care team is ready to help — talk with them soon about your plan. Small steps make a big difference, and you're already taking them by being here.");
     }
     if (P.device === "none") nb.push("Ask your care team whether you should check your blood sugar at home, and how often.");
     if (P.device === "cgm" || P.device === "both") nb.push("Look at your CGM each day. Notice what happens after meals and activity." + (P.phone === "yes" ? " You can share your data with a family member or your care team through the app, if you want." : ""));
@@ -1846,7 +1994,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (has("trouble", "side")) t.push("Side effects: write down what happens and when, and call your care team. There are often other choices.");
     if (has("trouble", "needle")) t.push("Needles: pen needles are very small and thin. Ask your educator to practice with you.");
     if (has("trouble", "many")) t.push("Too many pills: ask your care team or pharmacist for a medicine review. Some medicines come combined in one pill.");
-    if (arr("meds").length && !has("meds", "nomed")) t.push("Never stop or change a medicine on your own. Talk with your care team first.");
+    if (arr("meds").length && !has("meds", "nomed")) t.push("Thinking about stopping or changing a medicine? Talk with your care team first — they want to help you find what works.");
     if (P.sched === "shift") t.push("Shift work: ask your team how to time your medicines on work days and days off.");
     h += sec("💊", "My medicines", li(m) + (t.length ? "<strong>Making it easier:</strong>" + li(t) : ""));
 
@@ -1861,7 +2009,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     } else {
       s.push("<strong>Lows:</strong> " + (arr("meds").length && !has("meds", "unsure") ? "Your medicines rarely cause lows on their own. " : "") + "Still learn the signs (shaky, sweaty, confused) and the Rule of 15.");
     }
-    if (P.alone === "yes") s.push("<strong>Living alone:</strong> tell a neighbor or friend about your diabetes, wear a medical ID, and set up a daily check-in." + ((P.device === "cgm" || P.device === "both") ? " Turn on CGM low alerts and consider sharing with a follower." : ""));
+    if (isAlone()) s.push("<strong>Living alone:</strong> tell a neighbor or friend about your diabetes, wear a medical ID, and set up a daily check-in." + ((P.device === "cgm" || P.device === "both") ? " Turn on CGM low alerts and consider sharing with a follower." : ""));
     var sick = ["Check blood sugar every 4 hours and write it down.", "Drink 1 cup of water or sugar-free fluid every hour you are awake.", "Can't eat? Have about 15 grams of carbs every hour (½ cup juice, ½ cup regular gelatin, or 6 crackers)."];
     if (onInsulin()) sick.push("Keep taking your insulin. You may need more — follow your team's plan.");
     if (has("meds", "sglt")) sick.push("SGLT2 inhibitor: often paused when you are sick or can't eat or drink. Check ketones if you feel sick, even if your blood sugar is normal.");
@@ -1872,6 +2020,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     s.push("<strong>My sick-day plan:</strong>" + li(sick));
     s.push("<strong>Call my care team</strong> if blood sugar is over 300 two checks in a row or over 250 for more than a day, vomiting or diarrhea lasts more than 6 hours, I can't keep fluids down, fever over 101°F for more than a day, or moderate or large ketones.");
     s.push("<strong>Call 911</strong> for passing out, a seizure, a low that won't come up after 2–3 treatments, confusion, chest pain, trouble breathing, or signs of stroke.");
+    s.push("<strong>Emergency contact:</strong> " + (P.emergName || P.emergPhone ? esc((P.emergName || "") + " " + (P.emergPhone || "")) : "______________"));
     s.push("<strong>Care team:</strong> " + (P.teamPhone ? esc(P.teamPhone) : "______________") + " &nbsp; <strong>Pharmacy:</strong> " + (P.pharmPhone ? esc(P.pharmPhone) : "______________"));
     h += sec("🛟", "My safety plan", li(s));
 
@@ -1879,7 +2028,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     var c = [], due = CARE_NAMES.filter(function (n, i) { return !state.care[i]; });
     if (due.length) c.push("<strong>Ask about at my next visit:</strong> " + due.join(", ") + ".");
     else c.push("You're up to date on your yearly checkups. Great job!");
-    c.push("<strong>Every day:</strong> check your feet — tops, bottoms, and between the toes." + (P.alone === "no" && P.helpers ? " Ask " + esc(P.helpers) + " to help if it's hard to see." : ""));
+    c.push("<strong>Every day:</strong> check your feet — tops, bottoms, and between the toes." + ((arr("household").length && !isAlone()) && P.helpers ? " Ask " + esc(P.helpers) + " to help if it's hard to see." : ""));
     if (has("cond", "bp")) c.push("Check blood pressure at home if you can. A common goal is under 130/80.");
     if (has("cond", "kidney")) c.push("Get kidney tests at least once a year, or more often if your team advises. Ask before taking pain pills like ibuprofen or naproxen.");
     if (has("cond", "eye")) c.push("See your eye doctor as often as advised — usually at least once a year.");
@@ -1895,7 +2044,6 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (phq >= 3) cp.push("<strong>Your answers suggest you may be feeling down.</strong> Please share this with your care team. Depression is common with diabetes, and it can be treated.");
     if (P.overwhelm === "often" || P.overwhelm === "some") cp.push("Feeling overwhelmed by diabetes is very common. A diabetes education class, support group, or counselor can help lighten the load.");
     if (P.overwhelm === "rarely") cp.push("You're coping well. Keep doing what helps you.");
-    if (P.helpers) cp.push("<strong>My support team:</strong> " + esc(P.helpers) + ". Share this plan with them.");
     var sup = labels("support").filter(function (x) { return x !== "None right now"; });
     if (sup.length) cp.push("<strong>Support I want to ask about:</strong> " + sup.map(esc).join(", ") + ".");
     if (has("cond", "mood")) cp.push("Keep up care for depression or anxiety. Tell your team if it gets harder to manage diabetes.");
@@ -1908,6 +2056,11 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     if (has("practices", "fast")) fp.push('<div class="callout warn" style="margin:.4rem 0"><strong>Fasting safely</strong>Talk with your care team 1–2 months before a fast. Fasting can cause dangerous lows' + (hypo() ? ", <strong>especially with the insulin or sulfonylurea you take</strong>" : "") + ". Check your blood sugar more often. Break the fast if your blood sugar is below 70 or above 300, or if you feel unwell. Many faith traditions allow people with health conditions to change or skip a fast — your faith leader can help.</div>");
     h += sec("💛", "Coping and support", li(cp));
     if (fp.length) h += sec("🕊️", "Faith and rest", li(fp));
+
+    /* Tracking */
+    var ws = weekStats(dk(new Date()));
+    h += sec("📝", "My tracking", ws.logged ? weekHTML(ws)
+      : "<p>Keep track of your food, activity, medicines, and blood sugar in <strong>My daily log</strong>" + (P.phone === "no" ? ", or print a blank paper log" : "") + ". It helps you and your care team see what's working. Start with just one thing a day.</p>");
 
     /* First step */
     var pl = state.plan;
@@ -1925,6 +2078,229 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
     $("#myPlan").innerHTML = h;
     renderGoalChips();
   }
+
+  /* ================= DAILY LOG ================= */
+  if (!state.log) state.log = {};
+  if (!state.extraMeds) state.extraMeds = [];
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function dk(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseDk(k) { var a = k.split("-"); return new Date(+a[0], +a[1] - 1, +a[2]); }
+  function shiftK(k, n) { var d = parseDk(k); d.setDate(d.getDate() + n); return dk(d); }
+  function niceDate(k) { return parseDk(k).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); }
+  var logK = dk(new Date());
+  var MEAL_LIST = [["b", "Breakfast"], ["l", "Lunch"], ["d", "Dinner"], ["s", "Snacks"]];
+  var MEAL_TAGS = [["veg", "🥦 Half plate veggies"], ["grain", "🌾 Whole grains"], ["plant", "🫘 Beans, lentils, or tofu"], ["water", "💧 Water or no-sugar drink"]];
+
+  function dayOf(k, make) {
+    var d = state.log[k];
+    if (!d && make) d = state.log[k] = { meals: {}, act: [], meds: {}, bg: [], mood: null, note: "" };
+    return d;
+  }
+  function mealHas(m) { return m && (m.text || (m.tags && m.tags.length)); }
+  function dayHasData(d) {
+    if (!d) return false;
+    return Object.keys(d.meals).some(function (m) { return mealHas(d.meals[m]); }) || d.act.length > 0 ||
+      Object.keys(d.meds).some(function (x) { return d.meds[x]; }) || d.bg.length > 0 || !!d.mood || !!d.note;
+  }
+  function trackMeds() {
+    var list = [];
+    arr("meds").forEach(function (k) { if (MED_INFO[k]) list.push({ id: k, name: MED_INFO[k][0] }); });
+    state.extraMeds.forEach(function (n) { list.push({ id: "x:" + n, name: n, extra: true }); });
+    return list;
+  }
+  function weeklyGoal() { return { none: 30, little: 100 }[P.actNow] || 150; }
+  function bgInfo(w, v) {
+    if (v < 54) return ["tag-low", "Very low — treat now with the Rule of 15, and tell your care team"];
+    if (v < 70) return ["tag-low", "Low — treat with the Rule of 15"];
+    var hi = (w === "after") ? 180 : (w === "wake" || w === "before") ? 130 : 180;
+    var lo = (w === "wake" || w === "before") ? 80 : 70;
+    if (v < lo) return ["tag-ok", "Just under your goal range"];
+    if (v <= hi) return ["tag-ok", "In range ✓"];
+    return ["tag-high", "Above goal — notice what may have caused it"];
+  }
+  var BG_WHEN = { wake: "Woke up", before: "Before meal", after: "After meal", bed: "Bedtime", other: "Other" };
+
+  function cheerLine() {
+    var lines = ["Every healthy choice is a step forward.", "Progress, not perfection.", "Small steps add up to big changes.",
+      "Showing up is the hardest part — and you're here.", "Be as kind to yourself as you would be to a good friend.",
+      "You're caring for someone important: you.", "Each day is a fresh start."];
+    if (P.faith === "yes") lines.push("Your body is a gift — thank you for caring for it.", "\"Be strong and of a good courage.\" (Joshua 1:9)");
+    if (P.helpers) lines.push("You're doing this for you — and for " + P.helpers + ".");
+    var n = parseDk(logK).getDate() % lines.length;
+    var streak = 0, k = logK;
+    while (dayHasData(state.log[k])) { streak++; k = shiftK(k, -1); }
+    return (streak >= 2 ? "🔥 " + streak + "-day logging streak! " : "") + lines[n];
+  }
+
+  function renderLog() {
+    var d = dayOf(logK) || { meals: {}, act: [], meds: {}, bg: [], mood: null, note: "" };
+    $("#logDate").value = logK;
+    $("#logNext").disabled = logK >= dk(new Date());
+    $("#logCheer").textContent = cheerLine();
+    /* food */
+    $("#logFood").innerHTML = MEAL_LIST.map(function (m) {
+      var md = d.meals[m[0]] || {}, tags = md.tags || [];
+      return '<div class="meal"><label class="field" for="meal-' + m[0] + '">' + m[1] + '</label><input type="text" id="meal-' + m[0] + '" data-meal="' + m[0] + '" placeholder="What I ate" value="' + esc(md.text || "") + '"><div class="chips">' +
+        MEAL_TAGS.map(function (t) { return '<button type="button" class="chip" data-meal="' + m[0] + '" data-tag="' + t[0] + '" aria-pressed="' + (tags.indexOf(t[0]) > -1) + '">' + t[1] + "</button>"; }).join("") + "</div></div>";
+    }).join("");
+    foodMsg(d);
+    /* activity */
+    $("#actLogList").innerHTML = d.act.map(function (a, i) { return '<li><span>' + esc(a.t) + " · <strong>" + a.m + " min</strong></span><button type=\"button\" class=\"x\" data-del-act=\"" + i + '" aria-label="Remove">Remove</button></li>'; }).join("");
+    var tot = d.act.reduce(function (s, a) { return s + a.m; }, 0), am = $("#actLogMsg");
+    if (tot) { am.className = "feedback show good"; am.textContent = "🎉 " + tot + " minutes today! Every minute helps your body use insulin better."; } else am.className = "feedback";
+    /* meds */
+    var tm = trackMeds();
+    $("#medLog").innerHTML = tm.length ? tm.map(function (m) {
+      return '<label><input type="checkbox" data-med="' + esc(m.id) + '"' + (d.meds[m.id] ? " checked" : "") + "> <span>" + esc(m.name) + "</span>" + (m.extra ? ' <button type="button" class="x btn-small" data-del-med="' + esc(m.name) + '" style="margin-left:auto">Remove</button>' : "") + "</label>";
+    }).join("") : '<p class="plan-empty">Add your diabetes medicines in Part 6, or add any medicine below.</p>';
+    var allTaken = tm.length && tm.every(function (m) { return d.meds[m.id]; }), mm = $("#medLogMsg");
+    if (allTaken) { mm.className = "feedback show good"; mm.textContent = "💊 All medicines checked off today — great job taking care of yourself!"; } else mm.className = "feedback";
+    /* bg */
+    $("#bgLogList").innerHTML = d.bg.map(function (b, i) {
+      var inf = bgInfo(b.w, b.v);
+      return "<li><span>" + BG_WHEN[b.w] + ": <strong>" + b.v + " mg/dL</strong> <span class=\"" + inf[0] + "\">" + inf[1] + '</span></span><button type="button" class="x" data-del-bg="' + i + '">Remove</button></li>';
+    }).join("");
+    /* mood */
+    $$("#moodChips .chip").forEach(function (c) { c.setAttribute("aria-pressed", String(d.mood) === c.dataset.mood); });
+    $("#logNote").value = d.note || "";
+    moodMsg(d);
+    $("#logWeek").innerHTML = weekHTML(weekStats(logK));
+  }
+  function foodMsg(d) {
+    var veg = 0, logged = 0, water = 0, el = $("#foodMsg");
+    MEAL_LIST.forEach(function (m) { var md = d.meals[m[0]]; if (mealHas(md)) { logged++; if ((md.tags || []).indexOf("veg") > -1) veg++; if ((md.tags || []).indexOf("water") > -1) water++; } });
+    if (!logged) { el.className = "feedback"; return; }
+    var t = veg >= 2 ? "🥦 Veggies at " + veg + " meals today — wonderful!" : veg === 1 ? "🥦 Veggies at 1 meal today — nice! Adding them to one more meal is a great next step." : "Thanks for logging your meals! An easy idea for next time: add a vegetable to a meal you already enjoy.";
+    if (water && water === logged) t += " 💧 Great drink choices, too!";
+    el.className = "feedback show good"; el.textContent = t;
+  }
+  function moodMsg(d) {
+    var el = $("#moodMsg");
+    if (!d.mood) { el.className = "feedback"; return; }
+    el.className = "feedback show " + (d.mood <= 2 ? "neutral" : "good");
+    el.textContent = d.mood <= 2 ? "Hard days happen, and they don't erase your progress. Be gentle with yourself. Reach out to " + (P.helpers || "someone you trust") + ". If you ever feel hopeless, call or text 988."
+      : d.mood === 3 ? "Thanks for checking in with yourself. That matters." : "😊 So glad to hear it!";
+  }
+  function saveLog() { save(); renderLog(); }
+
+  $("#logFood").addEventListener("input", function (e) {
+    var m = e.target.dataset.meal; if (!m) return;
+    var d = dayOf(logK, true); d.meals[m] = d.meals[m] || {}; d.meals[m].text = e.target.value;
+    save(); foodMsg(d); $("#logCheer").textContent = cheerLine(); $("#logWeek").innerHTML = weekHTML(weekStats(logK));
+  });
+  $("#logFood").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tag]"); if (!b) return;
+    var d = dayOf(logK, true), m = b.dataset.meal; d.meals[m] = d.meals[m] || {};
+    var tags = d.meals[m].tags = d.meals[m].tags || [], i = tags.indexOf(b.dataset.tag);
+    if (i > -1) tags.splice(i, 1); else tags.push(b.dataset.tag);
+    b.setAttribute("aria-pressed", i < 0);
+    save(); foodMsg(d); $("#logCheer").textContent = cheerLine(); $("#logWeek").innerHTML = weekHTML(weekStats(logK));
+  });
+  $("#actLogAdd").addEventListener("click", function () {
+    var m = parseInt($("#actLogMin").value, 10); if (!(m > 0)) return;
+    dayOf(logK, true).act.push({ t: $("#actLogType").value, m: Math.min(m, 600) }); saveLog();
+  });
+  $("#actLogList").addEventListener("click", function (e) { var b = e.target.closest("[data-del-act]"); if (b) { dayOf(logK, true).act.splice(+b.dataset.delAct, 1); saveLog(); } });
+  $("#medLog").addEventListener("change", function (e) { var c = e.target.closest("[data-med]"); if (c) { dayOf(logK, true).meds[c.dataset.med] = c.checked; saveLog(); } });
+  $("#medLog").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-del-med]"); if (!b) return; e.preventDefault();
+    state.extraMeds = state.extraMeds.filter(function (n) { return n !== b.dataset.delMed; }); saveLog();
+  });
+  $("#medAddBtn").addEventListener("click", function () {
+    var n = $("#medAddName").value.trim(); if (!n || state.extraMeds.indexOf(n) > -1) return;
+    state.extraMeds.push(n); $("#medAddName").value = ""; saveLog();
+  });
+  $("#bgLogAdd").addEventListener("click", function () {
+    var v = parseInt($("#bgLogVal").value, 10); if (!(v >= 20 && v <= 600)) return;
+    dayOf(logK, true).bg.push({ w: $("#bgLogWhen").value, v: v }); $("#bgLogVal").value = ""; saveLog();
+  });
+  $("#bgLogList").addEventListener("click", function (e) { var b = e.target.closest("[data-del-bg]"); if (b) { dayOf(logK, true).bg.splice(+b.dataset.delBg, 1); saveLog(); } });
+  $("#moodChips").addEventListener("click", function (e) {
+    var c = e.target.closest("[data-mood]"); if (!c) return;
+    var d = dayOf(logK, true); d.mood = d.mood === +c.dataset.mood ? null : +c.dataset.mood; saveLog();
+  });
+  $("#logNote").addEventListener("input", function () { dayOf(logK, true).note = this.value; save(); });
+  $("#logPrev").addEventListener("click", function () { logK = shiftK(logK, -1); renderLog(); });
+  $("#logNext").addEventListener("click", function () { if (logK < dk(new Date())) { logK = shiftK(logK, 1); renderLog(); } });
+  $("#logToday").addEventListener("click", function () { logK = dk(new Date()); renderLog(); });
+  $("#logDate").addEventListener("change", function () { if (this.value && this.value <= dk(new Date())) { logK = this.value; renderLog(); } });
+
+  function openLog() {
+    var i = sections.map(function (s) { return s.dataset.id; }).indexOf("log");
+    logK = dk(new Date()); go(i); renderLog();
+  }
+  $("#viewLogBtn").addEventListener("click", openLog);
+  document.addEventListener("click", function (e) { if (e.target.closest("[data-open-log]")) openLog(); });
+
+  /* ---- Weekly summary ---- */
+  function weekStats(endK) {
+    var st = { start: shiftK(endK, -6), end: endK, days: [], logged: 0, veg: 0, plant: 0, water: 0, meals: 0, act: 0, actDays: 0, medAll: 0, medTracked: trackMeds().length, bg: 0, inRange: 0, lows: 0, hard: 0 };
+    for (var i = 6; i >= 0; i--) {
+      var k = shiftK(endK, -i), d = state.log[k];
+      st.days.push(k);
+      if (!dayHasData(d)) continue;
+      st.logged++;
+      MEAL_LIST.forEach(function (m) { var md = d.meals[m[0]]; if (mealHas(md)) { st.meals++; var t = md.tags || []; if (t.indexOf("veg") > -1) st.veg++; if (t.indexOf("plant") > -1) st.plant++; if (t.indexOf("water") > -1) st.water++; } });
+      var mins = d.act.reduce(function (s, a) { return s + a.m; }, 0); st.act += mins; if (mins) st.actDays++;
+      if (st.medTracked && trackMeds().every(function (m) { return d.meds[m.id]; })) st.medAll++;
+      d.bg.forEach(function (b) { st.bg++; if (b.v < 70) st.lows++; else if (bgInfo(b.w, b.v)[1] === "In range ✓") st.inRange++; });
+      if (d.mood && d.mood <= 2) st.hard++;
+    }
+    return st;
+  }
+  function logLows() { return weekStats(dk(new Date())).lows; }
+  function weekHTML(st) {
+    var goal = weeklyGoal();
+    var h = '<p class="confirm">' + niceDate(st.start) + " – " + niceDate(st.end) + "</p>";
+    if (!st.logged) return h + "<p>Your week will appear here as you log. Start with just one thing today — like one meal or one walk. 🌱</p>";
+    var b = [];
+    var ever = Object.keys(state.log).some(function (k) { return dayHasData(state.log[k]); });
+    if (ever) b.push("🌟 Started my log");
+    if (st.logged >= 7) b.push("📅 Logged all 7 days");
+    if (st.act >= goal) b.push("🚶 Activity goal reached");
+    if (st.veg >= 5) b.push("🥦 Veggie champion");
+    if (st.medTracked && st.logged >= 3 && st.medAll === st.logged) b.push("💊 Medicine pro");
+    if (st.water >= 7) b.push("💧 Water winner");
+    h += '<div class="badges">' + b.map(function (x) { return '<span class="badge">' + x + "</span>"; }).join("") + "</div>";
+    var m = [];
+    m.push("📅 You logged <strong>" + st.logged + " of 7 days</strong>. " + (st.logged >= 5 ? "Amazing consistency!" : "Every day you log helps you learn what works for you."));
+    var pct = Math.min(100, Math.round(st.act / goal * 100));
+    m.push("🚶 <strong>" + st.act + " minutes</strong> of activity — " + (st.act >= goal ? "you reached your goal of " + goal + " minutes! 🎉" : pct + "% of your " + goal + "-minute goal. " + (st.act ? "Great work — keep adding a little at a time." : "A short walk is a great way to start.")));
+    if (st.meals) m.push("🥦 <strong>" + st.veg + "</strong> meal" + (st.veg === 1 ? "" : "s") + " with half a plate of veggies" + (st.plant ? " and <strong>" + st.plant + "</strong> with beans, lentils, or tofu" : "") + ". " + (st.veg ? "Your body thanks you!" : "Try adding veggies to one favorite meal this week."));
+    if (st.medTracked && !st.medAll) m.push("💊 Checking off your medicines is a great habit to build. Tap each one in your log as you take it — it's an easy way to remember.");
+    else if (st.medTracked) m.push("💊 You checked off all your medicines on <strong>" + st.medAll + " of " + st.logged + "</strong> days you logged. " + (st.medAll === st.logged ? "Wonderful!" : "Some days are busier than others. If you miss a dose, check the medicine label or ask your pharmacist what to do, then pick up with your next dose."));
+    if (st.bg) m.push("🩸 <strong>" + st.inRange + " of " + st.bg + "</strong> blood sugar readings were in your goal range." + (st.lows ? " You logged <strong>" + st.lows + " low reading" + (st.lows > 1 ? "s" : "") + "</strong>. Lows are not your fault — share this with your care team so they can help prevent them." : ""));
+    if (st.hard >= 2) m.push("💛 You had some hard days this week. You don't have to carry this alone — talk with " + esc(P.helpers || "someone you trust") + " or your care team.");
+    return h + li(m);
+  }
+
+  function printTable(title, rows, blank) {
+    var head = "<tr><th>Day</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th><th>Snacks</th><th>Activity (min)</th><th>Medicines taken</th><th>Blood sugar</th><th>How I felt</th></tr>";
+    var body = rows.map(function (k) {
+      if (blank) return "<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
+      var d = state.log[k] || { meals: {}, act: [], meds: {}, bg: [] };
+      var cells = MEAL_LIST.map(function (m) { var md = d.meals[m[0]] || {}; return "<td>" + esc(md.text || "") + " " + (md.tags || []).map(function (t) { return { veg: "🥦", grain: "🌾", plant: "🫘", water: "💧" }[t]; }).join("") + "</td>"; }).join("");
+      var acts = d.act.map(function (a) { return esc(a.t) + " " + a.m; }).join(", ");
+      var meds = trackMeds().filter(function (m) { return d.meds[m.id]; }).map(function (m) { return "✓ " + esc(m.name); }).join("<br>");
+      var bgs = d.bg.map(function (b) { return BG_WHEN[b.w] + " " + b.v; }).join("<br>");
+      var mood = d.mood ? ["", "😢", "😕", "😐", "🙂", "😄"][d.mood] : "";
+      return "<tr><td>" + niceDate(k) + "</td>" + cells + "<td>" + acts + "</td><td>" + meds + "</td><td>" + bgs + "</td><td>" + mood + " " + esc(d.note || "") + "</td></tr>";
+    }).join("");
+    return '<div class="card"><h2>' + title + '</h2><table>' + head + body + "</table>" +
+      (blank ? '<p class="confirm">Tick 🥦 when half your plate was vegetables. Every entry counts — you don\'t need to fill in every box.</p>' : "") + "</div>";
+  }
+  function doPrint(html) {
+    $("#printPlan").innerHTML = html;
+    document.body.classList.add("print-plan"); window.print();
+    setTimeout(function () { document.body.classList.remove("print-plan"); }, 500);
+  }
+  $("#printWeek").addEventListener("click", function () {
+    var st = weekStats(logK);
+    doPrint(printTable((P.name ? esc(P.name) + "'s" : "My") + " Week: " + niceDate(st.start) + " – " + niceDate(st.end), st.days, false) + '<div class="card"><h3>My week in review</h3>' + weekHTML(st) + "</div>");
+  });
+  $("#printBlank").addEventListener("click", function () {
+    doPrint(printTable("My Daily Log — Week of ____________", [1, 2, 3, 4, 5, 6, 7], true));
+  });
 
   var planReady = false;
   $$("[data-form]").forEach(renderForm);
@@ -1949,6 +2325,7 @@ footer.site { max-width: 1180px; margin: 0 auto; padding: 0 16px 3rem; font-size
 
   planReady = true;
   renderPlan();
+  renderLog();
   applySettings();
   showWho();
   go(Math.min(state.current || 0, sections.length - 1), false);
