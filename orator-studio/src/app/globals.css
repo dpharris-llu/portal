@@ -451,3 +451,46 @@ a.list-row:hover, .list-row:has(> a:hover) { background: var(--panel); color: in
 
 /* Phones: the tab bar already lists the modules (spec 3C). */
 @media (max-width: 699px) { .module-grid { display: none; } }
+
+/* Research workspace (F-118): the argument on the left, probing and sources on the right. */
+.research-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: 28px; align-items: start; }
+.research-main { min-width: 0; }
+.research-side { position: sticky; top: 76px; max-height: calc(100vh - 92px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 8px; }
+@media (max-width: 1099px) {
+  .research-grid { grid-template-columns: 1fr; }
+  .research-side { position: static; max-height: none; overflow: visible; order: -1; }
+}
+.probe-panel, .workspace-panel { border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px; background: #fff; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-1); }
+.probe-panel { border-color: #c9d3e3; }
+.panel-head { display: flex; align-items: baseline; gap: 10px; }
+.panel-head h2 { margin: 0; font-family: var(--serif); font-size: 19px; font-weight: 600; color: var(--navy); flex: 1; }
+.starters { display: flex; flex-wrap: wrap; gap: 6px; }
+.starters button { text-align: left; min-height: 32px; height: auto; padding: 6px 10px; font-weight: 400; background: var(--panel); border-color: var(--line); }
+.probe-thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.probe { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.probe-q { margin: 0; font-weight: 600; font-size: 14px; color: var(--navy); }
+.probe-q::before { content: "You asked: "; font-weight: 500; color: var(--muted); }
+.probe-a { font-size: 14px; line-height: 1.6; white-space: pre-line; }
+.fact-chip { display: inline-flex; min-height: 22px; height: 22px; padding: 0 7px; margin: 0 2px; border-radius: 6px; border: 1px solid #c9d3e3; background: var(--navy-soft); color: var(--navy); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+.fact-chip:hover:not(:disabled) { background: #dfe6f2; border-color: var(--navy); }
+.id-chip { flex: none; font-size: 12px; font-weight: 600; color: var(--navy); background: var(--navy-soft); border-radius: 6px; padding: 1px 7px; font-variant-numeric: tabular-nums; }
+.proposals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.proposal { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--panel); }
+.proposal.open { background: #fff; border-color: #c9d3e3; }
+.proposal.discard.open { border-color: #e7b3c2; }
+.proposal.dismissed, .proposal.left.out { opacity: 0.7; }
+.proposal-what { font-size: 14px; font-weight: 600; }
+.ws-source { border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.ws-source > summary { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; min-height: 44px; }
+.ws-source > summary::-webkit-details-marker { display: none; }
+.ws-source[open] > summary { border-bottom: 1px solid var(--line); }
+.ws-title { flex: 1; min-width: 0; font-family: var(--serif); font-weight: 600; }
+.ws-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.ws-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ws-facts li { background: var(--panel); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; transition: box-shadow 0.3s; }
+.ws-facts li.hl { box-shadow: 0 0 0 2px var(--navy); background: #fff; }
+.use-in { width: auto; min-height: 32px; padding: 2px 8px; font-size: 13px; }
+.discard-ask { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.discard-ask input { width: 180px; min-height: 32px; padding: 4px 8px; font-size: 13px; }
+.ws-discarded summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
+.add-box { border: 1px dashed #c3cad4; border-radius: 12px; padding: 12px; background: #fbfcfe; }

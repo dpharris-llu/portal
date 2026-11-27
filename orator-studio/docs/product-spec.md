@@ -56,6 +56,7 @@ OratorStudio is one product with four modules. They share one sign-in, one store
 
 **Boundaries decided so far**
 
+- **Research is a workspace you question.** Sources and confirmed facts live with the argument. The author builds the case by asking, accepting and discarding, one step at a time (F-118).
 - **Organizing your thoughts belongs in Research.** The argument outline is built there, and it works with no sources at all: the author types points, orders them and attaches evidence later. A point with no evidence is marked unsupported, not blocked.
 - **Slides belong in Build.** Splitting or merging points into slides, choosing charts, quotes and layouts, and the time limit (which shapes slides more than the argument) are Build's.
 - **PPTX import is in Build**, since an existing deck is a starting point for slides. An imported deck can be sent back to Research to pull out its argument and check its claims against sources (F-117).
@@ -277,6 +278,7 @@ Priority: **P0** = required for that stage to ship, **P1** = should have, **P2**
 | F-016 | Research | Save the argument as its own object: Research's output and Build's input; one argument can feed several decks; export it as a written brief (DOCX or Markdown) | P1 |
 | F-017 | Platform | Shared media library: upload an image once; each image is a slide image or evidence; evidence images keep their source and date; alt text and rights travel with the image | P1 |
 | F-018 | Platform | Magic Link sign-in, one institution, author role | P0 |
+| F-118 | Research | Research workspace with probes: each argument has one workspace of sources (papers, documents, data, the author's notes) and the facts confirmed from them, with short ids (S2, F7). The author builds the case by asking successive questions; Claude answers from the active facts only, citing them, with the earlier questions as context, and proposes changes (add a point, link evidence, change the thesis, add an open question, discard a source or fact). The author accepts or dismisses each one. Answers and proposals are checked: citations must be active facts, and every number must appear in the facts cited. When the author discards a source or fact, by button or by asking, it is taken off every point, never sent to Claude again, and kept on record with the reason; it can be restored or undone | P0 |
 
 Also in Stage 0: the audience response features in section 5A (A-01 to A-05 are P0 for version .3).
 
@@ -389,6 +391,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 | Accessibility remediation | Suggests alt text, reading order, caption fixes | Per-item accept; flagged as AI-generated |
 | Q&A prediction (Present) | Drafts likely questions and answers from the deck's own evidence | Answers cite slides; presenter edits |
 | Semantic search and voice | Matches spoken or typed queries to slides | Presenter preview before audience sees it |
+| Probing the workspace (Research) | Answers the author's successive questions from the workspace's active facts and proposes changes to the argument (F-118) | Citations and numbers checked; each proposal accepted or dismissed; discards only on the author's word |
 | Reading research papers (Research) | Pulls each paper's findings and limitations with quotes and pages, then argues across papers for the argument's purpose (F-015) | Quotes and numbers checked against the PDF; author confirms each finding; points that fail checks are left out |
 | Illustrations (Build) | Generates images from a prompt through the institution's image provider (F-116) | Illustration only; labeled as AI-generated; clinical- or data-looking images blocked or flagged |
 | Viewer Q&A (Engage) | Answers viewer questions from a published deck | Restricted to deck content; shows source slides; says "not covered" otherwise |

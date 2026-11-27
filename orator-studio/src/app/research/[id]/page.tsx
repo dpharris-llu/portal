@@ -11,12 +11,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { TopBar } from "@/components/TopBar";
 import { useArgument } from "@/lib/useArgument";
-import { argumentTitle, isSupported, newEvidence, newPoint, type ArgFields, type ArgPoint, type Argument } from "@/model/argument";
+import { argumentTitle, evidenceFromFact, isSupported, newPoint, type ArgFields, type ArgPoint, type Argument } from "@/model/argument";
 import type { Intent } from "@/model/types";
 import { Proposal, proposePrompt, templateProposal, type ProposeRequest } from "@/ai/argument";
 import { askClaudeFor, claudeAvailable, ClaudeError, type Transport } from "@/ai/analysis-client";
 import { briefMarkdown } from "@/research/brief";
 import { saveFile } from "@/lib/saveFile";
+import { ProbePanel } from "@/components/research/ProbePanel";
+import { noteBodies, WorkspacePanel } from "@/components/research/WorkspacePanel";
 
 /** A text field that keeps its own value while typing and commits when you leave it. */
 function Field({ value, onCommit, multiline, label, placeholder, rows }: { value: string; onCommit: (v: string) => void; multiline?: boolean; label: string; placeholder?: string; rows?: number }) {
@@ -68,6 +70,11 @@ export default function ArgumentPage() {
   const [proposal, setProposal] = useState<{ value: Proposal; keep: Set<number>; useThesis: boolean; via: Transport | "template" } | null>(null);
   const [thinking, setThinking] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const showFact = (id: string) => {
+    setHighlight(id);
+    setTimeout(() => document.getElementById(`fact-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  };
 
   useEffect(() => {
     claudeAvailable().then(setTransport);
@@ -147,7 +154,7 @@ export default function ArgumentPage() {
         <button onClick={downloadBrief}>Download brief</button>
         <Link href={`/build/${arg.id}`}><button className="primary">Build slides</button></Link>
       </TopBar>
-      <main className="wide stack" style={{ maxWidth: 920, gap: 24 }}>
+      <main className="wide stack" style={{ maxWidth: 1360, gap: 24 }}>
         <div className="stack" style={{ gap: 4 }}>
           <p className="eyebrow">Argument</p>
           <div className="title-input"><Field label="Title" value={arg.title} placeholder={argumentTitle(arg)} onCommit={(title) => set({ title })} /></div>
@@ -172,6 +179,8 @@ export default function ArgumentPage() {
           <Field multiline label="Thesis" value={arg.thesis} placeholder="Write the one sentence your argument supports" onCommit={(thesis) => set({ thesis })} />
         </div>
 
+        <div className="research-grid">
+        <div className="stack research-main" style={{ gap: 24 }}>
         <section className="stack" aria-labelledby="points-h">
           <div className="row">
             <h2 id="points-h" className="section-h" style={{ margin: 0 }}>Points, in order</h2>
@@ -264,18 +273,24 @@ export default function ArgumentPage() {
                 <ul className="evidence-list">
                   {p.evidence.map((e) => (
                     <li key={e.id}>
-                      <span className="chip">{e.kind}</span>
+                      {e.factId ? <button type="button" className="fact-chip" onClick={() => showFact(e.factId!)} aria-label={`Show fact ${e.factId}`}>{e.factId}</button> : <span className="chip">{e.kind}</span>}
                       <span style={{ flex: 1 }}>
                         {e.text}
                         {e.quote && <span className="quote-line" style={{ display: "block" }}>“{e.quote}”</span>}
                         {e.source && <span className="muted"> ({e.source})</span>}
                       </span>
-                      <button className="ghost danger small" onClick={() => putPoint({ ...p, evidence: p.evidence.filter((x) => x.id !== e.id) }, "Removed evidence")} aria-label={`Remove evidence: ${e.text}`}>Remove</button>
+                      <button className="ghost danger small" onClick={() => putPoint({ ...p, evidence: p.evidence.filter((x) => x.id !== e.id) }, "Took evidence off a point")} aria-label={`Take off this point: ${e.text}`}>{e.factId ? "Unlink" : "Remove"}</button>
                     </li>
                   ))}
                 </ul>
               )}
-              <EvidenceAdder onAdd={(text, source) => putPoint({ ...p, evidence: [...p.evidence, newEvidence(text, source ? { source } : {})] }, "Added evidence")} />
+              <EvidenceAdder
+                onAdd={(text, source) => {
+                  const { bodies, fact } = noteBodies(arg, text, source);
+                  const after = { ...arg, sources: [...(arg.sources ?? []), ...bodies.flatMap((b) => (b.kind === "source.put" ? [b.source] : []))], facts: [...(arg.facts ?? []), fact] };
+                  apply([...bodies, { kind: "point.put", point: { ...p, evidence: [...p.evidence, evidenceFromFact(after, fact)] } }], "Added evidence");
+                }}
+              />
               <div className="row">
                 <button className="small" onClick={() => apply([{ kind: "point.move", pointId: p.id, index: i - 1 }], "Moved point")} disabled={i === 0}>Move up</button>
                 <button className="small" onClick={() => apply([{ kind: "point.move", pointId: p.id, index: i + 1 }], "Moved point")} disabled={i === arg.points.length - 1}>Move down</button>
@@ -301,6 +316,12 @@ export default function ArgumentPage() {
           <Field multiline rows={3} label="Next steps" value={arg.nextSteps.join("\n")} onCommit={(v) => set({ nextSteps: lines(v) })} />
         </label>
         <p className="small muted">Version {arg.version} · {log.length} changes recorded</p>
+        </div>
+        <aside className="research-side" aria-label="Research workspace">
+          <ProbePanel arg={arg} apply={apply} onFact={showFact} />
+          <WorkspacePanel arg={arg} apply={apply} highlight={highlight} />
+        </aside>
+        </div>
       </main>
     </>
   );

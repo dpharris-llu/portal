@@ -18,7 +18,66 @@ export interface EvidenceItem {
   /** Where it came from: "Delgado et al., 2025, p. 4", "Statements, Feb 2026", a URL. */
   source?: string;
   quote?: string;
+  /** The workspace fact this evidence is, when it came from one (spec 1A, F-118). */
+  factId?: Id;
 }
+
+/**
+ * The Research workspace (F-118): the sources an argument draws on and the
+ * facts confirmed from them. Ids are short ("S2", "F7") so the author and
+ * Claude can refer to them. Discarded items stay on record, with a reason,
+ * but are never used again: not in points, not sent to Claude.
+ */
+export type SourceKind = "paper" | "document" | "data" | "note" | "web";
+export interface WorkspaceSource {
+  id: Id;
+  kind: SourceKind;
+  title: string;
+  /** Full citation for papers; file name, URL or "Author's note" otherwise. */
+  citation: string;
+  /** Short form for chips: "Delgado et al., 2025". */
+  short: string;
+  design?: string;
+  sample?: string;
+  status: "active" | "discarded";
+  discardReason?: string;
+  addedAt: string;
+}
+export interface Fact {
+  id: Id;
+  sourceId: Id;
+  kind: "finding" | "limitation" | "figure" | "note";
+  text: string;
+  quote?: string;
+  page?: number;
+  /** True when the app checked the quote (and its numbers) against the source. */
+  checked: boolean;
+  status: "active" | "discarded";
+  discardReason?: string;
+}
+/** One probe: the author's question, Claude's checked answer, and what became of its proposals. */
+export interface Probe {
+  id: Id;
+  question: string;
+  at: string;
+  answer: string;
+  cites: Id[];
+  /** Problems the app found in the answer (shown, and the answer is marked). */
+  problems: string[];
+  /** Outcome of each proposal, by index: accepted, dismissed, or left out by the checks. */
+  outcomes: ("accepted" | "dismissed" | "left out" | "open")[];
+  proposals: { action: ProbeAction; why: string; problems: string[] }[];
+  via: string;
+}
+
+/** What a probe may propose. The author accepts or dismisses each one. */
+export type ProbeAction =
+  | { kind: "add_point"; text: string; intent: Intent; detail: string; factIds: Id[] }
+  | { kind: "link_evidence"; pointId: Id; factIds: Id[] }
+  | { kind: "set_thesis"; text: string }
+  | { kind: "add_open_question"; text: string }
+  | { kind: "discard_source"; sourceId: Id; reason: string }
+  | { kind: "discard_fact"; factId: Id; reason: string };
 
 export interface ArgPoint {
   id: Id;
@@ -47,6 +106,9 @@ export interface Argument {
   recommendation: string;
   nextSteps: string[];
   origin: ArgumentOrigin;
+  sources?: WorkspaceSource[];
+  facts?: Fact[];
+  probes?: Probe[];
   /** Number of operations applied. */
   version: number;
 }
@@ -57,7 +119,11 @@ export type ArgOpBody =
   | { kind: "arg.set"; patch: Partial<ArgFields> }
   | { kind: "point.put"; point: ArgPoint; index?: number }
   | { kind: "point.delete"; pointId: Id }
-  | { kind: "point.move"; pointId: Id; index: number };
+  | { kind: "point.move"; pointId: Id; index: number }
+  | { kind: "source.put"; source: WorkspaceSource }
+  | { kind: "fact.put"; fact: Fact }
+  | { kind: "probe.put"; probe: Probe }
+  | { kind: "item.remove"; list: "sources" | "facts" | "probes"; id: Id };
 
 export interface ArgOp {
   id: Id;
@@ -131,6 +197,18 @@ export function applyArgOp(arg: Argument, op: ArgOp): Argument {
       next = { ...arg, points };
       break;
     }
+    case "source.put":
+      next = { ...arg, sources: upsert(arg.sources, b.source) };
+      break;
+    case "fact.put":
+      next = { ...arg, facts: upsert(arg.facts, b.fact) };
+      break;
+    case "probe.put":
+      next = { ...arg, probes: upsert(arg.probes, b.probe) };
+      break;
+    case "item.remove":
+      next = { ...arg, [b.list]: ((arg[b.list] ?? []) as { id: Id }[]).filter((x) => x.id !== b.id) };
+      break;
   }
   return { ...next, version: arg.version + 1 };
 }
@@ -153,6 +231,20 @@ export function invertArgOp(before: Argument, body: ArgOpBody): ArgOpBody {
     }
     case "point.move":
       return { kind: "point.move", pointId: body.pointId, index: before.points.findIndex((p) => p.id === body.pointId) };
+    case "source.put":
+    case "fact.put":
+    case "probe.put": {
+      const list = body.kind === "source.put" ? "sources" : body.kind === "fact.put" ? "facts" : "probes";
+      const item = body.kind === "source.put" ? body.source : body.kind === "fact.put" ? body.fact : body.probe;
+      const prev = (before[list] as { id: Id }[] | undefined)?.find((x) => x.id === item.id);
+      if (!prev) return { kind: "item.remove", list, id: item.id };
+      return list === "sources" ? { kind: "source.put", source: prev as WorkspaceSource } : list === "facts" ? { kind: "fact.put", fact: prev as Fact } : { kind: "probe.put", probe: prev as Probe };
+    }
+    case "item.remove": {
+      const prev = (before[body.list] as { id: Id }[] | undefined)?.find((x) => x.id === body.id);
+      if (!prev) return body;
+      return body.list === "sources" ? { kind: "source.put", source: prev as WorkspaceSource } : body.list === "facts" ? { kind: "fact.put", fact: prev as Fact } : { kind: "probe.put", probe: prev as Probe };
+    }
   }
 }
 
@@ -167,10 +259,78 @@ export function changesSince(log: ArgOp[], version: number): { points: Set<Id>; 
   for (const op of later) {
     const b = op.body;
     if (b.kind === "arg.set") framing = framing || Object.keys(b.patch).some((k) => k !== "title");
-    else points.add(b.kind === "point.put" ? b.point.id : b.pointId);
+    else if (b.kind === "point.put") points.add(b.point.id);
+    else if (b.kind === "point.delete" || b.kind === "point.move") points.add(b.pointId);
   }
   return { points, framing, count: later.length };
 }
 
 export const argumentTitle = (a: Pick<Argument, "title" | "thesis" | "purpose">) =>
   (a.title.trim() || a.thesis.trim().slice(0, 80) || a.purpose.trim().slice(0, 80) || "Untitled argument").replace(/[.]+$/, "");
+
+// ---- Workspace helpers (F-118) ----
+
+function upsert<T extends { id: Id }>(list: T[] | undefined, item: T): T[] {
+  const l = list ?? [];
+  return l.some((x) => x.id === item.id) ? l.map((x) => (x.id === item.id ? item : x)) : [...l, item];
+}
+
+/** The next short id: "S3" after S1 and S2. */
+export function nextId(prefix: "S" | "F", existing: { id: Id }[] | undefined): Id {
+  const n = Math.max(0, ...(existing ?? []).map((x) => (x.id.startsWith(prefix) ? Number(x.id.slice(1)) || 0 : 0)));
+  return `${prefix}${n + 1}`;
+}
+
+export const activeSources = (a: Argument) => (a.sources ?? []).filter((s) => s.status === "active");
+export const activeFacts = (a: Argument) => {
+  const live = new Set(activeSources(a).map((s) => s.id));
+  return (a.facts ?? []).filter((f) => f.status === "active" && live.has(f.sourceId));
+};
+
+/** Evidence for a point, from a fact, labeled with its source. */
+export function evidenceFromFact(a: Argument, f: Fact): EvidenceItem {
+  const src = (a.sources ?? []).find((s) => s.id === f.sourceId);
+  const kind: EvidenceItem["kind"] = f.kind === "figure" ? "figure" : f.kind === "note" ? "note" : "finding";
+  return {
+    id: `ev-${f.id}`,
+    kind,
+    text: f.text,
+    factId: f.id,
+    ...(f.quote ? { quote: f.quote } : {}),
+    source: src ? `${src.short}${f.page ? `, p. ${f.page}` : ""}` : undefined,
+  };
+}
+
+/**
+ * Discarding (the author's call, F-118): the fact or source is marked discarded
+ * with the reason, and evidence that used it is taken off every point. A source
+ * takes its facts with it. Returns the operations, so one undo restores it all.
+ */
+export function discardBodies(a: Argument, target: { sourceId: Id } | { factId: Id }, reason: string): ArgOpBody[] {
+  const bodies: ArgOpBody[] = [];
+  const facts =
+    "sourceId" in target ? (a.facts ?? []).filter((f) => f.sourceId === target.sourceId && f.status === "active") : (a.facts ?? []).filter((f) => f.id === target.factId && f.status === "active");
+  if ("sourceId" in target) {
+    const src = (a.sources ?? []).find((s) => s.id === target.sourceId);
+    if (!src || src.status === "discarded") return [];
+    bodies.push({ kind: "source.put", source: { ...src, status: "discarded", discardReason: reason } });
+  } else if (!facts.length) return [];
+  for (const f of facts) bodies.push({ kind: "fact.put", fact: { ...f, status: "discarded", discardReason: reason } });
+  const gone = new Set(facts.map((f) => f.id));
+  for (const p of a.points) {
+    if (p.evidence.some((e) => e.factId && gone.has(e.factId))) bodies.push({ kind: "point.put", point: { ...p, evidence: p.evidence.filter((e) => !(e.factId && gone.has(e.factId))) } });
+  }
+  return bodies;
+}
+
+/** Bring a discarded source or fact back (its evidence links are not restored; undo does that). */
+export function restoreBodies(a: Argument, target: { sourceId: Id } | { factId: Id }): ArgOpBody[] {
+  if ("sourceId" in target) {
+    const src = (a.sources ?? []).find((s) => s.id === target.sourceId);
+    if (!src || src.status === "active") return [];
+    const facts = (a.facts ?? []).filter((f) => f.sourceId === src.id && f.status === "discarded" && f.discardReason === src.discardReason);
+    return [{ kind: "source.put", source: { ...src, status: "active", discardReason: undefined } }, ...facts.map((f) => ({ kind: "fact.put" as const, fact: { ...f, status: "active" as const, discardReason: undefined } }))];
+  }
+  const f = (a.facts ?? []).find((x) => x.id === target.factId);
+  return f && f.status === "discarded" ? [{ kind: "fact.put", fact: { ...f, status: "active", discardReason: undefined } }] : [];
+}

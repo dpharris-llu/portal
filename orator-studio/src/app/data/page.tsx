@@ -178,7 +178,7 @@ export default function DataUrlPage() {
       const { source, draft, argument: figArg } = finalize(base);
       const tenantId = await repo.tenantId();
       const linked = figArg
-        ? await saveNewArgument({ tenantId, me, ai: { kind: "ai", id: "claude", via: figArg.via }, origin: "data", ...pointsFromFigures(source, figArg), fields: { ...pointsFromFigures(source, figArg).fields, title: source.name, purpose: goal }, reason: "Created from a data URL" })
+        ? await saveNewArgument({ tenantId, me, ai: { kind: "ai", id: "claude", via: figArg.via }, origin: "data", ...pointsFromFigures(source, figArg, "data"), fields: { ...pointsFromFigures(source, figArg, "data").fields, title: source.name, purpose: goal }, reason: "Created from a data URL" })
         : null;
       const bodies: OpBody[] = [
         { kind: "deck.setMeta", patch: { title: source.name, goal, ...(linked ? { argumentId: linked.id, argumentVersion: linked.version } : {}), timeLimitMin: Math.max(5, draft.narrative.length * 2) } },

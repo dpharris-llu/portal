@@ -30,7 +30,7 @@ import { newId } from "@/model/ids";
 import type { Author, Paper } from "@/model/types";
 import { currentAuthorId, getRepo } from "@/lib/repo";
 import { putAsset } from "@/lib/assets";
-import { saveNewArgument } from "@/research/link";
+import { evidenceFor, saveNewArgument, workspaceFromPapers } from "@/research/link";
 
 interface PaperState {
   id: string; // "P1"
@@ -199,15 +199,13 @@ export default function EvidencePage() {
       const r = synth.result;
       const keptPoints = r.points.filter((pt, i) => pt.verified && !dropped.has(`pt-${i}`));
       const pointIds = keptPoints.map(() => newId("pt"));
-      const findingOf = (id: string) => {
-        const paper = used.find((x) => id.startsWith(x.id + "-"));
-        const c = paper?.claims.find((x) => x.id === id);
-        return paper && c ? { paper, c } : null;
-      };
       const rec = r.recommendation.verified && !dropped.has("rec") ? r.recommendation : undefined;
       const tenantId = await repo.tenantId();
+      const ws = workspaceFromPapers(used);
       const linked = await saveNewArgument({
         tenantId,
+        sources: ws.sources,
+        facts: ws.facts,
         me,
         ai: { kind: "ai", id: "claude", via: synth.via },
         origin: "papers",
@@ -225,10 +223,7 @@ export default function EvidencePage() {
           text: pt.conclusion,
           intent: "persuade" as const,
           detail: `Why it matters: ${pt.soWhat}\nEvidence: ${pt.agreement}; ${pt.strength} strength. ${pt.strengthReason}${pt.gaps ? `\nNot covered: ${pt.gaps}` : ""}`,
-          evidence: pt.cites.flatMap((id) => {
-            const f = findingOf(id);
-            return f ? [{ id: newId("ev"), kind: "finding" as const, text: f.c.text, quote: f.c.quote, source: `[${f.paper.id.slice(1)}] ${shortCitation(f.paper.citation)}, p. ${f.c.page}` }] : [];
-          }),
+          evidence: evidenceFor(ws.sources, ws.facts, pt.cites.flatMap((id) => (ws.factOf.get(id) ? [ws.factOf.get(id)!] : []))),
           byAi: true,
         })),
       });

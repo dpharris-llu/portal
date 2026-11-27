@@ -1,5 +1,5 @@
 /** The argument as a written brief (F-016), in Markdown. */
-import { argumentTitle, isSupported, type Argument } from "@/model/argument";
+import { activeSources, argumentTitle, isSupported, type Argument } from "@/model/argument";
 
 export function briefMarkdown(a: Argument): string {
   const out: string[] = [`# ${argumentTitle(a)}`, ""];
@@ -21,6 +21,8 @@ export function briefMarkdown(a: Argument): string {
   if (a.openQuestions.length) out.push("## What we don't know yet", "", ...a.openQuestions.map((q) => `- ${q}`), "");
   if (a.recommendation) out.push("## Recommendation", "", a.recommendation, "");
   if (a.nextSteps.length) out.push("## Next steps", "", ...a.nextSteps.map((s) => `- ${s}`), "");
+  const sources = activeSources(a);
+  if (sources.length) out.push("## Sources", "", ...sources.map((s) => `- ${s.id}: ${s.citation}`), "");
   if (a.points.some((p) => p.byAi)) out.push("---", "", "_Some points were written or proposed by Claude and edited by the author._", "");
   return out.join("\n");
 }
