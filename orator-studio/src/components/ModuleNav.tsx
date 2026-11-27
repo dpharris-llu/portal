@@ -1,7 +1,13 @@
 "use client";
-/** The four modules (spec 1A). The current one is marked for screen readers and by an underline, not color alone. */
+/**
+ * The modules (spec 1A) as the app's main navigation (spec 3C): a sidebar on
+ * desktop, an icon rail on iPad, a bottom tab bar on phones. The current one is
+ * marked for screen readers (aria-current) and by more than color.
+ */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icon } from "./Icon";
+import { Wordmark } from "./Wordmark";
 
 export type ModuleKey = "research" | "build" | "present" | "engage";
 
@@ -20,13 +26,20 @@ export function moduleFor(path: string): ModuleKey | null {
   return null;
 }
 
-export function ModuleNav() {
-  const current = moduleFor(usePathname() ?? "/");
+export function ModuleNav({ compact = false }: { compact?: boolean }) {
+  const path = usePathname() ?? "/";
+  const current = path === "/" ? "home" : moduleFor(path);
+  const items = [{ key: "home", name: "Home", href: "/" }, ...MODULES];
   return (
-    <nav className="module-nav" aria-label="Modules">
-      {MODULES.map((m) => (
-        <Link key={m.key} href={m.href} aria-current={current === m.key ? "page" : undefined}>
-          {m.name}
+    <nav className={compact ? "side-nav compact" : "side-nav"} aria-label="Modules">
+      <Link href="/" className="side-brand" aria-label="OratorStudio home">
+        <span className="brand-full"><Wordmark size={20} /></span>
+        <span className="brand-mono" aria-hidden="true">O<span>S</span></span>
+      </Link>
+      {items.map((m) => (
+        <Link key={m.key} href={m.href} className="side-link" aria-current={current === m.key ? "page" : undefined}>
+          <Icon name={m.key} size={22} />
+          <span>{m.name}</span>
         </Link>
       ))}
     </nav>

@@ -162,7 +162,7 @@ function Presenter({ deck }: { deck: Deck }) {
 
   return (
     <LiveContext.Provider value={liveInfo}>
-      <TopBar>
+      <TopBar compact>
         <strong>{deck.meta.title}</strong>
         {!DEMO && (
           <button

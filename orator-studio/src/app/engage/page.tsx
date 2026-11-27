@@ -11,9 +11,9 @@ export default function EngageHome() {
     <>
       <TopBar />
       <ModeBanner />
-      <main className="wide stack">
-        <h1 style={{ margin: 0 }}>Orator Engage</h1>
-        <p className="muted" style={{ margin: 0 }}>The room joins from their phones, with no account, for live polls and questions. Nothing a phone sends shows to the room until you approve it, and your slides keep working if the connection drops.</p>
+      <main className="wide stack" style={{ gap: 28 }}>
+        <header className="page-head"><div><p className="eyebrow">Orator Engage</p><h1>Involve the room</h1></div></header>
+        <p className="lede">The room joins from their phones, with no account, for live polls and questions. Nothing a phone sends shows to the room until you approve it, and your slides keep working if the connection drops.</p>
         {DEMO && <p className="notice small">Phones need a server to connect to, so live sessions are off in this demo. Poll slides still show their questions.</p>}
         <div className="start-grid">
           <div className="start-card" style={{ cursor: "default" }}>
@@ -29,7 +29,7 @@ export default function EngageHome() {
             <span className="small">In Build, add a poll block to any slide. Results show on the slide live.</span>
           </div>
         </div>
-        <h2 style={{ margin: "8px 0 0", fontSize: 18 }}>Present with a live audience</h2>
+        <h2 className="section-h">Present with a live audience</h2>
         <DeckList action="present" empty={<>No decks yet. <Link href="/build">Make one in Build.</Link></>} />
       </main>
     </>

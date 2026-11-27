@@ -147,11 +147,11 @@ export default function ArgumentPage() {
         <button onClick={downloadBrief}>Download brief</button>
         <Link href={`/build/${arg.id}`}><button className="primary">Build slides</button></Link>
       </TopBar>
-      <main className="wide stack">
-        <label>
-          <span className="small muted">Argument</span>
-          <Field label="Title" value={arg.title} placeholder={argumentTitle(arg)} onCommit={(title) => set({ title })} />
-        </label>
+      <main className="wide stack" style={{ maxWidth: 920, gap: 24 }}>
+        <div className="stack" style={{ gap: 4 }}>
+          <p className="eyebrow">Argument</p>
+          <div className="title-input"><Field label="Title" value={arg.title} placeholder={argumentTitle(arg)} onCommit={(title) => set({ title })} /></div>
+        </div>
         <div className="row" style={{ alignItems: "flex-start" }}>
           <label style={{ flex: 2, minWidth: 260 }}>
             Purpose: what should happen because of this?
@@ -166,14 +166,15 @@ export default function ArgumentPage() {
           Key takeaway
           <Field label="Key takeaway" value={arg.takeaway} placeholder="The one thing they should remember" onCommit={(takeaway) => set({ takeaway })} />
         </label>
-        <label>
-          Thesis: the one sentence everything supports
-          <Field multiline label="Thesis" value={arg.thesis} onCommit={(thesis) => set({ thesis })} />
-        </label>
+        <div className="stack arg-thesis" style={{ gap: 4 }}>
+          <span className="eyebrow">Thesis</span>
+          <span className="small muted">The one sentence everything supports.</span>
+          <Field multiline label="Thesis" value={arg.thesis} placeholder="Write the one sentence your argument supports" onCommit={(thesis) => set({ thesis })} />
+        </div>
 
         <section className="stack" aria-labelledby="points-h">
           <div className="row">
-            <h2 id="points-h" style={{ margin: 0, fontSize: 18 }}>Points, in order</h2>
+            <h2 id="points-h" className="section-h" style={{ margin: 0 }}>Points, in order</h2>
             <span className="small muted">{arg.points.length} points{unsupported ? `, ${unsupported} without evidence yet` : ""}</span>
           </div>
           <details>
@@ -197,7 +198,7 @@ export default function ArgumentPage() {
           {error && <p className="small error" role="alert">{error}</p>}
 
           {proposal && (
-            <div className="arg-point" style={{ borderColor: "var(--navy)" }} aria-label="Proposal">
+            <div className="proposal-card" aria-label="Proposal">
               <strong>{proposal.via === "template" ? "Template outline" : "Claude's proposal"}: keep what helps</strong>
               {proposal.value.thesis && (
                 <label className="inline">
@@ -243,9 +244,9 @@ export default function ArgumentPage() {
 
           {arg.points.map((p, i) => (
             <div key={p.id} className={`arg-point${isSupported(p) ? "" : " unsupported"}`} aria-label={`Point ${i + 1}`}>
-              <div className="row">
-                <strong>{i + 1}.</strong>
-                <div style={{ flex: 1, minWidth: 200 }}>
+              <div className="point-head">
+                <span className="num-badge">{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <Field label={`Conclusion of point ${i + 1}`} value={p.text} placeholder="A conclusion, written as a headline" onCommit={(text) => putPoint({ ...p, text })} />
                 </div>
                 <select aria-label={`Intent of point ${i + 1}`} value={p.intent} onChange={(e) => putPoint({ ...p, intent: e.target.value as Intent })} style={{ width: "auto" }}>
@@ -255,8 +256,8 @@ export default function ArgumentPage() {
                 </select>
               </div>
               <div className="row small">
-                {isSupported(p) ? <span className="chip">{p.evidence.length} evidence</span> : <span className="chip warn">Unsupported: no evidence yet</span>}
-                {p.byAi && <span className="chip">Claude</span>}
+                {isSupported(p) ? <span className="chip ok">{p.evidence.length} evidence</span> : <span className="chip warn">No evidence yet</span>}
+                {p.byAi && <span className="chip">Written with Claude</span>}
               </div>
               <Field multiline label={`Detail for point ${i + 1}`} value={p.detail} placeholder="Why it matters, and what you want to say about it" onCommit={(detail) => putPoint({ ...p, detail })} />
               {p.evidence.length > 0 && (

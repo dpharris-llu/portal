@@ -26,7 +26,9 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Magic Link login, cloud storage of decks, and audience sessions over Realtime. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only, and required with the two above. Audience sessions are written with it. |
-| `ANTHROPIC_API_KEY` | Outline drafting with Claude. Without it, a built-in template outline is used. |
+| `ANTHROPIC_API_KEY` | Claude on the server: outlines, analysis, reading papers. Without it, Claude works only inside claude.ai, and outlines use a template. |
+| `SOURCE_ALLOWED_HOSTS` | Comma-separated hosts that data URL sources may be fetched from, such as `api.open-meteo.com`. Empty means any public host. |
+| `REQUIRE_SIGN_IN` | Set to `1` on a public server other than Vercel. Without sign-in, the Claude and URL-fetch routes then switch off (on Vercel this is automatic). |
 
 ### Setting up a Supabase project
 
@@ -36,6 +38,17 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 4. Set the three Supabase variables above in Vercel (or `.env.local`).
 
 To run the same stack locally with Docker: `npx supabase start`, which prints the local URL and keys.
+
+## Deploy to Vercel
+
+1. In Vercel, **Add New → Project** and import `dpharris-llu/portal`.
+2. Set **Root Directory** to `orator-studio`. The framework is detected as Next.js; keep the default build settings.
+3. Under **Settings → Git**, set the production branch to the branch you want live (the work so far is on `claude/wonderful-lamport-y0ycay`), or merge it into `main` first.
+4. Environment variables are all optional:
+   - **None:** the site runs in local mode. Each visitor's work stays in their own browser. Claude and URL fetching are off, because there is no sign-in to protect them.
+   - **Supabase variables:** Magic Link sign-in, cloud storage, live audience sessions. Apply the migrations first (below), and add `https://<your-vercel-domain>/auth/callback` as a redirect URL in Supabase.
+   - **`ANTHROPIC_API_KEY`:** only takes effect with Supabase set, so that only signed-in people can use it.
+5. Version .3 is for non-sensitive content only (spec section 8).
 
 ## Layout of the code
 

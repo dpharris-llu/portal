@@ -206,9 +206,50 @@ Contrast ratios are WCAG 2.1 calculations from the hex values.
 - [ ] Small-size mark for browser tabs and app icons (likely a monogram, such as an O or OS).
 - [ ] Choose the red for the reversed colorway.
 - [ ] Confirm with LLU brand staff that the product may use the LLU palette and how it may be shown beside LLU logos.
-- [ ] Choose a brand typeface and replace the placeholder.
+- [ ] Choose a brand typeface to replace Inter and Source Serif 4 (3C).
 - [ ] Trademark, domain, and app store check for OratorStudio and the module names.
 - [ ] Decide whether the motto changes to name the four modules.
+
+## 3C. Interface design
+
+The interface follows direction A ("calm clinical") with direction B's serif headings, chosen from three directions on Nov 27, 2026. Mockups for desktop, iPad and phone: [OratorStudio design directions](https://claude.ai/artifact/EaeKiRbeAWdcyaR4zP6g3j).
+
+**Principles**
+
+1. **Calm and white.** White surfaces, quiet gray panels, hairline borders, generous spacing. Grouping comes from space more than boxes.
+2. **Serif for what people read, sans for what they operate.** Page titles, the thesis, argument points and card titles use the serif. Controls, labels, tables and body text use the sans-serif.
+3. **Red is rare.** Navy carries text and primary actions. Regent Red appears about once per screen: the wordmark, the current module marker, the slide accent bar.
+4. **Status is spoken plainly.** Evidence strength, unsupported points and slides to review are labeled in words, with color as a second signal, never the only one.
+
+**Tokens**
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Navy | #002255 | Primary buttons, headings, links |
+| Regent Red | #a30234 | Wordmark, current-module marker, slide accent |
+| Ink | #0f1b2d | Body text |
+| Muted | #4a5568 | Secondary text (7.4:1 on white) |
+| Line | #e7eaef | Borders and dividers |
+| Panel | #f7f8fa | Side navigation, quiet panels |
+| Amber | #8a4b00 on #fff7eb | Needs attention: unsupported points, slides to review |
+| Green | #1d4b2a on #e6f2e9 | Strong or moderate evidence, checks that passed |
+| Radius | 10 px controls, 16 px cards | |
+| Sans | Inter | Interface text |
+| Serif | Source Serif 4 | Titles, thesis, points |
+
+Both typefaces are open source (SIL Open Font License) and are served by the app itself, not by a font service. They are placeholders until LLU chooses a brand typeface (3B).
+
+**Layout by device**
+
+| Device | Navigation | Notes |
+| --- | --- | --- |
+| Desktop (1200 px and wider) | Sidebar with the four modules and labels | Slide editor: thumbnails, slide, details panel side by side |
+| iPad and small laptops | Icon rail with short labels | Upright: one column of content. Sideways: the full slide editor |
+| Phone | Bottom tab bar | For reviewing and quick fixes: the argument, a slide's text and notes, joining a session. Full slide building is meant for iPad or desktop |
+
+Every control is at least 44 by 44 points, so it is easy to tap. Layouts reflow without horizontal scrolling down to 320 px wide.
+
+**Styling approach.** Version .3 uses one stylesheet built on these tokens, with no CSS framework. When the app needs complex components (dialogs, menus, date pickers, data tables), adopt an unstyled accessible component library such as Radix UI or React Aria, styled with these tokens, rather than Bootstrap's defaults. Dark mode is a later item.
 
 ## 4. Functional requirements
 
@@ -478,6 +519,7 @@ Every source is either a file the author uploads or a URL the author adds. There
 | Accessibility | Decks and exports pass automated checks and a defined manual checklist; tagged PDF output | 2 |
 | Security | Encryption in transit and at rest; tenant isolation through Row Level Security; secrets never sent to models | .3 |
 | Security | URL sources are fetched by the server only from the institution's allowed hosts, never from private addresses unless allowed; API and connector credentials stored encrypted and never sent to models or the browser | .3 |
+| Security | On a deployed server, routes that call Claude with the institution's key or fetch URLs require sign-in; with no sign-in configured they are off | .3 |
 | Security | Magic Link login (F-018) | .3 |
 | Security | Role-based access and audit log of views, edits, exports, and AI calls | 1 |
 | Privacy | Documents used as data sources are read in the browser and not uploaded; their figures go to AI only where sensitivity labels allow | .3 |

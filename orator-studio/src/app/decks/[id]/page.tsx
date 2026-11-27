@@ -98,7 +98,7 @@ export default function EditorPage() {
 
   return (
     <>
-      <TopBar>
+      <TopBar compact>
         <strong>{deck.meta.title}</strong>
         <span className="status" role="status">{status === "saving" ? "Saving…" : status === "error" ? "Save failed: kept locally" : "Saved"}</span>
         <button onClick={() => { flush(); undo(); }} disabled={!canUndo}>Undo</button>

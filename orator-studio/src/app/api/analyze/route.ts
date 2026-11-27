@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { serverAccess } from "@/lib/serverAccess";
 import { Analysis, AnalysisRequest, analysisPrompt } from "@/ai/analysis";
 import { aiConfigured } from "@/ai/claude";
 import { claudeJson, guard } from "@/ai/server-claude";
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /** Whether this server can ask Claude (it needs ANTHROPIC_API_KEY). */
 export async function GET() {
-  return NextResponse.json({ available: aiConfigured() });
+  return NextResponse.json({ available: aiConfigured() && (await serverAccess()).ok });
 }
 
 /** Claude's analysis of confirmed figures. Only the purpose, comparisons, labels and numbers are sent. */

@@ -7,6 +7,7 @@ import { TopBar } from "@/components/TopBar";
 import { ModeBanner } from "@/components/ModeBanner";
 import { DeckList, useOpenSample } from "@/components/DeckList";
 import { getArguments, type ArgumentSummary } from "@/lib/argumentRepo";
+import { Icon } from "@/components/Icon";
 
 export default function BuildHome() {
   const router = useRouter();
@@ -24,11 +25,17 @@ export default function BuildHome() {
     <>
       <TopBar />
       <ModeBanner />
-      <main className="wide stack">
-        <h1 style={{ margin: 0 }}>Orator Build</h1>
-        <p className="muted" style={{ margin: 0 }}>Turn an argument into slides that fit your time. Layout follows the content.</p>
+      <main className="wide stack" style={{ gap: 28 }}>
+        <header className="page-head">
+          <div>
+            <p className="eyebrow">Orator Build</p>
+            <h1>Turn the argument into slides</h1>
+            <p className="lede">Slides that fit your time. Layout follows the content.</p>
+          </div>
+        </header>
         <div className="start-grid">
           <div className="start-card" style={{ cursor: "default" }}>
+            <span className="icon-tile"><Icon name="research" /></span>
             <strong>From an argument</strong>
             {args === null ? (
               <span className="small muted">Loading…</span>
@@ -47,15 +54,17 @@ export default function BuildHome() {
             )}
           </div>
           <Link href="/import" className="start-card">
+            <span className="icon-tile"><Icon name="upload" /></span>
             <strong>Import a PowerPoint deck</strong>
             <span className="small">Text, images, tables and notes convert; anything else is kept as an image, with a report.</span>
           </Link>
           <button className="start-card" onClick={() => openSample((h) => router.push(h))}>
+            <span className="icon-tile"><Icon name="build" /></span>
             <strong>Open the demo deck</strong>
             <span className="small">A sample deck to try the editor, checks and presenting.</span>
           </button>
         </div>
-        <h2 style={{ margin: "8px 0 0", fontSize: 18 }}>Your decks</h2>
+        <h2 className="section-h">Your decks</h2>
         <DeckList action="edit" allowDelete empty="No decks yet." />
       </main>
     </>

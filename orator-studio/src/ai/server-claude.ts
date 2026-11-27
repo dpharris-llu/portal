@@ -4,15 +4,12 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { aiConfigured } from "./claude";
-import { serverSupabase } from "@/lib/supabase/server";
+import { serverAccess } from "@/lib/serverAccess";
 
 export async function guard(): Promise<NextResponse | null> {
   if (!aiConfigured()) return NextResponse.json({ error: "Claude isn't connected to this server. Set ANTHROPIC_API_KEY.", code: "not_configured" }, { status: 501 });
-  const supabase = await serverSupabase();
-  if (supabase) {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return NextResponse.json({ error: "Sign in first.", code: "not_granted" }, { status: 401 });
-  }
+  const access = await serverAccess();
+  if (!access.ok) return NextResponse.json({ error: access.error, code: "not_granted" }, { status: access.status });
   return null;
 }
 

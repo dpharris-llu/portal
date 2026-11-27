@@ -4,6 +4,8 @@
  * audience polls and Q&A are off because phones need a server to connect to.
  */
 import { createRoot } from "react-dom/client";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/source-serif-4";
 import "../src/app/globals.css";
 import { ParamsContext, usePath } from "./router";
 import Home from "../src/app/page";
