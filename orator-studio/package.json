@@ -1,8 +1,8 @@
 {
-  "name": "lectern",
+  "name": "orator-studio",
   "version": "0.3.0",
   "private": true,
-  "description": "LecternAI: a presentation platform that stores decks as structured content (claims, evidence, intent).",
+  "description": "OratorStudio: a presentation platform that stores decks as structured content (claims, evidence, intent).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

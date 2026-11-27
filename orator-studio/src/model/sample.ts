@@ -13,8 +13,8 @@ export function sampleDeck(): Deck {
 export function sampleDeckOps(): { deck: Deck; ops: OpBody[] } {
   const deck = emptyDeck();
   const meta = {
-    title: "Why LecternAI",
-    goal: "Get approval to pilot LecternAI with five LLU admins",
+    title: "Why OratorStudio",
+    goal: "Get approval to pilot OratorStudio with five LLU admins",
     audience: "LLU leadership",
     timeLimitMin: 15,
     takeaway: "Structured decks are faster to build, easier to trust, and easier to present.",

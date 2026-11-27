@@ -9,7 +9,7 @@ export function TopBar({ children }: { children?: React.ReactNode }) {
   const sb = browserSupabase();
   return (
     <header className="topbar">
-      <Link href="/" aria-label="LecternAI home"><Wordmark size={22} /></Link>
+      <Link href="/" aria-label="OratorStudio home"><Wordmark size={22} /></Link>
       {children}
       <span className="spacer" />
       {sb && (

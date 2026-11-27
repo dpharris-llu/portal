@@ -1,4 +1,4 @@
-"""Builds src/import/fixtures/sample.pptx, a small deck that exercises the importer.
+"""Builds src/import/fixtures/sample.pptx for the OratorStudio importer, a small deck that exercises the importer.
 
 Run: python3 scripts/make-fixture.py   (needs python-pptx and Pillow)
 """

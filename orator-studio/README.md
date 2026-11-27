@@ -1,11 +1,13 @@
-# LecternAI (version .3 scaffold)
+# OratorStudio (version .3)
+
+*Ideas first. Slides follow.* · Create. Present. Engage.
 
 A presentation platform that stores a deck as structured content (claims, evidence and intent) and generates the layout from it. This folder is the version .3 (Stage 0) starting point described in the product spec.
 
 ## Run it
 
 ```bash
-cd lectern
+cd orator-studio
 npm install
 npm run dev        # http://localhost:3000
 npm test           # unit tests (model, theme, layout, search, presenter, checks, import, audience)
@@ -77,5 +79,7 @@ Images from imported decks are stored in the browser (IndexedDB). They don't syn
 ## Notes
 
 - Theme colors come from the spec's table. A test checks every contrast ratio in that table, and all of them match to within rounding. Sky blue `#6699cc` is 3.003:1, which only just passes for large text and chart marks.
-- The LLU fonts, logo colors and clearance rules are still placeholders, as the spec says.
+- The LLU fonts and clearance rules are still placeholders, as the spec says.
+- **Wordmark:** "Orator" in navy (15.4:1 on white) and "Studio" in Regent Red (8.0:1). The brand card shows the name on black, but Regent Red on black is only 2.6:1, below the 3:1 minimum even for large text. A dark version needs a lighter red: `#cc0044` is 3.65:1 (large text only), `#e0335f` is 4.8:1. That choice is for LLU brand staff, so the app only uses the light version for now.
+- Browser storage keys and channel names still start with `lectern`, the earlier working name, so decks already saved in a browser stay readable. Users never see them.
 - Version .3 is for non-sensitive content only (spec 9). Nothing here is set up for patient or student data.

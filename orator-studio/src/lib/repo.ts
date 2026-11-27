@@ -30,6 +30,8 @@ export interface DeckRepo {
   remove(id: string): Promise<void>;
 }
 
+// Browser storage keys keep the product's earlier working name ("lectern") so
+// decks already saved in a browser stay readable. They are never shown to users.
 const INDEX_KEY = "lectern:index";
 const deckKey = (id: string) => `lectern:deck:${id}`;
 

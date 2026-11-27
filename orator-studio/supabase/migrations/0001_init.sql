@@ -1,4 +1,4 @@
--- LecternAI version .3 schema.
+-- OratorStudio version .3 schema.
 -- Multi-tenant from day one (spec 8): every row carries tenant_id, and Row Level
 -- Security limits access to members of that tenant. Standard Postgres only, to
 -- keep a later move to Azure a migration rather than a rewrite (spec 9).

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { browserSupabase } from "@/lib/supabase/client";
-import { Wordmark } from "@/components/Wordmark";
+import { BrandHero } from "@/components/BrandHero";
 
 export default function LoginPage() {
   const supabase = browserSupabase();
@@ -13,8 +13,8 @@ export default function LoginPage() {
   if (!supabase) {
     return (
       <main className="narrow">
-        <Wordmark />
-        <p>Supabase is not configured, so LecternAI is running in local mode with no login. Decks are saved in this browser.</p>
+        <BrandHero />
+        <p>Supabase is not configured, so OratorStudio is running in local mode with no login. Decks are saved in this browser.</p>
         <Link href="/">Go to your decks</Link>
       </main>
     );
@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   return (
     <main className="narrow">
-      <Wordmark />
+      <BrandHero />
       <h1>Sign in</h1>
       {state === "sent" ? (
         <p role="status">Check {email} for a sign-in link.</p>

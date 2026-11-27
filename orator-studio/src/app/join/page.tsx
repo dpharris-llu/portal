@@ -8,7 +8,7 @@ export default function JoinPage() {
   const [code, setCode] = useState("");
   return (
     <main className="phone">
-      <Wordmark size={22} />
+      <Wordmark size={26} tagline />
       <h1>Join a presentation</h1>
       <form
         className="stack"
