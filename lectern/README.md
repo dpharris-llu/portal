@@ -1,0 +1,59 @@
+# LecternAI (version .3 scaffold)
+
+A presentation platform that stores a deck as structured content (claims, evidence and intent) and generates the layout from it. This folder is the version .3 (Stage 0) starting point described in the product spec.
+
+## Run it
+
+```bash
+cd lectern
+npm install
+npm run dev        # http://localhost:3000
+npm test           # unit tests (model, theme, layout, search, presenter, checks)
+npm run typecheck
+```
+
+With no environment variables, the app runs in **local mode**. There's no login, and decks are saved in the browser. Click **Open demo deck** to try it.
+
+To sign in and sync, copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Used for |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Magic Link login and cloud storage. Apply `supabase/migrations/0001_init.sql` first. In Supabase Auth settings, add `<your-origin>/auth/callback` as a redirect URL. |
+| `ANTHROPIC_API_KEY` | Outline drafting with Claude. Without it, a built-in template outline is used. |
+
+## Layout of the code
+
+| Path | What it is | Spec |
+| --- | --- | --- |
+| `src/model/` | Deck, slide and block types. Every edit is an operation with author, time and reason. Undo appends inverse operations, so the log is a full audit trail and replays to the current deck. | 3, 6 (guardrail 5) |
+| `src/theme/` | LLU palette as tokens with PMS and CMYK values. WCAG contrast math. Rules 1 to 4: body-text blocking with the nearest compliant color, safe uses computed against the background, chart series ordering with outlines, and white or black text on fills. | 3A |
+| `src/layout/engine.ts` | Rule-based layout (statement, quote, visual, split, stack, grid), shrink-to-fit with overflow warnings, flow around freeform regions, and a per-slide override. Pure, so export can reuse it. | 3, F-003 to F-005 |
+| `src/search/` | Local BM25 search over claims, content, notes, table cells and chart labels, with prefix matching. Has a hook for blending in embeddings. | L-01, L-02 (partial), L-10 |
+| `src/present/` | Presenter state machine: private preview, send, return-to-place, blank, never-show-on-voice, and confirm-before-showing. The audience window syncs over `BroadcastChannel` with no server. | L-04 to L-06, L-09 |
+| `src/checks/` | Missing alt text, unsourced charts, `[figure: …]` placeholders, AI content awaiting review, and layout overflow. | F-010, guardrail 2 |
+| `src/ai/` | Outline prompt and schema, a template fallback, and the Claude call (`claude-opus-5-5`, structured JSON output, server-side refusal fallback). | F-001, F-002 |
+| `src/app/` | Pages: deck list, new deck (goal → outline review → approve), editor, presenter, audience window, login, and the auth callback. | |
+| `supabase/migrations/` | Tenants, memberships with roles, decks, and an append-only `deck_ops` table. Row Level Security on every table. Each new user gets a personal tenant. | 8, 9 |
+
+## Status against version .3 (Stage 0)
+
+| Item | Status |
+| --- | --- |
+| F-001, F-002: deck from goal; outline approved before slides | Built |
+| F-003, F-004: theme-driven layout; structured editor with live reflow | Built |
+| F-005: freeform region | Partial. A region can be reserved and content flows around it, but there's no editor yet for blocks inside it. |
+| F-006: PPTX import | Not started |
+| F-007: PPTX and PDF export | Not started |
+| F-008: non-linear live mode | Built: Ctrl/Cmd+K search, private preview, return-to-place, top-3 matches, never-show-on-voice and confirm flags. Voice (L-03) uses the browser's speech recognition where it exists. |
+| F-009, L-10: offline presenting package | Partial. Decks are cached in the browser and presenting needs no server, but there's no service worker or self-contained HTML export yet. |
+| F-010: contrast and alt-text checks | Built |
+| F-011: notes and rehearsal timer | Notes are built. The timer counts narrative time and detour time separately; there's no rehearsal mode yet. |
+| L-02: semantic matching | Hook only. Search is lexical until per-slide embeddings are added. |
+| Magic Link login | Built. It needs a Supabase project to try. |
+| A-01 to A-05: audience response | Not started |
+
+## Notes
+
+- Theme colors come from the spec's table. A test checks every contrast ratio in that table, and all of them match to within rounding. Sky blue `#6699cc` is 3.003:1, which only just passes for large text and chart marks.
+- The LLU fonts, logo colors and clearance rules are still placeholders, as the spec says.
+- Version .3 is for non-sensitive content only (spec 9). Nothing here is set up for patient or student data.
