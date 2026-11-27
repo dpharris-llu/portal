@@ -6,6 +6,7 @@ import { useDeck } from "@/lib/useDeck";
 import { TopBar } from "@/components/TopBar";
 import { SlideView } from "@/components/SlideView";
 import { BlockEditor } from "@/components/BlockEditor";
+import { SourcesPanel } from "@/components/SourcesPanel";
 import { getTheme } from "@/theme/llu";
 import { layoutSlide, LAYOUT_NAMES } from "@/layout/engine";
 import { deckChecks } from "@/checks/checks";
@@ -18,7 +19,7 @@ const BLOCK_TYPES: BlockType[] = ["text", "bullets", "image", "chart", "table", 
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
-  const { deck, log, commit, undo, redo, canUndo, canRedo, status, missing } = useDeck(id);
+  const { deck, log, commit, undo, redo, canUndo, canRedo, status, missing, me } = useDeck(id);
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<Slide | null>(null);
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -243,6 +244,7 @@ export default function EditorPage() {
               Deck: {issues.filter((i) => i.severity === "error").length} errors, {issues.filter((i) => i.severity === "warning").length} warnings.
             </p>
           </section>
+          <SourcesPanel deck={deck} me={me} commit={(ops, reason) => { flush(); commit(ops, reason); }} />
           <section>
             <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>Deck</h2>
             <div className="small stack" style={{ gap: 4 }}>

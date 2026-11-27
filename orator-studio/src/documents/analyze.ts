@@ -28,7 +28,7 @@ export interface Finding {
   text: string;
   /** A short headline for the row's chart slide. */
   claim?: string;
-  /** A question or next step the finding raises, worded as a suggestion. */
+  /** A question or next step the finding raises. Only Claude's insights carry one; computed patterns describe. */
   suggestion?: string;
   /** Higher is more worth saying. */
   score: number;
@@ -97,7 +97,6 @@ function withinSeries(src: DataSource, s: SourceSeries): Finding[] {
       score: 0.7,
       text: `${L} ${diffs.every((d) => d > 0) ? "grew in every period" : "never fell"}, adding ${fmt(avgAdd)} a period on average, from ${fmt(pts[0].v)} (${per(pts[0])}) to ${fmt(pts[n - 1].v)} (${per(pts[n - 1])}).`,
       claim: `${L} grew every period, to ${fmt(pts[n - 1].v)}`,
-      suggestion: `Decide how and when to use the ${low(s.label)}, which grows by about ${fmt(avgAdd)} a period.`,
     });
   }
 
@@ -128,7 +127,6 @@ function withinSeries(src: DataSource, s: SourceSeries): Finding[] {
         score: 0.6 + 0.3 * r2,
         text: `${L} ${up ? "rose" : "fell"} steadily, from ${fmt(pts[0].v)} (${per(pts[0])}) to ${fmt(pts[n - 1].v)} (${per(pts[n - 1])})${change !== null ? `, ${up ? "up" : "down"} ${change}` : ""}.`,
         claim: `${L} ${up ? "rose" : "fell"} steadily to ${fmt(pts[n - 1].v)}`,
-        suggestion: `Decide whether the ${up ? "rise" : "fall"} in ${low(s.label)} should continue, and watch the next report.`,
       });
     }
   }
@@ -148,7 +146,6 @@ function withinSeries(src: DataSource, s: SourceSeries): Finding[] {
         score: 0.55 + Math.min(0.3, cv / 3) - (isLevel(s.label) ? 0.2 : 0),
         text: `${L} swung widely: ${names} ${peaks.length === 1 ? "was" : "were each"} ${pct(least)} or more above the ${fmt(m)} average.`,
         claim: `${L} peaked in ${names}`,
-        ...(isLevel(s.label) ? {} : { suggestion: `Find out what drove ${low(s.label)} in ${names}.` }),
       });
     }
   }
@@ -167,7 +164,6 @@ function withinSeries(src: DataSource, s: SourceSeries): Finding[] {
         score: 0.5 + (share - 0.5),
         text: `${L} came mostly in ${names}: ${pct(share)} of the ${fmt(total)} total.`,
         claim: `${pct(share)} of ${low(s.label)} came in ${names}`,
-        suggestion: `Check what the ${low(s.label)} in ${names} were for.`,
       });
     }
   }
@@ -256,7 +252,6 @@ function betweenSeries(src: DataSource): Finding[] {
           seriesIds: [a.id, b.id],
           score: 0.4 + 0.2 * (count / n),
           text: `In ${count} of ${n} periods, ${low(a.label)} matched ${low(b.label)} exactly.`,
-          suggestion: `Look at the ${n - count} periods where ${low(a.label)} and ${low(b.label)} differ.`,
         });
       }
     }
@@ -294,7 +289,6 @@ function betweenSeries(src: DataSource): Finding[] {
         text: offset
           ? `${cap(small.label)} offset ${pct(overall)} of ${low(large.label)} overall, but ${pct(top)} in ${peak.d.period}.`
           : `${cap(small.label)} equaled ${pct(overall)} of ${low(large.label)} overall, but ${pct(top)} in ${peak.d.period}.`,
-        suggestion: `Ask why ${low(small.label)} were so high relative to ${low(large.label)} in ${peak.d.period}.`,
       });
     }
   }
@@ -353,12 +347,5 @@ export function analyze(src: DataSource): Analysis {
     if (best) headline[s.id] = best;
   });
   const findings = [...per.flat(), ...between].sort((a, b) => b.score - a.score);
-  // One suggestion per row: keep it on that row's strongest finding.
-  const suggested = new Set<string>();
-  for (const f of findings) {
-    if (!f.suggestion) continue;
-    if (suggested.has(f.seriesIds[0])) delete f.suggestion;
-    else suggested.add(f.seriesIds[0]);
-  }
   return { findings, headline };
 }

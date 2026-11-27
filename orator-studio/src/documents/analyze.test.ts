@@ -49,7 +49,7 @@ describe("analysis", () => {
     const f = a.findings.find((x) => x.kind === "volatile" && x.seriesIds[0] === "pur")!;
     expect(f.text).toBe("Purchases swung widely: Feb and May 2026 were each 69% or more above the $2,366.67 average.");
     expect(f.claim).toBe("Purchases peaked in Feb and May 2026");
-    expect(f.suggestion).toBe("Find out what drove purchases in Feb and May 2026.");
+    expect(f.suggestion).toBeUndefined();
   });
 
   it("reports concentrated rows and their offset against the row they reduce", () => {
@@ -65,14 +65,12 @@ describe("analysis", () => {
     expect(rising.headline.r.text).toBe("Retention rate rose steadily, from 80% (Jan 2026) to 88% (Jun 2026), up 8 percentage points.");
   });
 
-  it("does not call balances volatile when other rows explain them, and never suggests targets for them", () => {
+  it("does not call balances volatile when other rows explain them", () => {
     expect(kinds("close")).not.toContain("volatile");
-    expect(a.findings.filter((f) => f.suggestion).every((f) => !/balance/i.test(f.suggestion!) || /cash back/i.test(f.suggestion!))).toBe(true);
   });
 
-  it("keeps one suggestion per row", () => {
-    const rows = a.findings.filter((f) => f.suggestion).map((f) => f.seriesIds[0]);
-    expect(new Set(rows).size).toBe(rows.length);
+  it("leaves suggestions to Claude: computed patterns only describe", () => {
+    expect(a.findings.filter((f) => f.suggestion)).toEqual([]);
   });
 
   it("lists periods compactly", () => {
@@ -85,8 +83,9 @@ describe("analysis", () => {
     const claims = d.narrative.map((s) => s.claim);
     expect(claims[1]).toBe("What the figures show");
     expect(claims).toContain("Purchases peaked in Feb and May 2026");
-    expect(claims[claims.length - 1]).toBe("Suggested next steps");
-    expect(d.narrative[d.narrative.length - 1].intent).toBe("decide");
+    expect(claims).not.toContain("Suggested next steps"); // no Claude, no suggestions
+    const withSteps = draftFromSource(ledger, analyze(ledger).findings, [{ text: "Check the May receipts.", ai: true }]);
+    expect(withSteps.narrative[withSteps.narrative.length - 1]).toMatchObject({ claim: "Suggested next steps", intent: "decide" });
     expect(d.backup[0].claim).toBe("The figures check out");
     // Dropping a finding removes it from the deck.
     const all = analyze(ledger).findings;

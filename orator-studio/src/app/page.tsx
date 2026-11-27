@@ -61,6 +61,7 @@ export default function Home() {
           <button onClick={openSample}>Open demo deck</button>
           <Link href="/import"><button>Import PPTX</button></Link>
           <Link href="/documents"><button>Start from documents</button></Link>
+          <Link href="/data"><button>Start from a URL</button></Link>
           <Link href="/new"><button className="primary">New deck</button></Link>
         </div>
         {decks === null ? (

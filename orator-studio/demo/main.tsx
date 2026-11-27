@@ -10,6 +10,7 @@ import Home from "../src/app/page";
 import NewDeck from "../src/app/new/page";
 import ImportPage from "../src/app/import/page";
 import DocumentsPage from "../src/app/documents/page";
+import DataUrlPage from "../src/app/data/page";
 import EditorPage from "../src/app/decks/[id]/page";
 import PresentPage from "../src/app/decks/[id]/present/page";
 import { OutlineRequest, templateOutline } from "../src/ai/outline";
@@ -28,6 +29,13 @@ window.fetch = async (input, init) => {
       headers: { "content-type": "application/json" },
     });
   }
+  // Pages on claude.ai can't make requests to other sites, so URLs are fetched only by the full app's server.
+  if (url.endsWith("/api/sources/fetch")) {
+    return new Response(
+      JSON.stringify({ error: "This demo can't fetch URLs: pages on claude.ai can't reach other sites. Open the URL in your browser, save the response, and upload or paste it below." }),
+      { status: 501, headers: { "content-type": "application/json" } },
+    );
+  }
   // The demo has no server: Claude is reached through the page's claude.ai capability instead.
   if (url.endsWith("/api/analyze")) {
     return init?.method === "POST"
@@ -42,6 +50,7 @@ const routes: { pattern: RegExp; keys: string[]; Page: () => React.ReactNode }[]
   { pattern: /^\/new$/, keys: [], Page: NewDeck },
   { pattern: /^\/import$/, keys: [], Page: ImportPage },
   { pattern: /^\/documents$/, keys: [], Page: DocumentsPage },
+  { pattern: /^\/data$/, keys: [], Page: DataUrlPage },
   { pattern: /^\/decks\/([^/]+)$/, keys: ["id"], Page: EditorPage },
   { pattern: /^\/decks\/([^/]+)\/present$/, keys: ["id"], Page: PresentPage },
 ];

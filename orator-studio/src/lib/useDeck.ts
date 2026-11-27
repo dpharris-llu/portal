@@ -101,5 +101,6 @@ export function useDeck(id: string) {
     redo,
     status,
     missing,
+    me,
   };
 }

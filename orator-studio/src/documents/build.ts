@@ -25,6 +25,20 @@ function chartValues(s: SourceSeries): { values: number[]; flipped: boolean } {
 }
 
 export function provenanceLines(src: DataSource, s: SourceSeries): string[] {
+  if (src.kind === "url" && src.origin) {
+    const host = (() => {
+      try {
+        return new URL(src.origin!.url).host;
+      } catch {
+        return src.origin!.url;
+      }
+    })();
+    return s.figures.map((f, i) => {
+      const v = f.value === null ? "-" : f.raw ?? formatFigure(f.value, s.unit, hasCents(s));
+      const where = f.value === null ? "no figure" : f.entered ? "typed in by the author" : `${f.path}; ${host}, fetched ${src.origin!.fetchedAt.slice(0, 16).replace("T", " ")} UTC`;
+      return `${src.documents[i].period}: ${v} (${where})`;
+    });
+  }
   return s.figures.map((f, i) => {
     const doc = src.documents[i];
     const where = f.value === null ? "no figure" : f.entered ? "typed in by the author" : `${doc.name}, page ${f.page}`;

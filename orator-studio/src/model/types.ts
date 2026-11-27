@@ -4,6 +4,8 @@
  * derived from this, never stored as positioned boxes (except freeform regions).
  */
 
+import type { Mapping } from "@/sources/aggregate";
+
 export type Id = string;
 
 export type Intent = "inform" | "persuade" | "decide";
@@ -158,6 +160,8 @@ export interface SourceFigure {
   value: number | null;
   raw?: string;
   page?: number;
+  /** For data URL sources: the field, or how the figure was combined from it. */
+  path?: string;
   entered?: boolean;
 }
 
@@ -173,10 +177,23 @@ export interface SourceSeries {
 }
 
 /** Figures read from a set of documents (spec: start from documents). */
+/** Where a data URL source came from, and how its fields were mapped, so it can be refreshed (F-014). */
+export interface UrlOrigin {
+  url: string;
+  fetchedAt: string;
+  sha256: string;
+  contentType: string;
+  format: "json" | "xml" | "csv";
+  mapping: Mapping;
+  /** The fetched response, kept as a snapshot in this browser's asset store. */
+  snapshotAssetId?: string;
+}
+
 export interface DataSource {
   id: Id;
   name: string;
-  kind: "documents";
+  kind: "documents" | "url";
+  origin?: UrlOrigin;
   documents: SourceDocument[];
   series: SourceSeries[];
   createdAt: string;
