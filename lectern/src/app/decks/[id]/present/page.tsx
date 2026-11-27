@@ -16,6 +16,10 @@ import { SlideView } from "@/components/SlideView";
 import { CommandBar } from "@/components/CommandBar";
 import { TopBar } from "@/components/TopBar";
 import { listenOnce, speechAvailable } from "@/lib/speech";
+import { useLiveSession } from "@/lib/useLiveSession";
+import { LivePanel } from "@/components/LivePanel";
+import { LiveContext, type LiveInfo } from "@/components/LiveContext";
+import { JoinScreen } from "@/components/JoinScreen";
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60);
@@ -46,6 +50,17 @@ function Presenter({ deck }: { deck: Deck }) {
   const [now, setNow] = useState(() => Date.now());
   const [detourSec, setDetourSec] = useState(0);
   const channel = useRef<BroadcastChannel | null>(null);
+  const live = useLiveSession(deck.id);
+  const liveInfo: LiveInfo = useMemo(
+    () => ({
+      results: live.view?.results ?? {},
+      activePoll: live.view?.activePoll ?? null,
+      join: live.creds ? { code: live.creds.code, host: window.location.host } : undefined,
+    }),
+    [live.view, live.creds],
+  );
+  const liveRef = useRef(liveInfo);
+  liveRef.current = liveInfo;
 
   // Timer: total time, and time spent on detours, kept apart (L-08).
   useEffect(() => {
@@ -62,15 +77,15 @@ function Presenter({ deck }: { deck: Deck }) {
     channel.current = ch;
     if (!ch) return;
     ch.onmessage = (e) => {
-      if (e.data === "hello") ch.postMessage({ deckId: deck.id, view: stateRef.current.audience, deckJson: JSON.stringify(deck) } satisfies AudienceMessage);
+      if (e.data === "hello") ch.postMessage({ deckId: deck.id, view: stateRef.current.audience, deckJson: JSON.stringify(deck), live: liveRef.current } satisfies AudienceMessage);
     };
     return () => ch.close();
   }, [deck]);
   const stateRef = useRef(state);
   stateRef.current = state;
   useEffect(() => {
-    channel.current?.postMessage({ deckId: deck.id, view: state.audience, deckJson: JSON.stringify(deck) } satisfies AudienceMessage);
-  }, [deck, state.audience]);
+    channel.current?.postMessage({ deckId: deck.id, view: state.audience, deckJson: JSON.stringify(deck), live: liveInfo } satisfies AudienceMessage);
+  }, [deck, state.audience, liveInfo]);
 
   const voice = useCallback(() => {
     if (listening) return;
@@ -124,7 +139,7 @@ function Presenter({ deck }: { deck: Deck }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [cmdk.open, state.preview, voice]);
 
-  const live = state.audience.kind === "slide" ? deck.slides[state.audience.slideId] : null;
+  const liveSlide = state.audience.kind === "slide" ? deck.slides[state.audience.slideId] : null;
   const current = deck.slides[deck.narrative[state.index]];
   const next = deck.slides[deck.narrative[state.index + 1]];
   const preview = state.preview ? deck.slides[state.preview] : null;
@@ -133,7 +148,7 @@ function Presenter({ deck }: { deck: Deck }) {
   const over = elapsed - detourSec > budget;
 
   return (
-    <>
+    <LiveContext.Provider value={liveInfo}>
       <TopBar>
         <strong>{deck.meta.title}</strong>
         <button onClick={() => window.open(`/decks/${deck.id}/audience`, `lectern-audience-${deck.id}`, "popup")}>Open audience window</button>
@@ -164,7 +179,13 @@ function Presenter({ deck }: { deck: Deck }) {
                 <span className="spacer" />
                 {state.detour && <button className="primary" onClick={() => dispatch({ type: "returnToPlace" })}>Return to slide {state.index + 1} <span className="kbd">R</span></button>}
               </div>
-              {live ? <SlideView slide={live} theme={theme} /> : <div className="slide" style={{ background: "#000" }} aria-label="Audience screen is blank" />}
+              {state.audience.kind === "join" ? (
+                <JoinScreen code={state.audience.code} url={state.audience.url} theme={theme} />
+              ) : liveSlide ? (
+                <SlideView slide={liveSlide} theme={theme} />
+              ) : (
+                <div className="slide" style={{ background: "#000" }} aria-label="Audience screen is blank" />
+              )}
             </>
           )}
           <div className="row">
@@ -182,12 +203,13 @@ function Presenter({ deck }: { deck: Deck }) {
             <span className="spacer" />
             <span className="small muted" title="Time on planned detours">detours {fmt(detourSec)}</span>
           </div>
-          {preview && live && (
+          {preview && liveSlide && (
             <div>
               <p className="small" style={{ margin: "0 0 4px" }}><span className="live-tag">LIVE</span> Audience still sees:</p>
-              <SlideView slide={live} theme={theme} />
+              <SlideView slide={liveSlide} theme={theme} />
             </div>
           )}
+          <LivePanel live={live} deck={deck} index={index} liveSlide={liveSlide ?? (state.audience.kind === "join" ? current : null)} dispatch={dispatch} />
           <div>
             <h2 style={{ fontSize: 14, margin: "0 0 4px" }}>Notes · {current?.claim}</h2>
             <div className="notes">{current?.notes || <span className="muted">No notes.</span>}</div>
@@ -216,6 +238,6 @@ function Presenter({ deck }: { deck: Deck }) {
           }}
         />
       )}
-    </>
+    </LiveContext.Provider>
   );
 }

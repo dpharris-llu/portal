@@ -44,6 +44,15 @@ export function sampleDeck(): Deck {
         source: "Illustrative figures for the demo deck",
       },
     ]),
+    newSlide("Where would a pilot help most?", "decide", [
+      {
+        id: newId("b"),
+        type: "poll",
+        poll: "choice",
+        question: "Which decks cost your team the most time?",
+        options: ["Board and budget", "Enrollment reports", "Accreditation", "Lectures"],
+      },
+    ]),
     newSlide("Approve a pilot with five admins", "decide", [
       bulletsBlock(["Each admin ships three real decks", "We measure time saved and errors caught", "Decision on Stage 1 after eight weeks"]),
     ]),

@@ -66,6 +66,8 @@ function blockText(b: Block): string {
       return [b.caption ?? "", ...b.header, ...b.rows.flat()].join(" ");
     case "chart":
       return [b.alt, ...b.labels, ...b.series.map((s) => s.name)].join(" ");
+    case "poll":
+      return [b.question, ...b.options].join(" ");
   }
 }
 

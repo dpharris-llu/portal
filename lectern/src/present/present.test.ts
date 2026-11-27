@@ -50,6 +50,14 @@ describe("presenter", () => {
     expect(s.preview).toBe(churn);
   });
 
+  it("shows the join screen and returns from it without skipping a slide", () => {
+    let s = initPresenter(deck);
+    s = r(deck, s, { type: "showJoin", code: "ABC234", url: "https://x/j/ABC234" });
+    expect(s.audience.kind).toBe("join");
+    s = r(deck, s, { type: "next" });
+    expect(s.audience).toEqual({ kind: "slide", slideId: n0 });
+  });
+
   it("blanks and unblanks the audience screen", () => {
     let s = initPresenter(deck);
     s = r(deck, s, { type: "toggleBlank" });

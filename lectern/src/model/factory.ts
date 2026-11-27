@@ -50,5 +50,7 @@ export function blankBlock(type: Block["type"]): Block {
       return { id, type, text: "", attribution: "" };
     case "chart":
       return { id, type, chart: "bar", labels: ["A", "B", "C"], series: [{ name: "Series 1", values: [1, 2, 3] }], alt: "" };
+    case "poll":
+      return { id, type, poll: "choice", question: "", options: ["", ""] };
   }
 }

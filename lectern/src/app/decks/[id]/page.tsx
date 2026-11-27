@@ -14,7 +14,7 @@ import { blankBlock, newSlide } from "@/model/factory";
 import { locateSlide } from "@/model/ops";
 import type { Block, BlockType, Intent, Section, Slide } from "@/model/types";
 
-const BLOCK_TYPES: BlockType[] = ["text", "bullets", "image", "chart", "table", "quote"];
+const BLOCK_TYPES: BlockType[] = ["text", "bullets", "image", "chart", "table", "quote", "poll"];
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();

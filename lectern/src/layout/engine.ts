@@ -29,7 +29,7 @@ export interface SlideLayout {
 }
 
 const MIN_SCALE = 0.6;
-const VISUAL: Block["type"][] = ["image", "chart", "table"];
+const VISUAL: Block["type"][] = ["image", "chart", "table", "poll"];
 
 export function isVisual(b: Block): boolean {
   return VISUAL.includes(b.type);

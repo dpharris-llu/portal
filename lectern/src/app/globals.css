@@ -159,3 +159,48 @@ label.inline input { width: auto; }
 .report-stats span { font-size: 13px; color: var(--muted); }
 .report-table { font-size: 14px; }
 .review-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dd8800; margin-left: 6px; }
+
+/* Polls on slides */
+.b-poll { height: 100%; display: flex; flex-direction: column; gap: 0.3em; }
+.b-poll-q { margin: 0; font-weight: 600; }
+.b-poll-options { margin: 0; padding-left: 1.3em; }
+.b-poll-chart { flex: 1; min-height: 0; }
+.b-poll-status { margin: 0; font-size: 0.5em; opacity: 0.8; }
+.b-poll-texts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3em; font-size: 0.75em; }
+.b-poll-texts li { border-left: 0.2em solid; padding-left: 0.5em; }
+.b-cloud { flex: 1; margin: 0; display: flex; flex-wrap: wrap; gap: 0.2em 0.6em; align-content: center; justify-content: center; line-height: 1.1; font-weight: 700; }
+
+/* Join screen */
+.join-screen .join-inner { position: absolute; inset: 8% 6% 8% 8%; display: grid; grid-template-columns: 1.2fr 1fr; gap: 4cqw; align-items: center; }
+.join-lead { font-size: 3.2cqw; font-weight: 700; margin: 0 0 1.5cqw; }
+.join-url { font-size: 2.4cqw; margin: 0; }
+.join-code { font-size: 7cqw; font-weight: 800; letter-spacing: 0.08em; margin: 1cqw 0; font-family: ui-monospace, monospace; }
+.join-note { font-size: 1.6cqw; opacity: 0.75; margin: 0; }
+.join-qr img { width: 100%; height: auto; }
+
+/* Live panel */
+.live-panel { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 8px; }
+.live-panel h2 { font-size: 15px; margin: 0; }
+.live-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.live-dot.live { background: #3b8a14; }
+.live-dot.connecting, .live-dot.reconnecting { background: #dd8800; }
+.live-dot.error, .live-dot.off { background: #999; }
+.queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.queue li { background: var(--panel); border-radius: 6px; padding: 6px 8px; display: grid; gap: 4px; font-size: 14px; }
+.flag { font-size: 11px; font-weight: 700; color: #fff; background: var(--err); border-radius: 4px; padding: 1px 6px; }
+.votes { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* Participant pages */
+.phone { max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.phone h1 { font-size: 20px; margin: 0; }
+.phone .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.phone .choices { display: grid; gap: 8px; }
+.phone .choices button { text-align: left; padding: 12px 14px; font-size: 16px; }
+.phone .choices button[aria-pressed="true"] { border-color: var(--navy); outline: 2px solid var(--navy); }
+.phone .scale { display: flex; gap: 6px; flex-wrap: wrap; }
+.phone .scale button { min-width: 44px; min-height: 44px; font-size: 18px; }
+.phone .scale button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.tabs { display: flex; gap: 6px; }
+.tabs button[aria-selected="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.queue li.row { display: flex; }
+.queue button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }

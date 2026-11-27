@@ -23,7 +23,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
-  const isPublic = path.startsWith("/login") || path.startsWith("/auth");
+  // Audience members join from phones without an account (A-01).
+  const isPublic =
+    path.startsWith("/login") || path.startsWith("/auth") || path === "/join" || path.startsWith("/j/") || path.startsWith("/api/live/join/");
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

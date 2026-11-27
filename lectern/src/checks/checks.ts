@@ -21,6 +21,12 @@ function blockIssues(slideId: Id, b: Block): Issue[] {
   if (b.type === "image" && b.src && !b.attribution?.trim()) {
     out.push({ slideId, blockId: b.id, severity: "info", message: "Image has no attribution." });
   }
+  if (b.type === "poll") {
+    if (!b.question.trim()) out.push({ slideId, blockId: b.id, severity: "warning", message: "Poll has no question." });
+    if ((b.poll === "choice" || b.poll === "ranking") && b.options.filter((o) => o.trim()).length < 2) {
+      out.push({ slideId, blockId: b.id, severity: "warning", message: "Poll needs at least two options." });
+    }
+  }
   if (b.provenance?.author.kind === "ai") {
     out.push({ slideId, blockId: b.id, severity: "info", message: "AI-written content: review before presenting." });
   }

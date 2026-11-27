@@ -72,7 +72,20 @@ export interface ChartBlock extends BlockBase {
   source?: string;
 }
 
-export type Block = TextBlock | BulletsBlock | ImageBlock | TableBlock | QuoteBlock | ChartBlock;
+export type PollKind = "choice" | "rating" | "ranking" | "text" | "wordcloud";
+
+/** A live audience poll (A-02). Its results render on the slide as a chart while presenting (A-03). */
+export interface PollBlock extends BlockBase {
+  type: "poll";
+  poll: PollKind;
+  question: string;
+  /** Choice and ranking polls. */
+  options: string[];
+  /** Rating polls: highest value. */
+  scale?: number;
+}
+
+export type Block = TextBlock | BulletsBlock | ImageBlock | TableBlock | QuoteBlock | ChartBlock | PollBlock;
 export type BlockType = Block["type"];
 
 /** A rectangle in slide-relative units (0..1 on each axis). */

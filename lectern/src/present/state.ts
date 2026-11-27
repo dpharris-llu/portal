@@ -6,7 +6,11 @@
  */
 import type { Deck, Id } from "@/model/types";
 
-export type AudienceView = { kind: "slide"; slideId: Id } | { kind: "blank" };
+export type AudienceView =
+  | { kind: "slide"; slideId: Id }
+  | { kind: "blank" }
+  /** Join instructions and QR code for audience response (A-01). */
+  | { kind: "join"; code: string; url: string };
 
 export interface PresenterState {
   /** Position in the main narrative. */
@@ -31,6 +35,7 @@ export type PresenterAction =
   | { type: "send" }
   | { type: "returnToPlace" }
   | { type: "toggleBlank" }
+  | { type: "showJoin"; code: string; url: string }
   | { type: "notice"; message: string | null };
 
 export function initPresenter(deck: Deck, index = 0): PresenterState {
@@ -60,10 +65,10 @@ function show(deck: Deck, state: PresenterState, index: number): PresenterState 
 export function presenterReducer(deck: Deck, state: PresenterState, action: PresenterAction): PresenterState {
   switch (action.type) {
     case "next":
-      // From a detour, "next" first returns to the narrative.
-      return state.detour ? show(deck, state, state.index) : show(deck, state, state.index + 1);
+      // From a detour, the join screen or a blank screen, "next" first returns to the narrative.
+      return state.detour || state.audience.kind !== "slide" ? show(deck, state, state.index) : show(deck, state, state.index + 1);
     case "prev":
-      return state.detour ? show(deck, state, state.index) : show(deck, state, state.index - 1);
+      return state.detour || state.audience.kind !== "slide" ? show(deck, state, state.index) : show(deck, state, state.index - 1);
     case "goto":
       return show(deck, state, action.index);
     case "preview": {
@@ -99,6 +104,9 @@ export function presenterReducer(deck: Deck, state: PresenterState, action: Pres
     case "toggleBlank":
       if (state.audience.kind === "blank") return show(deck, state, state.index);
       return { ...state, audience: { kind: "blank" } };
+    case "showJoin":
+      if (state.audience.kind === "join") return show(deck, state, state.index);
+      return { ...state, audience: { kind: "join", code: action.code, url: action.url }, preview: null, confirming: null };
     case "notice":
       return { ...state, notice: action.message };
   }

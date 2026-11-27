@@ -77,6 +77,33 @@ export function BlockEditor({
           <input aria-label="Caption" placeholder="Caption" value={block.caption ?? ""} onChange={(e) => set({ caption: e.target.value })} />
         </>
       )}
+      {block.type === "poll" && (
+        <>
+          <select aria-label="Poll type" value={block.poll} onChange={(e) => set({ poll: e.target.value as typeof block.poll })} style={{ width: "auto" }}>
+            <option value="choice">Multiple choice</option>
+            <option value="rating">Rating scale</option>
+            <option value="ranking">Ranking</option>
+            <option value="text">Short text</option>
+            <option value="wordcloud">Word cloud</option>
+          </select>
+          <input aria-label="Poll question" placeholder="Question" value={block.question} onChange={(e) => set({ question: e.target.value })} />
+          {(block.poll === "choice" || block.poll === "ranking") && (
+            <textarea
+              aria-label="Options, one per line"
+              rows={Math.max(3, block.options.length + 1)}
+              value={block.options.join("\n")}
+              onChange={(e) => set({ options: e.target.value.split("\n") })}
+            />
+          )}
+          {block.poll === "rating" && (
+            <label className="inline">
+              Scale 1 to
+              <input type="number" min={2} max={10} value={block.scale ?? 5} onChange={(e) => set({ scale: Number(e.target.value) || 5 })} style={{ width: 70 }} />
+            </label>
+          )}
+          <p className="muted small">Open the poll while presenting; results appear on this slide live. Free-text answers need your approval before the room sees them.</p>
+        </>
+      )}
       {block.type === "chart" && (
         <>
           <div className="row">
