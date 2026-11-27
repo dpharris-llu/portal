@@ -40,6 +40,15 @@ describe("layout", () => {
     expect(huge.warnings.length).toBe(1);
   });
 
+  it("shrinks long tables to fit, and warns when even the minimum is too big", () => {
+    const table = (n: number): Block => ({ id: "t", type: "table", header: ["A", "B"], rows: Array.from({ length: n }, () => ["1", "2"]) });
+    expect(layoutSlide(newSlide("Claim", "inform", [table(3)]), lluTheme).boxes[0].fontScale).toBe(1);
+    const eleven = layoutSlide(newSlide("Claim", "inform", [table(10)]), lluTheme);
+    expect(eleven.boxes[0].fontScale).toBeLessThan(1);
+    expect(eleven.warnings).toEqual([]);
+    expect(layoutSlide(newSlide("Claim", "inform", [table(40)]), lluTheme).warnings).toHaveLength(1);
+  });
+
   it("flows content around a freeform region", () => {
     const s = newSlide("Claim", "inform", [textBlock("hello")]);
     s.freeform = { rect: { x: 0.6, y: 0.3, w: 0.35, h: 0.6 }, blocks: [] };

@@ -49,8 +49,16 @@ export function textLength(b: Block): { chars: number; lines: number } {
   }
 }
 
-/** Largest font scale (<= 1) at which the text fits the rect, by a simple line-wrap estimate. */
+/** Largest font scale (<= 1) at which the content fits the rect, by a simple line-wrap estimate. */
 export function fitScale(b: Block, rect: Rect, bodyPx: number): { scale: number; fits: boolean } {
+  if (b.type === "table") {
+    // Each row is about 1.95 lines of table text (0.8em) including cell padding; the caption adds one more.
+    const rows = b.rows.length + 1 + (b.caption ? 1 : 0);
+    const heightPx = rect.h * SLIDE_H;
+    const scale = heightPx / (rows * bodyPx * 0.8 * 1.95);
+    if (scale >= 1) return { scale: 1, fits: true };
+    return scale >= MIN_SCALE ? { scale: Math.floor(scale * 100) / 100, fits: true } : { scale: MIN_SCALE, fits: false };
+  }
   if (isVisual(b)) return { scale: 1, fits: true };
   const { chars, lines: minLines } = textLength(b);
   const widthPx = rect.w * SLIDE_W;

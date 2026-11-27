@@ -269,6 +269,8 @@ function walk(ctx: Ctx, el: El) {
         const res = rel ? chartFrom(ctx.pkg, rel.target, ctx.fileName) : "chart with a missing part";
         if (typeof res === "string") ctx.unconverted.push(res);
         else {
+          // Keep the chart's alt text from PowerPoint (Format > Alt Text).
+          res.alt = (path(el, "p:nvGraphicFramePr", "p:cNvPr")?.attrs.descr ?? "").trim();
           ctx.blocks.push(res);
           count(ctx, "chart");
         }

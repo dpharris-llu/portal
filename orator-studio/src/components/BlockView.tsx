@@ -132,6 +132,11 @@ function PollView({ block, theme }: { block: PollBlock; theme: Theme }) {
   );
 }
 
+/** Thousands separators; decimals only when the value has them. */
+export function fmt(v: number): string {
+  return v.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: Number.isInteger(v) ? 0 : 2 });
+}
+
 /** Axis label size that keeps the longest word inside its group. */
 function labelSize(labels: string[], groupW: number): number {
   const longest = Math.max(1, ...labels.flatMap((l) => l.split(/\s+/).map((w) => w.length)));
@@ -172,14 +177,21 @@ function ImageView({ block }: { block: ImageBlock }) {
 function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
   const W = 800;
   const H = 440;
-  const pad = { l: 20, r: 20, t: 40, b: 50 };
+  // One series needs no legend: the claim and the axis say what it is.
+  const legend = block.series.length > 1;
+  const pad = { l: 20, r: 20, t: legend ? 44 : 16, b: 50 };
   const colors = chartSeriesColors(theme, block.series.length);
-  const max = Math.max(1, ...block.series.flatMap((s) => s.values));
+  // Headroom so the tallest value label stays inside the plot.
+  const max = Math.max(1, ...block.series.flatMap((s) => s.values)) * 1.12;
   const plotW = W - pad.l - pad.r;
   const plotH = H - pad.t - pad.b;
   const groupW = plotW / Math.max(1, block.labels.length);
   const barW = (groupW * 0.75) / Math.max(1, block.series.length);
   const y = (v: number) => pad.t + plotH - (v / max) * plotH;
+  // Value labels shrink so neighbors don't run into each other.
+  const widest = Math.max(1, ...block.series.flatMap((s) => s.values.map((v) => fmt(v).length)));
+  const slot = block.chart === "line" ? groupW : barW;
+  const valueSize = Math.max(11, Math.min(20, (slot * 0.95) / (widest * 0.55)));
 
   return (
     <figure className="b-chart">
@@ -206,8 +218,8 @@ function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
                 {s.values.map((v, i) => (
                   <g key={i}>
                     <circle cx={pad.l + groupW * i + groupW / 2} cy={y(v)} r={8} fill={color.hex} stroke={stroke} />
-                    <text x={pad.l + groupW * i + groupW / 2} y={y(v) - 14} textAnchor="middle" fontSize={20} fill={theme.text}>
-                      {v}
+                    <text x={pad.l + groupW * i + groupW / 2} y={y(v) - 14} textAnchor="middle" fontSize={valueSize} fill={theme.text}>
+                      {fmt(v)}
                     </text>
                   </g>
                 ))}
@@ -221,8 +233,8 @@ function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
                 return (
                   <g key={i}>
                     <rect x={x} y={y(v)} width={barW - 4} height={pad.t + plotH - y(v)} fill={color.hex} stroke={stroke} strokeWidth={2} />
-                    <text x={x + (barW - 4) / 2} y={y(v) - 8} textAnchor="middle" fontSize={20} fill={theme.text}>
-                      {v}
+                    <text x={x + (barW - 4) / 2} y={y(v) - 8} textAnchor="middle" fontSize={valueSize} fill={theme.text}>
+                      {fmt(v)}
                     </text>
                   </g>
                 );
@@ -230,7 +242,7 @@ function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
             </g>
           );
         })}
-        {block.series.map((s, si) => (
+        {legend && block.series.map((s, si) => (
           <g key={`k${si}`} transform={`translate(${pad.l + si * 260}, 8)`}>
             <rect width={22} height={22} fill={colors[si].color.hex} stroke={colors[si].needsOutline ? theme.text : "none"} />
             <text x={30} y={18} fontSize={20} fill={theme.text}>

@@ -51,7 +51,8 @@ s = prs.slides.add_slide(title_only)
 s.shapes.title.text = "Applications by year"
 cd = CategoryChartData(); cd.categories = ["2024", "2025", "2026"]
 cd.add_series("Nursing", (410, 455, 520)); cd.add_series("Dentistry", (300, 310, 305))
-s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1), Inches(2), Inches(7), Inches(4), cd)
+chart = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1), Inches(2), Inches(7), Inches(4), cd)
+chart._element.nvGraphicFramePr.cNvPr.set("descr", "Applications by year for Nursing and Dentistry, 2024 to 2026")
 
 # 6. No title, a group with text, a pie chart (unsupported) and an unknown graphic frame
 s = prs.slides.add_slide(blank)

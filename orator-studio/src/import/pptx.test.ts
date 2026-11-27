@@ -50,6 +50,7 @@ describe("PPTX import", () => {
     expect(s[4].blocks[0]).toMatchObject({
       type: "chart",
       chart: "bar",
+      alt: "Applications by year for Nursing and Dentistry, 2024 to 2026",
       labels: ["2024", "2025", "2026"],
       series: [
         { name: "Nursing", values: [410, 455, 520] },
