@@ -328,7 +328,9 @@ export interface Analysis {
   headline: Record<string, Finding>;
 }
 
-export function analyze(src: DataSource): Analysis {
+export function analyze(all: DataSource): Analysis {
+  // Comparison rows (targets the author typed) are references, not data to find patterns in.
+  const src = { ...all, series: all.series.filter((s) => s.role !== "comparison") };
   const between = betweenSeries(src);
   // Balances that other rows add up to, or that carry over, swing because of
   // those rows; their own swings are not news.

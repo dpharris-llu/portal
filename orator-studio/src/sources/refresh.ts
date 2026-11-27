@@ -38,12 +38,26 @@ export function remap(old: DataSource, fetched: Fetched, by: string): Refresh {
       return origin.url;
     }
   })();
+  const data = old.series.filter((s) => s.role !== "comparison");
+  const oldPeriods = old.documents.map((d) => d.period);
   const next: DataSource = {
     ...old,
     origin: { ...origin, fetchedAt: fetched.fetchedAt, sha256: fetched.sha256, contentType: fetched.contentType },
     documents: mapped.periods.map((p) => ({ id: `p-${p}`, name: host, period: p, pages: 0 })),
-    series: old.series.map((s, k) => {
-      const m = mapped.series[k];
+    series: old.series.map((s) => {
+      if (s.role === "comparison") {
+        // Typed comparisons follow their periods; a single repeated value extends to new periods.
+        const vals = s.figures.map((f) => f.value);
+        const constant = vals.every((v) => v === vals[0]) ? s.figures[0] : null;
+        return {
+          ...s,
+          figures: mapped.periods.map((p) => {
+            const i = oldPeriods.indexOf(p);
+            return i >= 0 ? s.figures[i] : constant ? { ...constant } : { value: null };
+          }),
+        };
+      }
+      const m = mapped.series[data.indexOf(s)];
       return { ...s, figures: m.figures.map((f) => ({ value: f.value, raw: fmt(f.value), path: f.path })), confirmedAt: fetched.fetchedAt, confirmedBy: by };
     }),
   };
@@ -56,6 +70,7 @@ export function remap(old: DataSource, fetched: Fetched, by: string): Refresh {
   if (added.length) changes.push(`New periods: ${added.join(", ")}`);
   if (removed.length) changes.push(`Periods no longer in the data: ${removed.join(", ")}`);
   for (const [k, s] of old.series.entries()) {
+    if (s.role === "comparison") continue;
     const moved: string[] = [];
     before.forEach((p, i) => {
       const j = after.indexOf(p);
@@ -78,7 +93,7 @@ export function rebindOps(deck: Deck, src: DataSource): OpBody[] {
       const series = b.binding.seriesIds.map((id) => src.series.find((s) => s.id === id)).filter((s): s is NonNullable<typeof s> => Boolean(s));
       if (!series.length) continue;
       if (b.type === "chart") {
-        const fresh = chartFromSeries(src, series[0]);
+        const fresh = chartFromSeries(src, series.find((s) => s.role !== "comparison") ?? series[0]);
         ops.push({ kind: "block.replace", slideId: slide.id, block: { ...fresh, id: b.id, chart: b.chart } });
       } else {
         const fresh = tableFromSource(src, series);

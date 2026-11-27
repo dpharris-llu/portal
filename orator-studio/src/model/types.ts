@@ -174,6 +174,9 @@ export interface SourceSeries {
   figures: SourceFigure[];
   confirmedAt: string;
   confirmedBy: string;
+  /** A target, budget or reference value the author supplied, shown beside the row it applies to. */
+  role?: "comparison";
+  compareTo?: Id;
 }
 
 /** Figures read from a set of documents (spec: start from documents). */

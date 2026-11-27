@@ -117,7 +117,7 @@ export default function DocumentsPage() {
   }
 
   const preview = confirmed.length ? buildSource("", "") : null;
-  const { goal, panel, draftInputs } = useAnalysis(preview, "The PDFs stay here.");
+  const { goal, panel, finalize } = useAnalysis(preview, "The PDFs stay here.");
 
 
   async function createDeck() {
@@ -126,9 +126,7 @@ export default function DocumentsPage() {
       const repo = getRepo();
       const me: Author = { kind: "human", id: await currentAuthorId() };
       const now = new Date().toISOString();
-      const source = buildSource(now, me.id);
-      const { findings, steps } = draftInputs(source);
-      const draft = draftFromSource(source, findings, steps);
+      const { source, draft } = finalize(buildSource(now, me.id));
       const bodies: OpBody[] = [
         { kind: "deck.setMeta", patch: { title: source.name, goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         { kind: "source.put", source },

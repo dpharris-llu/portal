@@ -52,3 +52,32 @@ describe("draft deck from document figures", () => {
     expect(replay(deck, log).sources?.src1).toEqual(src);
   });
 });
+
+import { draftArgument } from "./build";
+describe("drafting an argument", () => {
+  const withBudget: DataSource = {
+    ...src,
+    series: [...src.series, { id: "b1", label: "Budget", unit: "currency", role: "comparison", compareTo: "s1", confirmedAt: "", confirmedBy: "me", figures: [{ value: 900, entered: true }, { value: 900, entered: true }, { value: 900, entered: true }] }],
+  };
+  const d = draftArgument(withBudget, {
+    thesis: "February blew the budget",
+    points: [
+      { conclusion: "February ran over budget.", evidence: "Purchases were $1,048.10 against $900.", soWhat: "Matters.", drivers: [{ hypothesis: "A one-off.", check: "Look at receipts." }], context: "Spending often peaks in winter.", rows: ["Purchases"], confidence: "medium", confidenceReason: "Three months." },
+    ],
+    recommendation: { action: "Hold a reserve", rationale: "Spikes happen.", tradeoffs: "Less to spend." },
+    nextSteps: ["Review receipts."],
+    via: "claude.ai",
+  });
+
+  it("uses conclusions as headlines, charts the comparison beside its row, and keeps context to the notes", () => {
+    expect(d.narrative.map((s) => s.claim)).toEqual(["February blew the budget", "February ran over budget", "Hold a reserve", "Next steps"]);
+    const chart = d.narrative[1].blocks[0];
+    expect(chart).toMatchObject({ type: "chart", series: [{ name: "Purchases" }, { name: "Budget", values: [900, 900, 900] }], binding: { seriesIds: ["s1", "b1"] } });
+    expect(d.narrative[1].blocks[1]).toMatchObject({ type: "text", provenance: { author: { kind: "ai" } } });
+    expect(d.narrative[1].notes).toContain("Context from Claude's general knowledge (not from your figures, and not checked):\nSpending often peaks in winter.");
+    expect(JSON.stringify(d.narrative[1].blocks)).not.toContain("peaks in winter");
+    expect(d.narrative[2].intent).toBe("decide");
+    // Payments wasn't used by any point, so its chart goes to backup.
+    expect(d.backup.map((s) => s.claim)).toContain("Payments ranged from $800.00 (Jan 2026) to $1,023.10 (Mar 2026)");
+  });
+});

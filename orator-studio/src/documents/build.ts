@@ -61,8 +61,14 @@ export function draftClaim(src: DataSource, s: SourceSeries): string {
   return `${label} ranged from ${fmt(lo.v)} (${src.documents[lo.i].period}) to ${fmt(hi.v)} (${src.documents[hi.i].period})`;
 }
 
+/** Comparison rows (targets, budgets, last year) the author attached to a row. */
+export const comparisonsFor = (src: DataSource, s: SourceSeries) => src.series.filter((x) => x.role === "comparison" && x.compareTo === s.id);
+export const dataSeries = (src: DataSource) => src.series.filter((s) => s.role !== "comparison");
+
 export function chartFromSeries(src: DataSource, s: SourceSeries): ChartBlock {
   const { values, flipped } = chartValues(s);
+  const cmps = comparisonsFor(src, s);
+  const cmpValues = (c: SourceSeries) => c.figures.map((f) => (f.value === null ? 0 : flipped ? Math.abs(f.value) : f.value));
   const missing = s.figures.map((f, i) => (f.value === null ? src.documents[i].period : null)).filter(Boolean);
   return {
     id: newId("b"),
@@ -70,13 +76,14 @@ export function chartFromSeries(src: DataSource, s: SourceSeries): ChartBlock {
     chart: "bar",
     unit: s.unit,
     labels: src.documents.map((d) => d.period),
-    series: [{ name: s.label, values }],
+    series: [{ name: s.label, values }, ...cmps.map((c) => ({ name: c.label, values: cmpValues(c) }))],
     alt: `${s.label} by period: ${s.figures.map((f, i) => `${src.documents[i].period} ${f.value === null ? "no figure" : formatFigure(values[i], s.unit, hasCents(s))}`).join(", ")}.`,
     source:
       `${src.name}, figures confirmed ${s.confirmedAt.slice(0, 10)}` +
       (flipped ? "; printed as negative amounts, shown as positive" : "") +
-      (missing.length ? `; no figure for ${missing.join(", ")}` : ""),
-    binding: { sourceId: src.id, seriesIds: [s.id] },
+      (missing.length ? `; no figure for ${missing.join(", ")}` : "") +
+      (cmps.length ? `; ${cmps.map((c) => c.label).join(", ")} entered by the author` : ""),
+    binding: { sourceId: src.id, seriesIds: [s.id, ...cmps.map((c) => c.id)] },
   };
 }
 
@@ -140,12 +147,12 @@ export function draftFromSource(src: DataSource, findings: Finding[] = analyze(s
     shows.push(slide);
   }
 
-  const charts = src.series.map((s) => {
+  const charts = dataSeries(src).map((s) => {
     const best = headline[s.id];
     const slide = newSlide(best?.claim ?? draftClaim(src, s), "inform", [chartFromSeries(src, s)]);
     slide.importNotes = [best?.ai ? "Headline written by Claude; its numbers were checked against your confirmed figures. Rewrite it in your own words if you like." : REVIEW_CLAIM];
     const about = findings.filter((f) => f.seriesIds.includes(s.id) && f.kind !== "summary").map((f) => f.text);
-    slide.notes = [...about, ...(about.length ? [""] : []), ...provenanceLines(src, s)].join("\n");
+    slide.notes = [...about, ...(about.length ? [""] : []), ...provenanceLines(src, s), ...comparisonsFor(src, s).flatMap((c) => ["", `${c.label}:`, ...provenanceLines(src, c)])].join("\n");
     return slide;
   });
 
@@ -180,4 +187,112 @@ export function draftFromSource(src: DataSource, findings: Finding[] = analyze(s
     backup.push(slide);
   }
   return { narrative: [title, ...shows, ...charts, ...next], backup: [...assurance, ...backup] };
+}
+
+
+// ---- Drafting an argument from Claude's analysis ----
+
+export interface ArgumentPoint {
+  conclusion: string;
+  evidence: string;
+  soWhat: string;
+  drivers: { hypothesis: string; check: string }[];
+  /** Claude's general knowledge, labeled; kept to the speaker notes. */
+  context?: string;
+  rows: string[];
+  confidence: "high" | "medium" | "low";
+  confidenceReason: string;
+}
+
+export interface Argument {
+  thesis?: string;
+  points: ArgumentPoint[];
+  recommendation?: { action: string; rationale: string; tradeoffs: string };
+  nextSteps: string[];
+  via: string;
+}
+
+const CONTEXT_LABEL = "Context from Claude's general knowledge (not from your figures, and not checked):";
+
+/**
+ * The deck as an argument: the thesis, one slide per point with its conclusion
+ * as the headline and the figures as evidence, then the recommendation and next
+ * steps. Rows no point uses, the checks, and the full table go to backup.
+ */
+export function draftArgument(src: DataSource, arg: Argument, checks: Finding[] = []): DraftDeck {
+  const now = new Date().toISOString();
+  const ai = { provenance: { author: { kind: "ai" as const, id: "claude", via: arg.via }, at: now, source: src.name } };
+  const rowsData = dataSeries(src);
+  const byLabel = (label: string) => rowsData.find((s) => s.label.toLowerCase() === label.trim().toLowerCase());
+  const used = new Set<string>();
+
+  const first = src.documents[0]?.period ?? "";
+  const last = src.documents[src.documents.length - 1]?.period ?? "";
+  const span = first && last && first !== last ? `${first} to ${last}` : first;
+  const title = newSlide(arg.thesis || (span ? `${span} in figures` : src.name), "persuade", [
+    { id: newId("b"), type: "text", text: `Based on ${rowsData.length} confirmed ${rowsData.length === 1 ? "row" : "rows"} from ${src.name}${span ? `, ${span}` : ""}.` } as Block,
+  ]);
+  title.importNotes = [arg.thesis ? "Thesis written by Claude; its numbers were checked against your figures. Make it yours before presenting." : "Write the one thing this deck should say."];
+  title.notes = `Source: ${src.name}.`;
+
+  const pointSlides = arg.points.map((pt) => {
+    const main = pt.rows.map(byLabel).find(Boolean);
+    const blocks: Block[] = [];
+    if (main) {
+      blocks.push(chartFromSeries(src, main));
+      used.add(main.id);
+    }
+    blocks.push({ id: newId("b"), type: "text", text: pt.evidence, ...ai } as Block);
+    const slide = newSlide(pt.conclusion.replace(/[.]$/, ""), "persuade", blocks);
+    const notes = [
+      `Why it matters: ${pt.soWhat}`,
+      ...(pt.drivers.length ? ["", "Possible drivers (hypotheses, not facts):", ...pt.drivers.map((d) => `- ${d.hypothesis} Check: ${d.check}`)] : []),
+      ...(pt.context ? ["", CONTEXT_LABEL, pt.context] : []),
+      "",
+      `Confidence: ${pt.confidence}. ${pt.confidenceReason}`,
+      ...(main ? ["", ...provenanceLines(src, main), ...comparisonsFor(src, main).flatMap((c) => ["", `${c.label}:`, ...provenanceLines(src, c)])] : []),
+    ];
+    slide.notes = notes.join("\n");
+    slide.importNotes = [
+      "Conclusion and evidence written by Claude; the numbers were checked against your figures. Make the conclusion your own before presenting.",
+      ...(pt.context ? ["The notes include Claude's general knowledge, labeled. Check it before putting it on a slide."] : []),
+      ...(pt.confidence === "low" ? ["Claude rated its confidence in this point as low."] : []),
+    ];
+    return slide;
+  });
+
+  const closing: Slide[] = [];
+  if (arg.recommendation) {
+    const r = arg.recommendation;
+    const slide = newSlide(r.action.replace(/[.]$/, ""), "decide", [
+      { id: newId("b"), type: "bullets", items: [`Why: ${r.rationale}`, `Tradeoffs: ${r.tradeoffs}`], ...ai } as Block,
+    ]);
+    slide.importNotes = ["Recommendation from Claude, not a decision. Keep, change or remove it."];
+    closing.push(slide);
+  }
+  if (arg.nextSteps.length) {
+    const slide = newSlide("Next steps", "decide", [{ id: newId("b"), type: "bullets", items: arg.nextSteps, ...ai } as Block]);
+    slide.importNotes = ["Next steps suggested by Claude. Keep, edit or remove each one."];
+    closing.push(slide);
+  }
+
+  // Backup: rows no point used, the checks, and the full table.
+  const extraCharts = rowsData
+    .filter((s) => !used.has(s.id))
+    .map((s) => {
+      const slide = newSlide(draftClaim(src, s), "inform", [chartFromSeries(src, s)]);
+      slide.notes = provenanceLines(src, s).join("\n");
+      return slide;
+    });
+  const checkSlides: Slide[] = checks.length
+    ? [Object.assign(newSlide("The figures check out", "inform", [{ id: newId("b"), type: "bullets", items: checks.map((f) => f.text) } as Block]), { notes: "Checked across every confirmed figure." })]
+    : [];
+  const tables: Slide[] = [];
+  for (let i = 0; i < src.series.length; i += 5) {
+    const group = src.series.slice(i, i + 5);
+    const slide = newSlide(src.series.length > 5 ? `All figures (${i / 5 + 1})` : "All figures", "inform", [tableFromSource(src, group)]);
+    slide.notes = group.map((s) => `${s.label}\n${provenanceLines(src, s).join("\n")}`).join("\n\n");
+    tables.push(slide);
+  }
+  return { narrative: [title, ...pointSlides, ...closing], backup: [...checkSlides, ...extraCharts, ...tables] };
 }

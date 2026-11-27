@@ -161,7 +161,7 @@ export default function DataUrlPage() {
   }
 
   const preview = buildSource("", "");
-  const { goal, panel, draftInputs } = useAnalysis(preview, "Only the mapped figures are sent; the full response stays here.");
+  const { goal, panel, finalize } = useAnalysis(preview, "Only the mapped figures are sent; the full response stays here.");
 
   async function createDeck() {
     setBusy(true);
@@ -169,13 +169,12 @@ export default function DataUrlPage() {
       const repo = getRepo();
       const me: Author = { kind: "human", id: await currentAuthorId() };
       const now = new Date().toISOString();
-      const source = buildSource(now, me.id)!;
+      const base = buildSource(now, me.id)!;
       // Keep the response itself as the snapshot the figures came from.
       const snapshotAssetId = newId("snap");
       await putAsset(snapshotAssetId, new Blob([loaded!.text], { type: loaded!.contentType || "text/plain" }));
-      source.origin!.snapshotAssetId = snapshotAssetId;
-      const { findings, steps } = draftInputs(source);
-      const draft = draftFromSource(source, findings, steps);
+      base.origin!.snapshotAssetId = snapshotAssetId;
+      const { source, draft } = finalize(base);
       const bodies: OpBody[] = [
         { kind: "deck.setMeta", patch: { title: source.name, goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         { kind: "source.put", source },
