@@ -75,8 +75,9 @@ The data model is what separates this product from a PowerPoint with an AI sideb
 | Block | A typed unit of content: text, figure, chart, table, image, quote, equation, diagram | Each type has its own accessibility and review rules |
 | Layout | A rule-based arrangement chosen from the slide's blocks and the active theme | No manual nudging; overridable per slide |
 | Theme (design tokens) | Colors, type, spacing, logo rules, contrast minimums, owned by the institution | Brand and accessibility are enforced, not checked |
-| Data binding | A link from a chart or number to a source (sheet, warehouse query, API), with refresh rule | Live figures and stale-number warnings |
-| Data source | Figures read from a set of documents or files, lined up by label across them, each with its document and page, and confirmed by a person before use | Recurring reports become decks without retyping, and every number stays traceable |
+| Source | Something a deck draws on, chosen by the author: an uploaded file, a web page, a data URL (JSON, XML or CSV), or an MCP connector. Every fetch is kept as a dated snapshot | Every claim and number traces to exactly what was read, and when |
+| Data source | Figures taken from sources (a document's page, a data field) and lined up into rows, each confirmed by a person before use | Recurring reports become decks without retyping, and every number stays traceable |
+| Data binding | A link from a chart or number to confirmed figures in a data source, with a refresh rule (manual, or scheduled for URL sources) | Live figures and stale-number warnings |
 | Provenance record | Source, retrieval time, transformation, and approver for any bound figure or cited claim | Auditability for board and accreditation use |
 | Variant | A saved view of a deck: which slides, what depth, what length, what language | One source, many outputs |
 | Freeform region | A slide area exempt from layout rules, with absolute positioning | The escape hatch |
@@ -199,6 +200,7 @@ Priority: **P0** = required for that stage to ship, **P1** = should have, **P2**
 | F-010 | One theme, with contrast and alt-text checks | P1 |
 | F-011 | Speaker notes and rehearsal timer | P1 |
 | F-013 | Claude analyzes confirmed figures for the deck's stated purpose: what stands out, how rows relate, questions that could explain a pattern, and next steps. Claude lists how it got every number; the app recomputes each one and leaves out anything that doesn't check. Inside claude.ai it runs on the viewer's own Claude account; elsewhere through the server's API key. Computed checks (rows that add up, carry-overs) always run; computed patterns stand in when Claude isn't connected | P1 |
+| F-014 | Data URL sources: fetch JSON, XML or CSV from a URL on the institution's allowed list, map fields to rows (Claude may propose the mapping), confirm them, keep a dated snapshot, and refresh on demand with changes shown (section 7) | P1 |
 | F-012 | Start from documents: read labeled figures from text-based PDFs in the browser, line them up across documents, let the author correct and confirm them, and draft a deck of bound charts (section 7) | P1 |
 
 Also in Stage 0: Magic Link login (P0) and the audience response features in section 5A (A-01 to A-05 are P0 for version .3).
@@ -207,7 +209,7 @@ Also in Stage 0: Magic Link login (P0) and the audience response features in sec
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| F-101 | Data bindings to uploaded Excel and CSV files and to document sources (F-012), with manual refresh; adding the next period's document to a source updates its charts; SQL, API, and SharePoint sources deferred | P0 |
+| F-101 | Data bindings to uploaded Excel and CSV files, document sources (F-012) and data URL sources (F-014), with manual or scheduled refresh; adding the next period's document to a source updates its charts; direct SQL and SharePoint deferred | P0 |
 | F-102 | Provenance panel on every bound number; stale-figure warnings | P0 |
 | F-103 | Cross-slide consistency check: flags the same metric with different values | P0 |
 | F-104 | Institutional themes with enforced brand rules; department sub-themes | P0 |
@@ -217,6 +219,8 @@ Also in Stage 0: Magic Link login (P0) and the audience response features in sec
 | F-108 | Sensitivity labels on decks and slides; restrict AI and sharing by label | P1 |
 | F-109 | Predicted hard questions with draft answers grounded in the deck | P1 |
 | F-110 | Teams and Outlook integration for sharing and scheduling | P2 |
+| F-112 | Web page sources: fetch a page, keep a dated snapshot of its readable text, and let Claude propose claims and figures with citations to passages, each confirmed by the author before use | P1 |
+| F-113 | MCP connectors: an institution admin adds a connector once (address and sign-in); authors pick it as a source; the app, not Claude, calls its tools and records every response as a snapshot | P1 |
 | F-111 | Document sources, extended: scanned PDFs (OCR), saved layouts for recurring report types, and Excel and CSV in the same review grid | P1 |
 
 ### Stage 2: faculty
@@ -316,6 +320,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 4. **Data handling.** Customer content is never used for model training. Sensitivity labels control which content may be sent to a hosted model. A private-model path is available for restricted data.
 5. **Reversibility.** Every AI operation is an undoable step in history.
 6. **Confirmed extraction.** Figures read from documents are never used until a person confirms them. Each keeps its document and page, and a value the author typed is labeled as typed.
+7. **Only the deck's sources.** AI reads only the sources the author attached to the deck. There is no open web search, and URL fetches go only to hosts on the institution's allowed list.
 
 **Evaluation.** Each AI capability has a test set built from real LLU decks (with permission). Targets for the first release: at least 90% of AI-proposed outlines accepted with minor edits, under 1% of drafted slides containing an unsupported figure, and search top-3 recall of at least 95% on a labeled query set. These targets are starting points to revise after the first measurements.
 
@@ -347,6 +352,25 @@ Many decks restate figures from recurring reports: monthly finance packs, enroll
 
 Tested on ten monthly credit card statements: the summary figures (balances, purchases, payments, credits) were found in all ten and matched the reconciled values exactly. One figure changed layout partway through the year and was found in only seven; the gaps were visible in the grid and filled by hand, as designed.
 
+**Sources: uploads and URLs (F-014, F-112, F-113)**
+
+Every source is either a file the author uploads or a URL the author adds. There is no open web search: the deck draws only on what the author chose, nothing leaves through search queries, and the deck can always say exactly what it drew on.
+
+| Kind | Examples | How it is read | First release |
+| --- | --- | --- | --- |
+| Uploaded file | PDF, Excel, CSV, Word, PowerPoint | In the browser; figures matched by label (F-012) | .3 (PDF), 1 (others) |
+| Web page | A news release, a policy page, a published report | Fetched by the server; readable text kept as a snapshot; Claude proposes claims with citations (F-112) | 1 |
+| Data URL | A REST API or file returning JSON, XML or CSV | Fetched by the server; fields mapped to rows by path, such as `daily.temperature_2m_max` (F-014) | .3 |
+| MCP connector | An institutional system exposed through MCP | The server calls the connector's tools as an MCP client and records each response (F-113) | 1 |
+
+- **Snapshots.** Every fetch is stored with its URL, time and a content hash. Figures and citations point at the snapshot, so a deck shows what it used even after the source changes. Refreshing fetches again and shows what changed before any chart updates.
+- **Structured data first.** JSON, XML and CSV name their fields, so mapping is exact and refresh is safe. The author picks the field holding the periods and the fields holding values (Claude may propose a mapping, which the author confirms). The confirmed rows then work like document figures: charts, analysis (F-013) and checks.
+- **Credentials.** APIs and connectors that need keys or sign-in store them encrypted on the server, per institution. They are never sent to Claude or to the browser.
+- **Allowed hosts.** The server fetches only from hosts on the institution's allowed list, and never from private or link-local addresses unless that exact host is allowed. This stops the fetcher from being used to reach internal systems.
+- **Internal systems.** Systems on LLU's network may not be reachable from the hosting provider. Those need an MCP server or a small connector that LLU runs inside its network.
+- **Who calls MCP.** Claude can call MCP tools itself, but then figures arrive inside Claude's answer. The app calls the tools, records the responses, and gives Claude the recorded data to analyze, so every number traces to a recorded response. Inside claude.ai, a page can also call the viewer's own connected MCP servers with their sign-in.
+- **Rights and terms.** Web page sources carry their URL and retrieval date in citations; reuse of quoted material follows the same attribution rules as images (F-204).
+
 **Exports**
 
 | Format | Fidelity goal | Notes |
@@ -365,11 +389,13 @@ Tested on ten monthly credit card statements: the summary figures (balances, pur
 | --- | --- | --- |
 | Magic Link login with a transactional email service | Identity | .3 |
 | Excel and CSV upload | Data sources for charts | 1 |
+| Data URLs (REST, JSON, XML, CSV) | Sources with refresh (F-014) | .3 |
+| MCP servers for institutional systems | Connectors as sources (F-113) | 1 |
 | Canvas via LTI 1.3 | Publish course material, grade passback | 2 |
 | Teams, Outlook | Share, schedule, present | 2 |
 | Entra ID SSO | Institutional identity and roles | 3 |
 | SharePoint, OneDrive | File storage and data sources | 3 |
-| SQL warehouse, REST APIs | Data bindings | 3 |
+| SQL warehouse | Data bindings, preferably through an API or MCP server the institution runs | 3 |
 | Public API and MCP server | Let other tools and agents create or update decks | 3 |
 
 ## 8. Non-functional requirements
@@ -385,6 +411,7 @@ Tested on ten monthly credit card statements: the summary figures (balances, pur
 | Accessibility | The product's own UI and the audience page meet WCAG 2.1 AA and work by keyboard and screen reader | .3 |
 | Accessibility | Decks and exports pass automated checks and a defined manual checklist; tagged PDF output | 2 |
 | Security | Encryption in transit and at rest; tenant isolation through Row Level Security; secrets never sent to models | .3 |
+| Security | URL sources are fetched by the server only from the institution's allowed hosts, never from private addresses unless allowed; API and connector credentials stored encrypted and never sent to models or the browser | .3 |
 | Security | Magic Link login, role-based access, audit log of views, edits, exports, and AI calls | 1 |
 | Privacy | Documents used as data sources are read in the browser and not uploaded; their figures go to AI only where sensitivity labels allow | .3 |
 | Privacy | No training on customer content; configurable data retention; data export and deletion on request | 1 |
@@ -413,7 +440,7 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 | Search | Per-slide embeddings computed at save; index bundled into the offline package | Semantic jump works with no network |
 | Audience response | Supabase Realtime channels per session | Live polls and Q&A without running a WebSocket server |
 | Slow jobs | PPTX import, export, and AI drafting run as background jobs with progress shown | Avoids serverless time limits (verify current limits) |
-| Data sources | Excel or CSV upload, linked to charts | Light for now; SQL and API bindings later |
+| Sources | Uploads read in the browser; URLs fetched by the server with an allowlist, snapshots kept in storage; MCP called by the server as a client | Provenance for every figure; credentials stay on the server; private systems reachable through a connector inside the institution |
 | Document sources | pdf.js text extraction in the browser; rule-based label and value matching; author confirmation | Sensitive files stay on the device; results are predictable and checkable |
 | Portability | Standard Postgres; avoid vendor-specific features where practical | Keeps a later move to Azure a migration, not a rewrite |
 
@@ -428,7 +455,7 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 **Roadmap**
 
 1. **Version .3 (you).** Structured editor, outline-first drafting, basic PPTX import, documents as data sources (basic), non-linear live mode, offline package, audience Q&A with slide matching, simple polls. Gate: you present from it weekly for 8 weeks.
-2. **Stage 1 (LLU admins).** Excel and CSV data bindings, provenance and consistency checks, themes, variants, claim-level review, roles and audit log. Gate: 5 admins each ship 3 real decks.
+2. **Stage 1 (LLU admins).** Excel and CSV data bindings, web page sources and MCP connectors, provenance and consistency checks, themes, variants, claim-level review, roles and audit log. Gate: 5 admins each ship 3 real decks.
 3. **Stage 2 (faculty).** Bulk import, handouts, accessibility remediation, image attribution, Canvas via LTI, quizzes. Gate: 20 faculty active; Canvas passback working.
 4. **Stage 3 (external).** Multi-tenant admin console, SSO and SCIM, public API and MCP, HECVAT and VPAT. Pricing and billing are out of scope until this stage is planned.
 
@@ -456,6 +483,8 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 | Audience abuse or off-topic submissions | Disrupted sessions | Moderation queue, rate limits, rotating codes |
 | Built entirely with AI-assisted coding | Hidden defects, security gaps | Tests, code review passes, security checklist, staged rollout |
 | Vendor lock-in | Costly later move | Standard Postgres, open file format |
+| URL fetcher used to reach internal systems | Data exposure | Per-institution host allowlist; private addresses blocked; fetches logged |
+| A source changes after a deck is presented | Wrong or unexplained numbers | Dated snapshots; refresh shows changes before charts update |
 
 **Open questions**
 
@@ -464,4 +493,5 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 - [ ] Does "basic import" need a higher bar once real faculty decks are tested?
 - [ ] Which Canvas features does LLU allow (LTI tools, grade passback)?
 - [ ] Who owns data sources for admin reports, and how are they exported today?
+- [ ] Which LLU systems already expose an API or could expose an MCP server, and are they reachable from the hosting provider or only from inside LLU's network?
 - [ ] Which recurring reports (finance, enrollment, accreditation) do admins build decks from, and in which formats: PDF, Excel, or a reporting system?
