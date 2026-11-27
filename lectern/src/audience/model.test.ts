@@ -117,3 +117,39 @@ describe("audience sessions", () => {
     expect(isFlagged("Great talk")).toBe(false);
   });
 });
+
+import { mergeRoom, roomView } from "./model";
+describe("room broadcasts", () => {
+  it("updates a phone's view locally, and asks for a refetch only when needed", () => {
+    const s = room();
+    openPoll(s, choice);
+    respond(s, "d0", "p1", { kind: "choice", option: 0 }, 5000);
+    ask(s, "d0", "Mine?", "q1", 1000);
+    ask(s, "d1", "Theirs?", "q2", 1000);
+    const mine = new Set(["q1"]);
+    let prev = participantView(s, "d0");
+    expect(prev.poll?.responded).toBe(true);
+
+    // Someone else's question approved and voted: merge without refetch, keep my flags.
+    moderateQuestion(s, "q2", "approved");
+    vote(s, "d2", "q2");
+    let next = mergeRoom(prev, roomView(s), mine);
+    expect(next).toEqual(participantView(s, "d0"));
+    prev = next!;
+
+    // My own question approved: refetch (myPending changes).
+    moderateQuestion(s, "q1", "approved");
+    expect(mergeRoom(prev, roomView(s), mine)).toBeNull();
+    prev = participantView(s, "d0");
+
+    // Poll closed: merge. A new poll opened: refetch.
+    closePoll(s);
+    next = mergeRoom(prev, roomView(s), mine);
+    expect(next?.poll).toBeNull();
+    openPoll(s, { ...choice, blockId: "p2" });
+    expect(mergeRoom(next!, roomView(s), mine)).toBeNull();
+
+    s.ended = true;
+    expect(mergeRoom(prev, roomView(s), mine)?.ended).toBe(true);
+  });
+});

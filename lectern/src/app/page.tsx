@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getRepo, type DeckSummary } from "@/lib/repo";
-import { sampleDeck } from "@/model/sample";
+import { sampleDeckOps } from "@/model/sample";
+import { applyOp, makeOp } from "@/model/ops";
+import { currentAuthorId } from "@/lib/repo";
 import { browserSupabase } from "@/lib/supabase/client";
 import { TopBar } from "@/components/TopBar";
 
@@ -20,8 +22,11 @@ export default function Home() {
 
   async function openSample() {
     const repo = getRepo();
-    const deck = { ...sampleDeck(), tenantId: await repo.tenantId() };
-    await repo.save(deck, [], true);
+    const { deck: empty, ops } = sampleDeckOps();
+    const me = { kind: "human" as const, id: await currentAuthorId() };
+    const log = ops.map((op) => makeOp(op, me, "Created demo deck"));
+    const deck = log.reduce(applyOp, { ...empty, tenantId: await repo.tenantId() });
+    await repo.save(deck, log, true);
     router.push(`/decks/${deck.id}`);
   }
 

@@ -127,7 +127,7 @@ export function openPoll(s: Session, spec: PollSpec): void {
   s.activePoll = spec.blockId;
 }
 
-function cleanSpec(spec: PollSpec): PollSpec {
+export function cleanSpec(spec: PollSpec): PollSpec {
   return {
     blockId: spec.blockId,
     kind: spec.kind,
@@ -142,7 +142,7 @@ export function closePoll(s: Session): void {
   s.activePoll = null;
 }
 
-function checkAnswer(spec: PollSpec, a: Answer): Result<Answer> {
+export function checkAnswer(spec: PollSpec, a: Answer): Result<Answer> {
   switch (spec.kind) {
     case "choice":
       return a.kind === "choice" && Number.isInteger(a.option) && a.option >= 0 && a.option < spec.options.length ? ok(a) : fail("Pick one of the options.");
@@ -186,14 +186,22 @@ export function respond(s: Session, device: string, blockId: string, answer: Ans
   return ok(undefined);
 }
 
+/** Normalize a question's text, or say why it cannot be asked. */
+export function cleanQuestion(text: string): Result<string> {
+  const t = text.trim().replace(/\s+/g, " ");
+  if (t.length < 3) return fail("Type a question.");
+  if (t.length > LIMITS.textLength) return fail(`Keep questions under ${LIMITS.textLength} characters.`);
+  return ok(t);
+}
+
 export function ask(s: Session, device: string, text: string, id: string, now: number): Result<string> {
   const d = s.devices[device];
   if (!d) return fail("Join the session first.");
   if (s.ended) return fail("This session has ended.");
   if (!s.qaOpen) return fail("Questions are closed right now.");
-  const t = text.trim().replace(/\s+/g, " ");
-  if (t.length < 3) return fail("Type a question.");
-  if (t.length > LIMITS.textLength) return fail(`Keep questions under ${LIMITS.textLength} characters.`);
+  const cleaned = cleanQuestion(text);
+  if (!cleaned.ok) return cleaned;
+  const t = cleaned.value;
   if (now - d.lastAsk < LIMITS.askIntervalMs) return fail("You can ask another question in a few seconds.");
   d.lastAsk = now;
   s.questions.push({ id, text: t, device, at: now, status: "pending", flagged: isFlagged(t), votes: [] });
@@ -301,6 +309,30 @@ export interface HostView {
   /** Free-text poll responses awaiting moderation, for the active poll. */
   pendingTexts: { device: string; text: string; flagged: boolean }[];
   questions: { id: string; text: string; status: QuestionStatus; flagged: boolean; votes: number; at: number }[];
+  /** What every phone may see; the presenter relays it in cloud mode. */
+  room: RoomView;
+}
+
+/** The public part of a session, identical for every phone. */
+export interface RoomView {
+  code: string;
+  ended: boolean;
+  qaOpen: boolean;
+  poll: PollSpec | null;
+  questions: { id: string; text: string; votes: number; answered: boolean }[];
+}
+
+export function roomView(s: Session): RoomView {
+  const p = s.activePoll ? s.polls[s.activePoll] : null;
+  return {
+    code: s.code,
+    ended: s.ended,
+    qaOpen: s.qaOpen,
+    poll: p && p.open ? p.spec : null,
+    questions: s.questions
+      .filter((q) => q.status === "approved" || q.status === "answered")
+      .map((q) => ({ id: q.id, text: q.text, votes: q.votes.length, answered: q.status === "answered" })),
+  };
 }
 
 export function hostView(s: Session): HostView {
@@ -322,6 +354,7 @@ export function hostView(s: Session): HostView {
     questions: s.questions
       .filter((q) => q.status !== "dismissed")
       .map((q) => ({ id: q.id, text: q.text, status: q.status, flagged: q.flagged, votes: q.votes.length, at: q.at })),
+    room: roomView(s),
   };
 }
 
@@ -346,7 +379,49 @@ export function participantView(s: Session, device: string): ParticipantView {
     questions: s.questions
       .filter((q) => q.status === "approved" || q.status === "answered")
       .map((q) => ({ id: q.id, text: q.text, votes: q.votes.length, voted: q.votes.includes(device), mine: q.device === device, answered: q.status === "answered" }))
-      .sort((a, b) => Number(a.answered) - Number(b.answered) || b.votes - a.votes),
+      .sort(byRoomOrder),
     myPending: s.questions.filter((q) => q.device === device && q.status === "pending").length,
+  };
+}
+
+function byRoomOrder(a: { answered: boolean; votes: number }, b: { answered: boolean; votes: number }) {
+  return Number(a.answered) - Number(b.answered) || b.votes - a.votes;
+}
+
+/** Same poll, compared field by field (key order differs once stored in Postgres). */
+export function samePoll(a: PollSpec, b: PollSpec): boolean {
+  return (
+    a.blockId === b.blockId &&
+    a.kind === b.kind &&
+    a.question === b.question &&
+    (a.scale ?? null) === (b.scale ?? null) &&
+    a.options.length === b.options.length &&
+    a.options.every((o, i) => o === b.options[i])
+  );
+}
+
+/**
+ * Update a phone's view from a room broadcast without asking the server.
+ * Returns null when the phone needs its own view refetched: a different poll
+ * opened (it may already have answered it), or one of its questions was approved.
+ */
+export function mergeRoom(prev: ParticipantView, room: RoomView, mine: ReadonlySet<string>): ParticipantView | null {
+  if (room.ended) return { ...prev, ended: true };
+  let poll: ParticipantView["poll"] = null;
+  if (room.poll) {
+    if (!prev.poll || !samePoll(prev.poll, room.poll)) return null;
+    poll = { ...room.poll, responded: prev.poll.responded };
+  }
+  const before = new Map(prev.questions.map((q) => [q.id, q]));
+  if (room.questions.some((q) => mine.has(q.id) && !before.has(q.id))) return null;
+  return {
+    code: room.code,
+    ended: false,
+    qaOpen: room.qaOpen,
+    poll,
+    questions: room.questions
+      .map((q) => ({ ...q, voted: before.get(q.id)?.voted ?? false, mine: mine.has(q.id) }))
+      .sort(byRoomOrder),
+    myPending: prev.myPending,
   };
 }

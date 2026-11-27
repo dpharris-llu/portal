@@ -8,7 +8,9 @@ A presentation platform that stores a deck as structured content (claims, eviden
 cd lectern
 npm install
 npm run dev        # http://localhost:3000
-npm test           # unit tests (model, theme, layout, search, presenter, checks)
+npm test           # unit tests (model, theme, layout, search, presenter, checks, import, audience)
+# With a local Supabase running, also compare the two audience stores:
+# SUPABASE_TEST_URL=http://127.0.0.1:54321 SUPABASE_TEST_SERVICE_KEY=<service role key> npm test
 npm run typecheck
 ```
 
@@ -18,8 +20,18 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 
 | Variable | Used for |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Magic Link login and cloud storage. Apply `supabase/migrations/0001_init.sql` first. In Supabase Auth settings, add `<your-origin>/auth/callback` as a redirect URL. |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Magic Link login, cloud storage of decks, and audience sessions over Realtime. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only, and required with the two above. Audience sessions are written with it. |
 | `ANTHROPIC_API_KEY` | Outline drafting with Claude. Without it, a built-in template outline is used. |
+
+### Setting up a Supabase project
+
+1. Create a project, then apply the migrations in `supabase/migrations/` in order (`npx supabase link` then `npx supabase db push`, or paste them into the SQL editor).
+2. **Authentication → URL configuration:** add `https://<your-domain>/auth/callback` as a redirect URL.
+3. **Realtime → Settings:** turn off "Allow public access", so only the private, access-checked channels work.
+4. Set the three Supabase variables above in Vercel (or `.env.local`).
+
+To run the same stack locally with Docker: `npx supabase start`, which prints the local URL and keys.
 
 ## Layout of the code
 
@@ -32,10 +44,10 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 | `src/present/` | Presenter state machine: private preview, send, return-to-place, blank, never-show-on-voice, and confirm-before-showing. The audience window syncs over `BroadcastChannel` with no server. | L-04 to L-06, L-09 |
 | `src/checks/` | Missing alt text, unsourced charts, `[figure: …]` placeholders, AI content awaiting review, and layout overflow. | F-010, guardrail 2 |
 | `src/import/` | PPTX import: text, bullets with indent levels, tables, images with alt text, bar and line charts with their data, and notes. Hidden slides go to backup. Unconverted items are listed in a report and flagged on their slides. `scripts/make-fixture.py` rebuilds the test deck. | F-006, 7 |
-| `src/audience/` | Audience sessions: polls (multiple choice, rating, ranking, short text, word cloud), Q&A with upvotes, moderation, a profanity filter, one response per device, rate limits, room lock. Includes the server store and live streams. | 5A |
+| `src/audience/` | Audience sessions: polls (multiple choice, rating, ranking, short text, word cloud), Q&A with upvotes, moderation, a profanity filter, one response per device, rate limits, room lock. Two stores behind one interface: in memory with Server-Sent Events (local mode), and Postgres with Supabase Realtime. A parity test runs the same scenario through both. | 5A |
 | `src/ai/` | Outline prompt and schema, a template fallback, and the Claude call (`claude-opus-5-5`, structured JSON output, server-side refusal fallback). | F-001, F-002 |
 | `src/app/` | Pages: deck list, new deck (goal → outline review → approve), import, editor, presenter, audience window, phone join pages (`/join`, `/j/<code>`), login, and the auth callback. | |
-| `supabase/migrations/` | Tenants, memberships with roles, decks, and an append-only `deck_ops` table. Row Level Security on every table. Each new user gets a personal tenant. | 8, 9 |
+| `supabase/migrations/` | `0001`: tenants, memberships with roles, decks, and an append-only `deck_ops` table, with Row Level Security on every table; each new user gets a personal tenant. `0002`: audience session tables and the functions that enforce the rules. `0003`: who may use which Realtime channel. | 8, 9 |
 
 ## Status against version .3 (Stage 0)
 
@@ -51,12 +63,14 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 | F-010: contrast and alt-text checks | Built |
 | F-011: notes and rehearsal timer | Notes are built. The timer counts narrative time and detour time separately; there's no rehearsal mode yet. |
 | L-02: semantic matching | Hook only. Search is lexical until per-slide embeddings are added. |
-| Magic Link login | Built. It needs a Supabase project to try. |
-| A-01 to A-05: audience response | Built. Join by QR code or short code, five poll types with live results on the slide, moderated Q&A with upvotes, and question-to-slide matching that opens a private preview. Tested with 300 simultaneous participants on one server. **See the hosting note below.** |
+| Magic Link login | Built. Sign-in, the login redirect and cloud saving were tested against a local Supabase stack; the email itself was not sent in tests. |
+| A-01 to A-05: audience response | Built. Join by QR code or short code, five poll types with live results on the slide, moderated Q&A with upvotes, and question-to-slide matching that opens a private preview. Tested end to end against a local Supabase stack, including 300 simultaneous participants. |
 
-## Hosting note for audience response
+## How live sessions work with Supabase
 
-Live sessions are held in the server's memory and streamed to phones with Server-Sent Events. That works on a single server (`npm run dev`, `npm start`, or one container), which is enough to try it on a laptop with phones on the same network. It will **not** work on Vercel's serverless hosting, where requests land on different instances. Before using it on Vercel, the session store in `src/audience/store.ts` needs a Supabase version (Postgres tables plus Supabase Realtime, as the spec plans). The API routes and pages only use the store's interface, so they won't change.
+Phones and the presenter call the app's API routes. The routes write to Postgres through the functions in `0002_live.sql`, using the service role, so rules such as one response per device hold even with many server instances. After each change, the server pings the presenter on a private Realtime channel (`live-host:<session>`). The presenter's browser fetches the new state and publishes the public room view (open poll, approved questions) to phones on `live-room:<code>`, at most a few times a second. A burst of votes therefore becomes a few broadcasts, not one per vote per phone. Only the session's presenter may listen to the host channel or publish to the room; this was checked with forged messages from a phone and from another signed-in user. Phones and the presenter also refetch every so often, in case a message is missed.
+
+Without Supabase, sessions stay in the server's memory and stream over Server-Sent Events. That works only on a single server, which is fine for local use.
 
 Images from imported decks are stored in the browser (IndexedDB). They don't sync to the cloud yet, so an imported deck opened on another device shows "Image not on this device".
 

@@ -1,9 +1,10 @@
 "use client";
 /** The participant's phone page (A-01, A-02, A-04): answer the open poll, ask and upvote questions. */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import type { Answer, ParticipantView } from "@/audience/model";
+import { mergeRoom, type Answer, type ParticipantView, type RoomView } from "@/audience/model";
+import { browserSupabase } from "@/lib/supabase/client";
 import { Wordmark } from "@/components/Wordmark";
 
 function deviceId(): string {
@@ -20,6 +21,16 @@ function deviceId(): string {
   }
 }
 
+const mineKey = (code: string) => `lectern-mine-${code.toUpperCase()}`;
+
+function loadMine(code: string): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(mineKey(code)) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
 export default function ParticipantPage() {
   const { code } = useParams<{ code: string }>();
   const [device, setDevice] = useState<string | null>(null);
@@ -27,27 +38,55 @@ export default function ParticipantPage() {
   const [problem, setProblem] = useState<string | null>(null);
   const [tab, setTab] = useState<"poll" | "qa">("poll");
   const [msg, setMsg] = useState<string | null>(null);
+  const mine = useRef<Set<string>>(new Set());
+  const viewRef = useRef<ParticipantView | null>(null);
+  viewRef.current = view;
+  const refetch = useRef<(delayMs?: number) => void>(() => {});
 
-  useEffect(() => setDevice(deviceId()), []);
+  useEffect(() => {
+    setDevice(deviceId());
+    mine.current = loadMine(code);
+  }, [code]);
 
   useEffect(() => {
     if (!device) return;
-    let es: EventSource | null = null;
     let stopped = false;
-    // Check the code first so a bad code gets a clear message instead of endless retries.
-    fetch(`/api/live/join/${code}/stream?device=${device}`, { method: "GET" })
-      .then(async (res) => {
-        if (!res.ok) {
-          setProblem((await res.json().catch(() => ({}))).error ?? "Could not join.");
-          return;
-        }
-        res.body?.cancel();
-        if (stopped) return;
+    let es: EventSource | null = null;
+    let cleanupRealtime = () => {};
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const load = async (): Promise<"sse" | "realtime" | null> => {
+      const res = await fetch(`/api/live/join/${code}?device=${device}`, { cache: "no-store" }).catch(() => null);
+      if (stopped) return null;
+      if (!res) {
+        setProblem("Could not reach the presentation.");
+        return null;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setProblem(json.error ?? "Could not join.");
+        return null;
+      }
+      setView(json.view);
+      setProblem(null);
+      return json.transport;
+    };
+
+    // Spread refetches out so a room of phones does not hit the server at once.
+    refetch.current = (delayMs = 0) => {
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void load();
+      }, delayMs + Math.random() * 1200);
+    };
+
+    (async () => {
+      const transport = await load();
+      if (!transport || stopped) return;
+      if (transport === "sse") {
         es = new EventSource(`/api/live/join/${code}/stream?device=${device}`);
-        es.addEventListener("view", (e) => {
-          setView(JSON.parse((e as MessageEvent).data));
-          setProblem(null);
-        });
+        es.addEventListener("view", (e) => setView(JSON.parse((e as MessageEvent).data)));
         es.addEventListener("gone", () => {
           es?.close();
           setProblem("This session has ended.");
@@ -55,15 +94,40 @@ export default function ParticipantPage() {
         es.onerror = () => {
           if (es?.readyState === EventSource.CLOSED) setProblem("Lost the connection. Reload to try again.");
         };
-      })
-      .catch(() => setProblem("Could not reach the presentation."));
+        return;
+      }
+      const sb = browserSupabase();
+      if (!sb) return;
+      await sb.realtime.setAuth();
+      const ch = sb
+        .channel(`live-room:${code.toUpperCase()}`, { config: { private: true } })
+        .on("broadcast", { event: "room" }, ({ payload }) => {
+          const prev = viewRef.current;
+          if (!prev) return;
+          const merged = mergeRoom(prev, payload as RoomView, mine.current);
+          if (merged) setView(merged);
+          else refetch.current();
+        })
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") refetch.current(); // catch up on anything missed while connecting
+        });
+      // Safety net for missed broadcasts.
+      const slow = setInterval(() => refetch.current(), 20000);
+      cleanupRealtime = () => {
+        clearInterval(slow);
+        void sb.removeChannel(ch);
+      };
+    })();
+
     return () => {
       stopped = true;
       es?.close();
+      cleanupRealtime();
+      if (timer) clearTimeout(timer);
     };
   }, [code, device]);
 
-  async function send(action: unknown): Promise<boolean> {
+  async function send(action: { type: string; [k: string]: unknown }): Promise<boolean> {
     const res = await fetch(`/api/live/join/${code}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -73,11 +137,27 @@ export default function ParticipantPage() {
       setMsg("Could not reach the presentation.");
       return false;
     }
+    const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setMsg((await res.json().catch(() => ({}))).error ?? "That did not work.");
+      setMsg(json.error ?? "That did not work.");
       return false;
     }
     setMsg(null);
+    // Show our own change at once; broadcasts carry everyone else's.
+    if (action.type === "respond") setView((v) => (v && v.poll ? { ...v, poll: { ...v.poll, responded: true } } : v));
+    if (action.type === "vote") {
+      setView((v) =>
+        v && {
+          ...v,
+          questions: v.questions.map((q) => (q.id === action.questionId ? { ...q, voted: !q.voted, votes: q.votes + (q.voted ? -1 : 1) } : q)),
+        },
+      );
+    }
+    if (action.type === "ask" && json.id) {
+      mine.current.add(json.id);
+      try { localStorage.setItem(mineKey(code), JSON.stringify([...mine.current])); } catch {}
+      setView((v) => v && { ...v, myPending: v.myPending + 1 });
+    }
     return true;
   }
 
@@ -114,7 +194,7 @@ export default function ParticipantPage() {
   );
 }
 
-function PollCard({ view, send }: { view: ParticipantView; send: (a: unknown) => Promise<boolean> }) {
+function PollCard({ view, send }: { view: ParticipantView; send: (a: { type: string; [k: string]: unknown }) => Promise<boolean> }) {
   const poll = view.poll;
   const [choice, setChoice] = useState<number | null>(null);
   const [text, setText] = useState("");
@@ -188,7 +268,7 @@ function PollCard({ view, send }: { view: ParticipantView; send: (a: unknown) =>
   );
 }
 
-function QaCard({ view, send }: { view: ParticipantView; send: (a: unknown) => Promise<boolean> }) {
+function QaCard({ view, send }: { view: ParticipantView; send: (a: { type: string; [k: string]: unknown }) => Promise<boolean> }) {
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
   return (

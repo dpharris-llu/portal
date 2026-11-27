@@ -5,13 +5,20 @@ import { bulletsBlock, emptyDeck, newSlide, textBlock } from "./factory";
 import { newId } from "./ids";
 
 export function sampleDeck(): Deck {
-  let deck = emptyDeck({
+  const { deck, ops } = sampleDeckOps();
+  return ops.reduce(applyOp, deck);
+}
+
+/** The demo deck as an empty deck plus the operations that build it, so its history replays. */
+export function sampleDeckOps(): { deck: Deck; ops: OpBody[] } {
+  const deck = emptyDeck();
+  const meta = {
     title: "Why LecternAI",
     goal: "Get approval to pilot LecternAI with five LLU admins",
     audience: "LLU leadership",
     timeLimitMin: 15,
     takeaway: "Structured decks are faster to build, easier to trust, and easier to present.",
-  });
+  };
 
   const narrative = [
     newSlide("PowerPoint stores boxes, not arguments", "inform", [
@@ -79,9 +86,9 @@ export function sampleDeck(): Deck {
   backup[1].flags = { requireConfirm: true };
 
   const ops: OpBody[] = [
+    { kind: "deck.setMeta", patch: meta },
     ...narrative.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "narrative" as const, index })),
     ...backup.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "backup" as const, index })),
   ];
-  for (const op of ops) deck = applyOp(deck, op);
-  return deck;
+  return { deck, ops };
 }
