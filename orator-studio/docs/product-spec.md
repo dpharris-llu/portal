@@ -62,6 +62,7 @@ Each stage adds a user type with different needs. Admin features are not assumed
 7. Publish a lecture as a slide deck, handout, and accessible study guide.
 8. Let viewers ask questions of a published deck and get answers grounded only in its content.
 9. Run live polls and moderated audience Q&A from phones, and jump to the slide that answers each question.
+10. Start from a set of documents, such as twelve monthly reports or statements, and turn their figures into sourced charts, with every number traceable to its document and page.
 
 ## 3. Core concepts
 
@@ -75,6 +76,7 @@ The data model is what separates this product from a PowerPoint with an AI sideb
 | Layout | A rule-based arrangement chosen from the slide's blocks and the active theme | No manual nudging; overridable per slide |
 | Theme (design tokens) | Colors, type, spacing, logo rules, contrast minimums, owned by the institution | Brand and accessibility are enforced, not checked |
 | Data binding | A link from a chart or number to a source (sheet, warehouse query, API), with refresh rule | Live figures and stale-number warnings |
+| Data source | Figures read from a set of documents or files, lined up by label across them, each with its document and page, and confirmed by a person before use | Recurring reports become decks without retyping, and every number stays traceable |
 | Provenance record | Source, retrieval time, transformation, and approver for any bound figure or cited claim | Auditability for board and accreditation use |
 | Variant | A saved view of a deck: which slides, what depth, what length, what language | One source, many outputs |
 | Freeform region | A slide area exempt from layout rules, with absolute positioning | The escape hatch |
@@ -196,6 +198,7 @@ Priority: **P0** = required for that stage to ship, **P1** = should have, **P2**
 | F-009 | Offline presenting from a downloaded deck | P0 |
 | F-010 | One theme, with contrast and alt-text checks | P1 |
 | F-011 | Speaker notes and rehearsal timer | P1 |
+| F-012 | Start from documents: read labeled figures from text-based PDFs in the browser, line them up across documents, let the author correct and confirm them, and draft a deck of bound charts (section 7) | P1 |
 
 Also in Stage 0: Magic Link login (P0) and the audience response features in section 5A (A-01 to A-05 are P0 for version .3).
 
@@ -203,7 +206,7 @@ Also in Stage 0: Magic Link login (P0) and the audience response features in sec
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| F-101 | Data bindings to uploaded Excel and CSV files, with manual refresh; SQL, API, and SharePoint sources deferred | P0 |
+| F-101 | Data bindings to uploaded Excel and CSV files and to document sources (F-012), with manual refresh; adding the next period's document to a source updates its charts; SQL, API, and SharePoint sources deferred | P0 |
 | F-102 | Provenance panel on every bound number; stale-figure warnings | P0 |
 | F-103 | Cross-slide consistency check: flags the same metric with different values | P0 |
 | F-104 | Institutional themes with enforced brand rules; department sub-themes | P0 |
@@ -213,6 +216,7 @@ Also in Stage 0: Magic Link login (P0) and the audience response features in sec
 | F-108 | Sensitivity labels on decks and slides; restrict AI and sharing by label | P1 |
 | F-109 | Predicted hard questions with draft answers grounded in the deck | P1 |
 | F-110 | Teams and Outlook integration for sharing and scheduling | P2 |
+| F-111 | Document sources, extended: scanned PDFs (OCR), saved layouts for recurring report types, Excel and CSV in the same review grid, and reconciliation checks (for example, opening balance plus changes equals closing balance) | P1 |
 
 ### Stage 2: faculty
 
@@ -306,10 +310,11 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 **Guardrails**
 
 1. **Labeling.** AI-written text and images carry a visible provenance flag in the editor, and the flag persists in history and export metadata.
-2. **No invented numbers.** AI may not generate a figure unless it comes from a bound source or user input. Unsourced figures are blocked or marked.
+2. **No invented numbers.** AI may not generate a figure unless it comes from a bound source, a confirmed document figure, or user input. Unsourced figures are blocked or marked.
 3. **Grounding.** Viewer Q&A and predicted answers retrieve only from the deck and its cited sources.
 4. **Data handling.** Customer content is never used for model training. Sensitivity labels control which content may be sent to a hosted model. A private-model path is available for restricted data.
 5. **Reversibility.** Every AI operation is an undoable step in history.
+6. **Confirmed extraction.** Figures read from documents are never used until a person confirms them. Each keeps its document and page, and a value the author typed is labeled as typed.
 
 **Evaluation.** Each AI capability has a test set built from real LLU decks (with permission). Targets for the first release: at least 90% of AI-proposed outlines accepted with minor edits, under 1% of drafted slides containing an unsupported figure, and search top-3 recall of at least 95% on a labeled query set. These targets are starting points to revise after the first measurements.
 
@@ -324,6 +329,19 @@ Migration decides adoption. Nobody will rebuild ten years of decks, so PPTX impo
 - Anything that cannot convert (complex SmartArt, embedded objects, animations) is kept as a freeform region or image, and listed in an import report.
 - Quality score per deck, so faculty and admins can triage a bulk import.
 - Basic import is the bar for now: text, images, tables, and speaker notes convert; everything else stays as an image or freeform region. Target: 80% of a representative sample of LLU decks import with no manual repair; measure this in Stage 0 and revisit the bar.
+
+**Documents as data sources (F-012)**
+
+Many decks restate figures from recurring reports: monthly finance packs, enrollment reports, statements. Retyping them is slow and is where wrong numbers come from.
+
+- The author adds a set of PDFs. They are read in the browser and not uploaded.
+- Labeled figures ("Purchases $22,773.77") are found and lined up across the documents into rows, one column per document, ordered by the month or period in the file names. Each value shows its page.
+- Lines that only look like figures are skipped: transaction lists, page numbers, account, box and phone numbers, dates, and numbers inside sentences.
+- The author checks the grid, types over or fills any value, and confirms each row. Nothing unconfirmed can be used. A value printed twice in one document with different amounts is flagged.
+- Confirmed rows become a data source stored with the deck. A draft deck follows: one bound chart per row, a claim computed from the figures (flagged for the author to rewrite), a backup table, and every figure's document and page in the notes and the editor.
+- First release: text-based PDFs only, matched by rules rather than AI, so results are predictable and checkable. Scanned PDFs, saved layouts per report type, and reconciliation checks are F-111.
+
+Tested on ten monthly credit card statements: the summary figures (balances, purchases, payments, credits) were found in all ten and matched the reconciled values exactly. One figure changed layout partway through the year and was found in only seven; the gaps were visible in the grid and filled by hand, as designed.
 
 **Exports**
 
@@ -364,6 +382,7 @@ Migration decides adoption. Nobody will rebuild ten years of decks, so PPTX impo
 | Accessibility | Decks and exports pass automated checks and a defined manual checklist; tagged PDF output | 2 |
 | Security | Encryption in transit and at rest; tenant isolation through Row Level Security; secrets never sent to models | .3 |
 | Security | Magic Link login, role-based access, audit log of views, edits, exports, and AI calls | 1 |
+| Privacy | Documents used as data sources are read in the browser and not uploaded; their figures go to AI only where sensitivity labels allow | .3 |
 | Privacy | No training on customer content; configurable data retention; data export and deletion on request | 1 |
 | Privacy | Version .3 uses non-sensitive content only. A HIPAA agreement with the host, or a move to Azure, is required before patient information may appear; student data is handled for FERPA | 1 |
 | Compliance | VPAT and HECVAT documentation prepared before first external sale | 3 |
@@ -391,6 +410,7 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 | Audience response | Supabase Realtime channels per session | Live polls and Q&A without running a WebSocket server |
 | Slow jobs | PPTX import, export, and AI drafting run as background jobs with progress shown | Avoids serverless time limits (verify current limits) |
 | Data sources | Excel or CSV upload, linked to charts | Light for now; SQL and API bindings later |
+| Document sources | pdf.js text extraction in the browser; rule-based label and value matching; author confirmation | Sensitive files stay on the device; results are predictable and checkable |
 | Portability | Standard Postgres; avoid vendor-specific features where practical | Keeps a later move to Azure a migration, not a rewrite |
 
 **Constraints for version .3**
@@ -403,7 +423,7 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 
 **Roadmap**
 
-1. **Version .3 (you).** Structured editor, outline-first drafting, basic PPTX import, non-linear live mode, offline package, audience Q&A with slide matching, simple polls. Gate: you present from it weekly for 8 weeks.
+1. **Version .3 (you).** Structured editor, outline-first drafting, basic PPTX import, documents as data sources (basic), non-linear live mode, offline package, audience Q&A with slide matching, simple polls. Gate: you present from it weekly for 8 weeks.
 2. **Stage 1 (LLU admins).** Excel and CSV data bindings, provenance and consistency checks, themes, variants, claim-level review, roles and audit log. Gate: 5 admins each ship 3 real decks.
 3. **Stage 2 (faculty).** Bulk import, handouts, accessibility remediation, image attribution, Canvas via LTI, quizzes. Gate: 20 faculty active; Canvas passback working.
 4. **Stage 3 (external).** Multi-tenant admin console, SSO and SCIM, public API and MCP, HECVAT and VPAT. Pricing and billing are out of scope until this stage is planned.
@@ -417,6 +437,7 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 | Legacy decks imported without repair | 80% (revisit given "basic" import) | .3 |
 | Q&A questions matched to the right slide in top 3 | 90% on a labeled set | .3 |
 | Number or claim errors caught before a board meeting | Tracked per deck | 1 |
+| Figures read from documents that the author had to correct | Under 5% on a labeled set of LLU reports | 1 |
 | Accessibility checks passing at export | 95% | 2 |
 
 **Risks**
@@ -439,3 +460,4 @@ Clients reach one deck service; AI calls, storage, and outside systems sit behin
 - [ ] Does "basic import" need a higher bar once real faculty decks are tested?
 - [ ] Which Canvas features does LLU allow (LTI tools, grade passback)?
 - [ ] Who owns data sources for admin reports, and how are they exported today?
+- [ ] Which recurring reports (finance, enrollment, accreditation) do admins build decks from, and in which formats: PDF, Excel, or a reporting system?
