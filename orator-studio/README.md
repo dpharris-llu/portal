@@ -2,7 +2,7 @@
 
 *Ideas first. Slides follow.* · Create. Present. Engage.
 
-A presentation platform that stores a deck as structured content (claims, evidence and intent) and generates the layout from it. This folder is the version .3 (Stage 0) starting point described in the product spec.
+A presentation platform that stores a deck as structured content (claims, evidence and intent) and generates the layout from it. This folder is the version .3 (Stage 0) starting point described in the product spec, [`docs/product-spec.md`](docs/product-spec.md).
 
 ## Run it
 
