@@ -205,6 +205,12 @@ label.inline input { width: auto; }
 .confidence.high { color: var(--ok); }
 .confidence.medium { color: var(--warn); }
 .confidence.low { color: var(--err); }
+.paper-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; }
+.ref-num { font-weight: 700; color: var(--navy); }
+.finding-kind.limit { background: var(--warn); }
+.quote-line { font-style: italic; font-size: 13px; color: var(--ink); border-left: 3px solid var(--line); padding-left: 8px; }
+.cites { display: flex; flex-wrap: wrap; gap: 4px; }
+.cite { font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
 .compare-row input.invalid { border-color: var(--err); }
 .suggestion { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
 .bound-data { background: var(--panel); border-radius: 6px; padding: 8px; display: grid; gap: 4px; font-size: 13px; }

@@ -201,6 +201,7 @@ Priority: **P0** = required for that stage to ship, **P1** = should have, **P2**
 | F-011 | Speaker notes and rehearsal timer | P1 |
 | F-013 | Claude analyzes confirmed figures for the deck's stated purpose and against comparisons the author supplies (a budget, target, last year or a normal): a thesis, then points that each give a conclusion, the evidence, why it matters, possible drivers with how to check them, optional context from Claude's general knowledge (labeled, kept to the notes) and a confidence level, then a recommendation with tradeoffs and next steps. Every number from the figures carries a formula the app recomputes; anything that doesn't check is left out. The draft deck is an argument: thesis, one slide per conclusion with its evidence chart, recommendation, next steps. Inside claude.ai it runs on the viewer's own Claude account; elsewhere through the server's API key. Computed checks always run; computed patterns (a summary, not an analysis) stand in when Claude isn't connected | P1 |
 | F-014 | Data URL sources: fetch JSON, XML or CSV from a URL on the institution's allowed list, map fields to rows (Claude may propose the mapping), confirm them, keep a dated snapshot, and refresh on demand with changes shown (section 7) | P1 |
+| F-015 | Start from research papers: Claude reads each uploaded paper for its citation, design, sample, findings and limitations, each with an exact quote and page that OratorStudio checks against the PDF; the author confirms findings; Claude argues across the papers for the deck's purpose, citing only confirmed findings; the deck carries numbered references, quotes and a backup slide per paper (section 6) | P1 |
 | F-012 | Start from documents: read labeled figures from text-based PDFs in the browser, line them up across documents, let the author correct and confirm them, and draft a deck of bound charts (section 7) | P1 |
 
 Also in Stage 0: Magic Link login (P0) and the audience response features in section 5A (A-01 to A-05 are P0 for version .3).
@@ -310,6 +311,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 | Accessibility remediation | Suggests alt text, reading order, caption fixes | Per-item accept; flagged as AI-generated |
 | Q&A prediction | Drafts likely questions and answers from the deck's own evidence | Answers cite slides; presenter edits |
 | Semantic search and voice | Matches spoken or typed queries to slides | Presenter preview before audience sees it |
+| Reading research papers | Pulls each paper's findings and limitations with quotes and pages, then argues across papers for the deck's purpose (F-015) | Quotes and numbers checked against the PDF; author confirms each finding; points that fail checks are left out |
 | Viewer Q&A | Answers viewer questions from a published deck | Restricted to deck content; shows source slides; says "not covered" otherwise |
 
 **Guardrails**
@@ -320,7 +322,8 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 4. **Data handling.** Customer content is never used for model training. Sensitivity labels control which content may be sent to a hosted model. A private-model path is available for restricted data.
 5. **Reversibility.** Every AI operation is an undoable step in history.
 6. **Confirmed extraction.** Figures read from documents are never used until a person confirms them. Each keeps its document and page, and a value the author typed is labeled as typed.
-7. **Only the deck's sources.** AI reads only the sources the author attached to the deck. There is no open web search, and URL fetches go only to hosts on the institution's allowed list.
+7. **Quoted evidence (F-015).** Every finding Claude takes from a research paper carries an exact quote and page. A finding is usable only if the quote appears on that page word for word (a page off by one is corrected) and every number in it is printed there, and only after the author confirms it. Claude's argument across papers must cite confirmed findings; a point whose numbers are not in the findings it cites is left out. How strong and how consistent the evidence is, and what it does not cover, are stated on each point. General knowledge is labeled and kept to speaker notes, as in F-013.
+8. **Only the deck's sources.** AI reads only the sources the author attached to the deck. There is no open web search, and URL fetches go only to hosts on the institution's allowed list.
 
 **Evaluation.** Each AI capability has a test set built from real LLU decks (with permission). Targets for the first release: at least 90% of AI-proposed outlines accepted with minor edits, under 1% of drafted slides containing an unsupported figure, and search top-3 recall of at least 95% on a labeled query set. These targets are starting points to revise after the first measurements.
 

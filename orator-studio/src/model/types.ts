@@ -202,6 +202,35 @@ export interface DataSource {
   createdAt: string;
 }
 
+/** A finding, limitation or method detail from a paper, with the exact words it rests on. */
+export interface PaperClaim {
+  /** "P1-C2": paper 1, claim 2. */
+  id: Id;
+  kind: "finding" | "limitation";
+  /** Plain-language statement; any number in it is printed on the cited page. */
+  text: string;
+  /** Copied word for word from the page ("..." may skip text). */
+  quote: string;
+  page: number;
+  confirmedAt: string;
+}
+
+/** A research paper used as evidence, read by Claude and checked against its own text. */
+export interface Paper {
+  /** "P1", "P2"; also its reference number. */
+  id: Id;
+  fileName: string;
+  pages: number;
+  citation: { title: string; authors: string[]; year?: string; venue?: string; doi?: string };
+  design?: string;
+  sample?: string;
+  claims: PaperClaim[];
+  /** The PDF, kept in this browser's asset store. */
+  pdfAssetId?: string;
+  readAt: string;
+  via: string;
+}
+
 export interface Deck {
   id: Id;
   tenantId: Id;
@@ -213,6 +242,8 @@ export interface Deck {
   slides: Record<Id, Slide>;
   /** Confirmed figures that charts and tables can be bound to. */
   sources?: Record<Id, DataSource>;
+  /** Research papers the deck cites. */
+  papers?: Record<Id, Paper>;
   /** Number of operations applied. */
   version: number;
 }

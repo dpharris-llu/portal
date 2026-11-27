@@ -3,7 +3,7 @@
  * reason (spec 3, "Rules of the model"). The deck is the fold of its operations,
  * which gives history, undo, and later claim-level diffs and co-editing.
  */
-import type { Author, Block, DataSource, Deck, DeckMeta, Id, Section, Slide } from "./types";
+import type { Author, Block, DataSource, Deck, DeckMeta, Id, Paper, Section, Slide } from "./types";
 import { newId } from "./ids";
 
 type Patchable = Pick<Slide, "claim" | "intent" | "notes" | "flags" | "freeform" | "layoutOverride" | "importNotes">;
@@ -21,7 +21,9 @@ export type OpBody =
   | { kind: "block.delete"; slideId: Id; blockId: Id }
   | { kind: "block.move"; slideId: Id; blockId: Id; index: number }
   | { kind: "source.put"; source: DataSource }
-  | { kind: "source.delete"; sourceId: Id };
+  | { kind: "source.delete"; sourceId: Id }
+  | { kind: "paper.put"; paper: Paper }
+  | { kind: "paper.delete"; paperId: Id };
 
 export type Operation = OpBody & {
   id: Id;
@@ -134,6 +136,16 @@ export function applyOp(deck: Deck, op: OpBody): Deck {
     case "source.put":
       next = { ...deck, sources: { ...(deck.sources ?? {}), [op.source.id]: op.source } };
       break;
+    case "paper.put":
+      next = { ...deck, papers: { ...(deck.papers ?? {}), [op.paper.id]: op.paper } };
+      break;
+    case "paper.delete": {
+      if (!deck.papers?.[op.paperId]) throw new OpError(`No paper ${op.paperId}`);
+      const papers = { ...deck.papers };
+      delete papers[op.paperId];
+      next = { ...deck, papers };
+      break;
+    }
     case "source.delete": {
       if (!deck.sources?.[op.sourceId]) throw new OpError(`No source ${op.sourceId}`);
       const sources = { ...deck.sources };
@@ -211,6 +223,15 @@ export function invertOp(before: Deck, op: OpBody): OpBody {
       const prev = before.sources?.[op.sourceId];
       if (!prev) throw new OpError(`No source ${op.sourceId}`);
       return { kind: "source.put", source: prev };
+    }
+    case "paper.put": {
+      const prev = before.papers?.[op.paper.id];
+      return prev ? { kind: "paper.put", paper: prev } : { kind: "paper.delete", paperId: op.paper.id };
+    }
+    case "paper.delete": {
+      const prev = before.papers?.[op.paperId];
+      if (!prev) throw new OpError(`No paper ${op.paperId}`);
+      return { kind: "paper.put", paper: prev };
     }
   }
 }

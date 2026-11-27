@@ -11,6 +11,7 @@ import NewDeck from "../src/app/new/page";
 import ImportPage from "../src/app/import/page";
 import DocumentsPage from "../src/app/documents/page";
 import DataUrlPage from "../src/app/data/page";
+import EvidencePage from "../src/app/evidence/page";
 import EditorPage from "../src/app/decks/[id]/page";
 import PresentPage from "../src/app/decks/[id]/present/page";
 import { OutlineRequest, templateOutline } from "../src/ai/outline";
@@ -37,7 +38,7 @@ window.fetch = async (input, init) => {
     );
   }
   // The demo has no server: Claude is reached through the page's claude.ai capability instead.
-  if (url.endsWith("/api/analyze")) {
+  if (url.endsWith("/api/analyze") || url.includes("/api/evidence/")) {
     return init?.method === "POST"
       ? new Response(JSON.stringify({ error: "Open this page in claude.ai to use your Claude account.", code: "not_configured" }), { status: 501 })
       : new Response(JSON.stringify({ available: false }), { headers: { "content-type": "application/json" } });
@@ -51,6 +52,7 @@ const routes: { pattern: RegExp; keys: string[]; Page: () => React.ReactNode }[]
   { pattern: /^\/import$/, keys: [], Page: ImportPage },
   { pattern: /^\/documents$/, keys: [], Page: DocumentsPage },
   { pattern: /^\/data$/, keys: [], Page: DataUrlPage },
+  { pattern: /^\/evidence$/, keys: [], Page: EvidencePage },
   { pattern: /^\/decks\/([^/]+)$/, keys: ["id"], Page: EditorPage },
   { pattern: /^\/decks\/([^/]+)\/present$/, keys: ["id"], Page: PresentPage },
 ];
