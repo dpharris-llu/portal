@@ -1,7 +1,8 @@
 "use client";
-import type { Block, ChartBlock } from "@/model/types";
+import type { Block, ChartBlock, ImageBlock } from "@/model/types";
 import type { Theme } from "@/theme/types";
 import { chartSeriesColors, primary } from "@/theme/rules";
+import { useAssetUrl } from "@/lib/assets";
 
 export function BlockView({ block, theme }: { block: Block; theme: Theme }) {
   switch (block.type) {
@@ -11,7 +12,9 @@ export function BlockView({ block, theme }: { block: Block; theme: Theme }) {
       return (
         <ul className="b-bullets">
           {block.items.map((item, i) => (
-            <li key={i}>{item}</li>
+            <li key={i} style={block.levels?.[i] ? { marginLeft: `${block.levels[i] * 1.2}em`, fontSize: "0.85em" } : undefined}>
+              {item}
+            </li>
           ))}
         </ul>
       );
@@ -23,15 +26,7 @@ export function BlockView({ block, theme }: { block: Block; theme: Theme }) {
         </figure>
       );
     case "image":
-      return block.src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <figure className="b-image">
-          <img src={block.src} alt={block.alt} />
-          {block.attribution && <figcaption>{block.attribution}</figcaption>}
-        </figure>
-      ) : (
-        <div className="b-empty">Image: add a URL</div>
-      );
+      return <ImageView block={block} />;
     case "table":
       return (
         <table className="b-table">
@@ -55,6 +50,19 @@ export function BlockView({ block, theme }: { block: Block; theme: Theme }) {
     case "chart":
       return <Chart block={block} theme={theme} />;
   }
+}
+
+function ImageView({ block }: { block: ImageBlock }) {
+  const { url, missing } = useAssetUrl(block.src);
+  if (!block.src) return <div className="b-empty">Image: add a URL</div>;
+  if (missing) return <div className="b-empty">Image not on this device</div>;
+  return (
+    <figure className="b-image">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {url && <img src={url} alt={block.alt} />}
+      {block.attribution && <figcaption>{block.attribution}</figcaption>}
+    </figure>
+  );
 }
 
 /**

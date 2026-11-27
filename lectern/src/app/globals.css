@@ -79,7 +79,7 @@ label.inline input { width: auto; }
 .slide-box[data-type="table"], .slide-box[data-type="quote"] { justify-content: center; }
 .slide-freeform { position: absolute; outline: 1px dashed rgba(0, 0, 0, 0.25); }
 .slide .placeholder { opacity: 0.4; }
-.b-text { margin: 0; }
+.b-text { margin: 0; white-space: pre-line; }
 .b-bullets { margin: 0; padding-left: 1.1em; }
 .b-bullets li { margin-bottom: 0.35em; }
 .b-quote { margin: 0; border-left: 0.25em solid; padding-left: 0.8em; font-size: 1.3em; }
@@ -151,3 +151,11 @@ label.inline input { width: auto; }
   .presenter { grid-template-columns: 1fr; height: auto; }
   .cmdk-results { grid-template-columns: 1fr; }
 }
+
+/* Import report */
+.report-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.report-stats div { background: var(--panel); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; }
+.report-stats strong { font-size: 28px; }
+.report-stats span { font-size: 13px; color: var(--muted); }
+.report-table { font-size: 14px; }
+.review-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dd8800; margin-left: 6px; }

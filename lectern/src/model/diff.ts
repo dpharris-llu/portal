@@ -1,7 +1,7 @@
 import type { Slide } from "./types";
 import type { OpBody, SlidePatch } from "./ops";
 
-const FIELDS = ["claim", "intent", "notes", "flags", "freeform", "layoutOverride"] as const;
+const FIELDS = ["claim", "intent", "notes", "flags", "freeform", "layoutOverride", "importNotes"] as const;
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -12,7 +12,7 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 export function diffSlide(a: Slide, b: Slide): OpBody[] {
   const ops: OpBody[] = [];
   const patch: SlidePatch = {};
-  for (const f of FIELDS) if (!same(a[f], b[f])) (patch as Record<string, unknown>)[f] = b[f];
+  for (const f of FIELDS) if (!same(a[f], b[f])) (patch as Record<string, unknown>)[f] = b[f] ?? null;
   if (Object.keys(patch).length) ops.push({ kind: "slide.update", slideId: a.id, patch });
   for (const block of b.blocks) {
     const old = a.blocks.find((x) => x.id === block.id);

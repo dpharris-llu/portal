@@ -112,7 +112,10 @@ export default function EditorPage() {
                 {deck[section].map((sid, i) => (
                   <li key={sid}>
                     <button className="thumb" aria-current={sid === slideId} onClick={() => select(sid)}>
-                      <span className="num">{section === "narrative" ? i + 1 : `B${i + 1}`}</span>
+                      <span className="num">
+                        {section === "narrative" ? i + 1 : `B${i + 1}`}
+                        {deck.slides[sid].importNotes && <span className="review-dot" title="Needs review after import" />}
+                      </span>
                       <SlideView slide={sid === slideId && view ? view : deck.slides[sid]} theme={theme} />
                     </button>
                   </li>
@@ -228,7 +231,14 @@ export default function EditorPage() {
                 {slideIssues.map((i, k) => <li key={k} className={i.severity}>{i.message}</li>)}
               </ul>
             )}
+            {view?.importNotes && (
+              <button style={{ marginTop: 8 }} onClick={() => structural(() => commit({ kind: "slide.update", slideId: view.id, patch: { importNotes: null } }, "Marked import reviewed"))}>
+                Mark import notes reviewed
+              </button>
+            )}
             <p className="muted small">
+              {deck.backup.concat(deck.narrative).filter((x) => deck.slides[x]?.importNotes).length > 0 &&
+                `${deck.backup.concat(deck.narrative).filter((x) => deck.slides[x]?.importNotes).length} slides need import review. `}
               Deck: {issues.filter((i) => i.severity === "error").length} errors, {issues.filter((i) => i.severity === "warning").length} warnings.
             </p>
           </section>

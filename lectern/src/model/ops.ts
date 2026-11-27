@@ -6,9 +6,9 @@
 import type { Author, Block, Deck, DeckMeta, Id, Section, Slide } from "./types";
 import { newId } from "./ids";
 
-export type SlidePatch = Partial<
-  Pick<Slide, "claim" | "intent" | "notes" | "flags" | "freeform" | "layoutOverride">
->;
+type Patchable = Pick<Slide, "claim" | "intent" | "notes" | "flags" | "freeform" | "layoutOverride" | "importNotes">;
+/** A field set to null is removed. (Not undefined: that would vanish when the log is stored as JSON.) */
+export type SlidePatch = { [K in keyof Patchable]?: Patchable[K] | null };
 
 export type OpBody =
   | { kind: "deck.setMeta"; patch: Partial<DeckMeta> }
@@ -56,11 +56,11 @@ function withSlide(deck: Deck, slide: Slide): Deck {
   return { ...deck, slides: { ...deck.slides, [slide.id]: slide } };
 }
 
-/** Apply keys of a patch; a key explicitly set to undefined is removed. */
-function patchObject<T extends object>(obj: T, patch: Partial<T>): T {
+/** Apply keys of a patch; a key set to null (or undefined) is removed. */
+function patchObject<T extends object>(obj: T, patch: object): T {
   const out = { ...obj } as Record<string, unknown>;
   for (const [k, v] of Object.entries(patch)) {
-    if (v === undefined) delete out[k];
+    if (v === undefined || v === null) delete out[k];
     else out[k] = v;
   }
   return out as T;
@@ -168,7 +168,7 @@ export function invertOp(before: Deck, op: OpBody): OpBody {
       const s = requireSlide(before, op.slideId);
       const patch: SlidePatch = {};
       for (const k of Object.keys(op.patch) as (keyof SlidePatch)[]) {
-        (patch as Record<string, unknown>)[k] = s[k];
+        (patch as Record<string, unknown>)[k] = s[k] ?? null;
       }
       return { kind: "slide.update", slideId: op.slideId, patch };
     }

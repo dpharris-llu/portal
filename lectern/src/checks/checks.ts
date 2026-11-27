@@ -36,6 +36,7 @@ export function deckChecks(deck: Deck, theme: Theme): Issue[] {
     const s = deck.slides[id];
     if (!s) continue;
     if (!s.claim.trim()) issues.push({ slideId: id, severity: "warning", message: "Slide has no claim." });
+    for (const note of s.importNotes ?? []) issues.push({ slideId: id, severity: "warning", message: `Import: ${note}` });
     for (const b of [...s.blocks, ...(s.freeform?.blocks ?? [])]) issues.push(...blockIssues(id, b));
     for (const w of layoutSlide(s, theme).warnings) issues.push({ slideId: id, severity: "warning", message: w });
   }

@@ -44,6 +44,7 @@ export default function Home() {
           <h1 style={{ margin: 0 }}>Your decks</h1>
           <span className="spacer" />
           <button onClick={openSample}>Open demo deck</button>
+          <Link href="/import"><button>Import PPTX</button></Link>
           <Link href="/new"><button className="primary">New deck</button></Link>
         </div>
         {decks === null ? (

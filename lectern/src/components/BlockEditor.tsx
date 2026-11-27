@@ -36,10 +36,14 @@ export function BlockEditor({
       )}
       {block.type === "bullets" && (
         <textarea
-          aria-label="Bullets, one per line"
+          aria-label="Bullets, one per line; indent with two spaces per level"
           rows={Math.max(3, block.items.length + 1)}
-          value={block.items.join("\n")}
-          onChange={(e) => set({ items: e.target.value.split("\n") })}
+          value={block.items.map((item, i) => "  ".repeat(block.levels?.[i] ?? 0) + item).join("\n")}
+          onChange={(e) => {
+            const lines = e.target.value.split("\n");
+            const levels = lines.map((l) => Math.min(4, Math.floor((l.length - l.trimStart().length) / 2)));
+            set({ items: lines.map((l) => l.trimStart()), levels: levels.some((x) => x > 0) ? levels : undefined });
+          }}
         />
       )}
       {block.type === "quote" && (
@@ -50,7 +54,11 @@ export function BlockEditor({
       )}
       {block.type === "image" && (
         <>
-          <input aria-label="Image URL" placeholder="https://…" value={block.src} onChange={(e) => set({ src: e.target.value })} />
+          {block.src.startsWith("asset:") ? (
+            <p className="muted small">Imported image (stored on this device)</p>
+          ) : (
+            <input aria-label="Image URL" placeholder="https://…" value={block.src} onChange={(e) => set({ src: e.target.value })} />
+          )}
           <input aria-label="Alt text" placeholder="Alt text (required)" value={block.alt} onChange={(e) => set({ alt: e.target.value })} />
           <input aria-label="Attribution" placeholder="Attribution / rights" value={block.attribution ?? ""} onChange={(e) => set({ attribution: e.target.value })} />
         </>

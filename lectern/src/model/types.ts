@@ -37,6 +37,8 @@ export interface TextBlock extends BlockBase {
 export interface BulletsBlock extends BlockBase {
   type: "bullets";
   items: string[];
+  /** Indent level per item (0 = top). Omitted means all top level. */
+  levels?: number[];
 }
 
 export interface ImageBlock extends BlockBase {
@@ -105,6 +107,8 @@ export interface Slide {
   freeform?: FreeformRegion;
   /** Name of a layout to force instead of the automatic choice. */
   layoutOverride?: string;
+  /** What PPTX import could not convert or had to guess; cleared once reviewed (F-006). */
+  importNotes?: string[];
 }
 
 export interface DeckMeta {

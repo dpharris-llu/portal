@@ -88,3 +88,23 @@ describe("diffSlide", () => {
     expect(diffSlide(a, a)).toEqual([]);
   });
 });
+
+describe("stored history", () => {
+  it("replays the same after a JSON round trip, including removed fields", () => {
+    const start = emptyDeck();
+    const s = newSlide("A");
+    s.layoutOverride = "grid";
+    s.importNotes = ["check me"];
+    let st = initState(start);
+    st = commit(st, { kind: "slide.insert", slide: s, section: "narrative", index: 0 }, me);
+    const edited = { ...st.deck.slides[s.id] };
+    delete edited.layoutOverride;
+    delete edited.importNotes;
+    st = commit(st, diffSlide(st.deck.slides[s.id], edited), me);
+    st = undo(st, me);
+    st = redo(st, me);
+    const stored = JSON.parse(JSON.stringify(st.log));
+    expect(replay(start, stored)).toEqual(st.deck);
+    expect(st.deck.slides[s.id].layoutOverride).toBeUndefined();
+  });
+});
