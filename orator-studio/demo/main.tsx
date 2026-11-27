@@ -39,6 +39,9 @@ window.fetch = async (input, init) => {
     });
   }
   // Pages on claude.ai can't make requests to other sites, so URLs are fetched only by the full app's server.
+  if (/\/api\/sources\/(search|fulltext|plan)$/.test(url)) {
+    return new Response(JSON.stringify({ error: "Searching databases needs the full app: this demo can't reach outside sites. Upload a PDF or add a fact instead." }), { status: 501 });
+  }
   if (url.endsWith("/api/sources/fetch")) {
     return new Response(
       JSON.stringify({ error: "This demo can't fetch URLs: pages on claude.ai can't reach other sites. Open the URL in your browser, save the response, and upload or paste it below." }),

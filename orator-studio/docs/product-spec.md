@@ -279,6 +279,7 @@ Priority: **P0** = required for that stage to ship, **P1** = should have, **P2**
 | F-017 | Platform | Shared media library: upload an image once; each image is a slide image or evidence; evidence images keep their source and date; alt text and rights travel with the image | P1 |
 | F-018 | Platform | Magic Link sign-in, one institution, author role | P0 |
 | F-118 | Research | Research workspace with probes: each argument has one workspace of sources (papers, documents, data, the author's notes) and the facts confirmed from them, with short ids (S2, F7). The author builds the case by asking successive questions; Claude answers from the active facts only, citing them, with the earlier questions as context, and proposes changes (add a point, link evidence, change the thesis, add an open question, discard a source or fact). The author accepts or dismisses each one. Answers and proposals are checked: citations must be active facts, and every number must appear in the facts cited. When the author discards a source or fact, by button or by asking, it is taken off every point, never sent to Claude again, and kept on record with the reason; it can be restored or undone | P0 |
+| F-119 | Research | Find sources: search named scientific and government databases from the workspace. Europe PMC (all of PubMed including CDC's MMWR, open-access full text from PubMed Central, preprints, and NCBI Bookshelf government reports) and ClinicalTrials.gov. Claude may write the search from the author's words; the author sees and can edit it. Results show access (free full text, abstract only, or registry record). Nothing is added unless the author chooses it; added sources are read and checked like uploads (open-access full text by section; otherwise the abstract, labeled as such; trials as their registry record), or, without Claude, the author ticks sentences to keep word for word. A probe that finds a gap can propose a search | P0 |
 
 Also in Stage 0: the audience response features in section 5A (A-01 to A-05 are P0 for version .3).
 
@@ -391,6 +392,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 | Accessibility remediation | Suggests alt text, reading order, caption fixes | Per-item accept; flagged as AI-generated |
 | Q&A prediction (Present) | Drafts likely questions and answers from the deck's own evidence | Answers cite slides; presenter edits |
 | Semantic search and voice | Matches spoken or typed queries to slides | Presenter preview before audience sees it |
+| Finding sources (Research) | Writes database searches from the author's words; reads added records for findings (F-119) | Author edits the search and picks every result; quotes checked against the record |
 | Probing the workspace (Research) | Answers the author's successive questions from the workspace's active facts and proposes changes to the argument (F-118) | Citations and numbers checked; each proposal accepted or dismissed; discards only on the author's word |
 | Reading research papers (Research) | Pulls each paper's findings and limitations with quotes and pages, then argues across papers for the argument's purpose (F-015) | Quotes and numbers checked against the PDF; author confirms each finding; points that fail checks are left out |
 | Illustrations (Build) | Generates images from a prompt through the institution's image provider (F-116) | Illustration only; labeled as AI-generated; clinical- or data-looking images blocked or flagged |
@@ -410,7 +412,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
    - Each point of the argument must cite confirmed findings. A point with a number that is not in the findings it cites is left out.
    - Each point states how strong and how consistent the evidence is and what it does not cover. Claude's general knowledge is labeled and kept to speaker notes, as in F-013.
 8. **Images are not evidence unless sourced.** AI-generated images are illustrations, labeled as such, and never shown as patients, scans, results or data. Evidence images carry their source, and anything read from them is confirmed before use.
-9. **Only the author's sources.** AI reads only the sources the author attached to the argument. There is no open web search, and URL fetches go only to hosts on the institution's allowed list.
+9. **Only the author's sources, found in named databases.** AI reads only the sources the author added to the argument. There is no open web search: Find sources (F-119) searches named scientific and government databases (Europe PMC, which covers PubMed, PubMed Central and NCBI Bookshelf, and ClinicalTrials.gov), and a result enters the workspace only when the author adds it, after which it is read and checked like any source. URL fetches go only to hosts on the institution's allowed list.
 
 **Evaluation.** Each AI capability has a test set built from real LLU decks (with permission). Targets for the first release: at least 90% of AI-proposed outlines accepted with minor edits, under 1% of drafted slides containing an unsupported figure, and search top-3 recall of at least 95% on a labeled query set. These targets are starting points to revise after the first measurements.
 
@@ -470,6 +472,7 @@ Every source is either a file the author uploads or a URL the author adds. There
 | --- | --- | --- | --- |
 | Uploaded file | PDF, Excel, CSV, Word | In the browser; figures matched by label (F-012) | .3 (PDF), 1 (others) |
 | Web page | A news release, a policy page, a published report | Fetched by the server; readable text kept as a snapshot; Claude proposes claims with citations (F-112) | 1 |
+| Database search | Europe PMC (PubMed, PubMed Central, NCBI Bookshelf) and ClinicalTrials.gov | The server queries fixed endpoints; the author picks results, which are read and checked (F-119) | .3 |
 | Data URL | A REST API or file returning JSON, XML or CSV | Fetched by the server; fields mapped to rows by path, such as `daily.temperature_2m_max` (F-014) | .3 |
 | MCP connector | An institutional system exposed through MCP | The server calls the connector's tools as an MCP client and records each response (F-113) | 1 |
 

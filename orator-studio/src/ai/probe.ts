@@ -17,6 +17,7 @@ export const ProbeActionSchema = z.union([
   z.object({ kind: z.literal("add_open_question"), text: z.string().max(400) }),
   z.object({ kind: z.literal("discard_source"), sourceId: z.string().max(12), reason: z.string().max(300) }),
   z.object({ kind: z.literal("discard_fact"), factId: z.string().max(12), reason: z.string().max(300) }),
+  z.object({ kind: z.literal("find_sources"), want: z.string().max(400) }),
 ]);
 export const ProbeAnswer = z.object({
   answer: z.string().max(6000),
@@ -100,11 +101,12 @@ export function probePrompt(r: ProbeRequest): string {
     "- Be direct: answer first, then reasoning. Point out weak evidence (unchecked facts, single small studies, limitations) where it matters.",
     "- When asked for objections or weaknesses, give the strongest ones, say whether the facts answer each, and propose an open question for each one they don't answer.",
     "- Propose changes only where they help the argument: add_point (with the facts that support it), link_evidence (facts to an existing point, by its number), set_thesis, add_open_question.",
+    "- When the facts can't answer something that matters, propose find_sources with a short plain description of the evidence to look for (the author can search scientific and government databases).",
     "- Propose discard_source or discard_fact ONLY when the author asks to drop, discard, remove or exclude something; use the id and put the author's reason in their words. Never propose discards on your own.",
     "- The author decides: proposals are suggestions they accept or dismiss.",
     "",
     'Reply with only JSON: {"answer":"...","cites":["F1"],"proposals":[{"why":"...","action":{"kind":"add_point","text":"...","intent":"persuade","detail":"...","factIds":["F1"]}}]}',
-    'Other action shapes: {"kind":"link_evidence","pointNumber":2,"factIds":["F4"]}, {"kind":"set_thesis","text":"..."}, {"kind":"add_open_question","text":"..."}, {"kind":"discard_source","sourceId":"S2","reason":"..."}, {"kind":"discard_fact","factId":"F7","reason":"..."}',
+    'Other action shapes: {"kind":"link_evidence","pointNumber":2,"factIds":["F4"]}, {"kind":"set_thesis","text":"..."}, {"kind":"add_open_question","text":"..."}, {"kind":"discard_source","sourceId":"S2","reason":"..."}, {"kind":"discard_fact","factId":"F7","reason":"..."}, {"kind":"find_sources","want":"..."}',
   ].join("\n");
 }
 
@@ -175,6 +177,9 @@ export function verifyProbe(a: Argument, r: ProbeAnswer): CheckedProbe {
         action = raw;
         if (!byId.has(raw.factId)) p.push(`${raw.factId} is not an active fact`);
         break;
+      case "find_sources":
+        action = raw;
+        break;
     }
     return { action, why, problems: p };
   });
@@ -200,5 +205,7 @@ export function describeAction(a: Argument, x: ProbeAction): string {
     }
     case "discard_fact":
       return `Discard fact ${x.factId}`;
+    case "find_sources":
+      return `Search for: ${x.want}`;
   }
 }

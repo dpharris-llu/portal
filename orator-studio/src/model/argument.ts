@@ -28,7 +28,7 @@ export interface EvidenceItem {
  * Claude can refer to them. Discarded items stay on record, with a reason,
  * but are never used again: not in points, not sent to Claude.
  */
-export type SourceKind = "paper" | "document" | "data" | "note" | "web";
+export type SourceKind = "paper" | "report" | "trial" | "document" | "data" | "note" | "web";
 export interface WorkspaceSource {
   id: Id;
   kind: SourceKind;
@@ -39,9 +39,21 @@ export interface WorkspaceSource {
   short: string;
   design?: string;
   sample?: string;
+  /** The public record, for sources found by search (F-119). */
+  url?: string;
+  /** What was read: the full text, only the abstract, or a registry record. */
+  access?: "full text" | "abstract" | "registry record";
+  /** Names for "pages" that are really sections (full texts from PubMed Central). */
+  pageLabels?: Record<number, string>;
   status: "active" | "discarded";
   discardReason?: string;
   addedAt: string;
+}
+
+/** Where in a source a fact is: "p. 4", or a section name. */
+export function locate(src: WorkspaceSource | undefined, page?: number): string {
+  if (!page) return "";
+  return src?.pageLabels?.[page] ?? `p. ${page}`;
 }
 export interface Fact {
   id: Id;
@@ -77,7 +89,8 @@ export type ProbeAction =
   | { kind: "set_thesis"; text: string }
   | { kind: "add_open_question"; text: string }
   | { kind: "discard_source"; sourceId: Id; reason: string }
-  | { kind: "discard_fact"; factId: Id; reason: string };
+  | { kind: "discard_fact"; factId: Id; reason: string }
+  | { kind: "find_sources"; want: string };
 
 export interface ArgPoint {
   id: Id;
@@ -297,7 +310,7 @@ export function evidenceFromFact(a: Argument, f: Fact): EvidenceItem {
     text: f.text,
     factId: f.id,
     ...(f.quote ? { quote: f.quote } : {}),
-    source: src ? `${src.short}${f.page ? `, p. ${f.page}` : ""}` : undefined,
+    source: src ? `${src.short}${f.page ? `, ${locate(src, f.page)}` : ""}${src.access === "abstract" ? " (abstract)" : ""}` : undefined,
   };
 }
 

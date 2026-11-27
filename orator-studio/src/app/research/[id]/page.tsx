@@ -71,6 +71,7 @@ export default function ArgumentPage() {
   const [thinking, setThinking] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [find, setFind] = useState<{ want: string; n: number } | null>(null);
   const showFact = (id: string) => {
     setHighlight(id);
     setTimeout(() => document.getElementById(`fact-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
@@ -318,8 +319,8 @@ export default function ArgumentPage() {
         <p className="small muted">Version {arg.version} · {log.length} changes recorded</p>
         </div>
         <aside className="research-side" aria-label="Research workspace">
-          <ProbePanel arg={arg} apply={apply} onFact={showFact} />
-          <WorkspacePanel arg={arg} apply={apply} highlight={highlight} />
+          <ProbePanel arg={arg} apply={apply} onFact={showFact} onFind={(want) => setFind((f) => ({ want, n: (f?.n ?? 0) + 1 }))} />
+          <WorkspacePanel arg={arg} apply={apply} highlight={highlight} find={find} />
         </aside>
         </div>
       </main>

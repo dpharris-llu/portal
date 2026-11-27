@@ -25,10 +25,11 @@ export type PaperReading = z.infer<typeof PaperReading>;
 
 export const ReadRequest = z.object({ fileName: z.string().max(300), text: z.string().max(200_000) });
 
-export function readPaperPrompt(fileName: string, text: string): string {
+export function readPaperPrompt(fileName: string, text: string, context?: string): string {
   return [
     "You are reading one research paper so a presenter can cite it accurately in a deck. The paper's text follows, with [[Page N]] markers where each PDF page starts. The reference list has been left out.",
     `File: ${fileName}`,
+    ...(context ? [context] : []),
     "",
     "Extract:",
     "- citation: title, authors (as printed, in order; at most 6, then \"et al.\" as the last entry), year, journal or venue, and DOI if printed.",

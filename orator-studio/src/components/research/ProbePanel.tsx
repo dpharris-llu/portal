@@ -60,10 +60,12 @@ export function bodiesFor(a: Argument, x: ProbeAction): ArgOpBody[] {
       return discardBodies(a, { sourceId: x.sourceId }, x.reason);
     case "discard_fact":
       return discardBodies(a, { factId: x.factId }, x.reason);
+    case "find_sources":
+      return [];
   }
 }
 
-export function ProbePanel({ arg, apply, onFact }: { arg: Argument; apply: Apply; onFact?: (id: string) => void }) {
+export function ProbePanel({ arg, apply, onFact, onFind }: { arg: Argument; apply: Apply; onFact?: (id: string) => void; onFind?: (want: string) => void }) {
   const [transport, setTransport] = useState<Transport | null | undefined>(undefined);
   const [question, setQuestion] = useState("");
   const [thinking, setThinking] = useState<number | null>(null);
@@ -114,7 +116,9 @@ export function ProbePanel({ arg, apply, onFact }: { arg: Argument; apply: Apply
   function decide(probe: Probe, i: number, accept: boolean) {
     const outcomes = probe.outcomes.map((o, j) => (j === i ? (accept ? "accepted" : "dismissed") : o));
     const record: ArgOpBody = { kind: "probe.put", probe: { ...probe, outcomes } };
-    const bodies = accept ? bodiesFor(arg, probe.proposals[i].action) : [];
+    const action = probe.proposals[i].action;
+    const bodies = accept ? bodiesFor(arg, action) : [];
+    if (accept && action.kind === "find_sources") onFind?.(action.want);
     apply([...bodies, record], accept ? `Accepted: ${describeAction(arg, probe.proposals[i].action)}` : "Dismissed a proposal");
   }
 
@@ -184,11 +188,11 @@ export function ProbePanel({ arg, apply, onFact }: { arg: Argument; apply: Apply
                       {outcome === "left out" && <span className="verify bad">Left out by the checks: {x.problems.join("; ")}</span>}
                       {outcome === "open" ? (
                         <span className="row">
-                          <button className={discard ? "small danger" : "small primary"} onClick={() => decide(p, i, true)}>{discard ? "Discard" : "Accept"}</button>
+                          <button className={discard ? "small danger" : "small primary"} onClick={() => decide(p, i, true)}>{discard ? "Discard" : x.action.kind === "find_sources" ? "Search" : "Accept"}</button>
                           <button className="small ghost" onClick={() => decide(p, i, false)}>Dismiss</button>
                         </span>
                       ) : outcome !== "left out" ? (
-                        <span className={`pill ${outcome === "accepted" ? "ok" : ""}`}>{outcome === "accepted" ? (discard ? "Discarded" : "Accepted") : "Dismissed"}</span>
+                        <span className={`pill ${outcome === "accepted" ? "ok" : ""}`}>{outcome === "accepted" ? (discard ? "Discarded" : x.action.kind === "find_sources" ? "Searched" : "Accepted") : "Dismissed"}</span>
                       ) : null}
                     </li>
                   );

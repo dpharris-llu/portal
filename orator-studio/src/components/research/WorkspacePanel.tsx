@@ -4,10 +4,11 @@
  * or fact can be discarded with a reason: it leaves every point and is never
  * sent to Claude again. Discarded items stay listed, and can be restored.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Author } from "@/model/types";
-import { activeFacts, discardBodies, evidenceFromFact, nextId, restoreBodies, type ArgOpBody, type Argument, type Fact, type WorkspaceSource } from "@/model/argument";
+import { activeFacts, discardBodies, evidenceFromFact, locate, nextId, restoreBodies, type ArgOpBody, type Argument, type Fact, type WorkspaceSource } from "@/model/argument";
 import { AddPaper } from "./AddPaper";
+import { FindSources } from "./FindSources";
 
 type Apply = (bodies: ArgOpBody[], reason: string, author?: Author) => void;
 
@@ -39,10 +40,17 @@ function DiscardButton({ label, onDiscard }: { label: string; onDiscard: (reason
   );
 }
 
-const KIND: Record<WorkspaceSource["kind"], string> = { paper: "Paper", document: "Document", data: "Data", note: "Notes", web: "Web page" };
+const KIND: Record<WorkspaceSource["kind"], string> = { paper: "Paper", report: "Report", trial: "Trial registry", document: "Document", data: "Data", note: "Notes", web: "Web page" };
 
-export function WorkspacePanel({ arg, apply, highlight }: { arg: Argument; apply: Apply; highlight?: string | null }) {
-  const [adding, setAdding] = useState<"paper" | "note" | null>(null);
+export function WorkspacePanel({ arg, apply, highlight, find }: { arg: Argument; apply: Apply; highlight?: string | null; find?: { want: string; n: number } | null }) {
+  const [adding, setAdding] = useState<"find" | "paper" | "note" | null>(null);
+  const [findWant, setFindWant] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (!find) return;
+    setFindWant(find.want);
+    setAdding("find");
+    setTimeout(() => document.getElementById("ws-h")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }, [find]);
   const [note, setNote] = useState({ text: "", from: "" });
   const live = activeFacts(arg);
   const sources = (arg.sources ?? []).filter((s) => s.status === "active");
@@ -63,9 +71,11 @@ export function WorkspacePanel({ arg, apply, highlight }: { arg: Argument; apply
         <span className="small muted">{sources.length} {sources.length === 1 ? "source" : "sources"} · {live.length} {live.length === 1 ? "fact" : "facts"}</span>
       </div>
       <div className="row">
-        <button className="small" onClick={() => setAdding(adding === "paper" ? null : "paper")} aria-expanded={adding === "paper"}>Add a paper</button>
+        <button className="small primary" onClick={() => setAdding(adding === "find" ? null : "find")} aria-expanded={adding === "find"}>Find sources</button>
+        <button className="small" onClick={() => setAdding(adding === "paper" ? null : "paper")} aria-expanded={adding === "paper"}>Upload a PDF</button>
         <button className="small" onClick={() => setAdding(adding === "note" ? null : "note")} aria-expanded={adding === "note"}>Add a fact</button>
       </div>
+      {adding === "find" && <FindSources key={findWant} arg={arg} apply={apply} initial={findWant} onDone={() => { setAdding(null); setFindWant(undefined); }} />}
       {adding === "paper" && <AddPaper arg={arg} apply={apply} onDone={() => setAdding(null)} />}
       {adding === "note" && (
         <div className="add-box stack" style={{ gap: 8 }}>
@@ -78,7 +88,7 @@ export function WorkspacePanel({ arg, apply, highlight }: { arg: Argument; apply
           </div>
         </div>
       )}
-      {sources.length === 0 && !adding && <p className="small muted">No sources yet. Add a paper or a fact, or start from documents, data or papers in Research.</p>}
+      {sources.length === 0 && !adding && <p className="small muted">No sources yet. Find sources in scientific and government databases, upload a PDF, or add a fact you know.</p>}
       {sources.map((s) => {
         const facts = live.filter((f) => f.sourceId === s.id);
         return (
@@ -90,7 +100,7 @@ export function WorkspacePanel({ arg, apply, highlight }: { arg: Argument; apply
               <span className="small muted">{facts.length} {facts.length === 1 ? "fact" : "facts"}</span>
             </summary>
             <div className="ws-body">
-              <p className="small muted" style={{ margin: 0 }}>{s.citation}{s.design ? ` · ${s.design}` : ""}{s.sample ? ` · ${s.sample}` : ""}</p>
+              <p className="small muted" style={{ margin: 0 }}>{s.citation}{s.design ? ` · ${s.design}` : ""}{s.sample ? ` · ${s.sample}` : ""}{s.access ? ` · read: ${s.access}` : ""}{s.url ? <> · <a href={s.url} target="_blank" rel="noopener noreferrer">record</a></> : null}</p>
               <ul className="ws-facts">
                 {facts.map((f) => (
                   <li key={f.id} id={`fact-${f.id}`} className={f.id === highlight ? "hl" : undefined}>
@@ -98,7 +108,7 @@ export function WorkspacePanel({ arg, apply, highlight }: { arg: Argument; apply
                       <span className="id-chip">{f.id}</span>
                       <span style={{ flex: 1, minWidth: 0 }}>{f.text}</span>
                     </div>
-                    {f.quote && <span className="quote-line">“{f.quote}”{f.page ? <span className="muted"> p. {f.page}</span> : null}</span>}
+                    {f.quote && <span className="quote-line">“{f.quote}”{f.page ? <span className="muted"> {locate(s, f.page)}</span> : null}</span>}
                     <div className="row small">
                       <span className={f.checked ? "pill ok" : "pill"}>{f.checked ? "Checked against the source" : "Unchecked"}</span>
                       {f.kind === "limitation" && <span className="pill warn">Limitation</span>}

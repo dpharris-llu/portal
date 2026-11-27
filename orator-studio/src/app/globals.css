@@ -494,3 +494,9 @@ a.list-row:hover, .list-row:has(> a:hover) { background: var(--panel); color: in
 .discard-ask input { width: 180px; min-height: 32px; padding: 4px 8px; font-size: 13px; }
 .ws-discarded summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
 .add-box { border: 1px dashed #c3cad4; border-radius: 12px; padding: 12px; background: #fbfcfe; }
+
+/* Find sources (F-119) */
+.candidates { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.candidate { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.cand-title { font-family: var(--serif); font-size: 16px; font-weight: 600; line-height: 1.3; }
+.pick-sentences { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
