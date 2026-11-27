@@ -11,6 +11,7 @@ import type { Author, Intent } from "@/model/types";
 import { applyOp, makeOp, type OpBody, type Operation } from "@/model/ops";
 import { bulletsBlock, emptyDeck, newSlide } from "@/model/factory";
 import { currentAuthorId, getRepo } from "@/lib/repo";
+import { DEMO } from "@/lib/demo";
 
 export default function NewDeck() {
   const router = useRouter();
@@ -119,7 +120,7 @@ export default function NewDeck() {
             <div className="row">
               <h2 id="outline-h" style={{ margin: 0 }}>Proposed outline</h2>
               <span className={source === "claude" ? "ai-flag" : "muted small"}>
-                {source === "claude" ? "AI proposal" : "Template (no AI key configured)"}
+                {source === "claude" ? "AI proposal" : DEMO ? "Template outline (AI drafting is off in the demo)" : "Template (no AI key configured)"}
               </span>
             </div>
             <p className="muted small">Edit, reorder or remove anything. No slides exist until you approve.</p>

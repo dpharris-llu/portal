@@ -8,10 +8,12 @@ import { applyOp, makeOp } from "@/model/ops";
 import { currentAuthorId } from "@/lib/repo";
 import { browserSupabase } from "@/lib/supabase/client";
 import { TopBar } from "@/components/TopBar";
+import { DEMO } from "@/lib/demo";
 
 export default function Home() {
   const router = useRouter();
   const [decks, setDecks] = useState<DeckSummary[] | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   async function refresh() {
     setDecks(await getRepo().list());
@@ -31,7 +33,9 @@ export default function Home() {
   }
 
   async function remove(d: DeckSummary) {
-    if (!confirm(`Delete "${d.title}"? This cannot be undone.`)) return;
+    // Two clicks instead of confirm(), which some embedded viewers block.
+    if (confirming !== d.id) return setConfirming(d.id);
+    setConfirming(null);
     await getRepo().remove(d.id);
     refresh();
   }
@@ -39,10 +43,16 @@ export default function Home() {
   return (
     <>
       <TopBar />
-      {!browserSupabase() && (
+      {DEMO ? (
         <div className="banner" role="status">
-          Local mode: decks are saved in this browser only. Set the Supabase variables in <code>.env.local</code> to sign in and sync.
+          Demo: everything runs in this browser, and decks are saved only here. Audience polls and Q&amp;A from phones need the full app.
         </div>
+      ) : (
+        !browserSupabase() && (
+          <div className="banner" role="status">
+            Local mode: decks are saved in this browser only. Set the Supabase variables in <code>.env.local</code> to sign in and sync.
+          </div>
+        )
       )}
       <main className="narrow stack">
         <div className="row">
@@ -64,7 +74,9 @@ export default function Home() {
                 <span className="muted small">{new Date(d.updatedAt).toLocaleString()}</span>
                 <span className="spacer" />
                 <Link href={`/decks/${d.id}/present`}>Present</Link>
-                <button className="ghost danger" onClick={() => remove(d)} aria-label={`Delete ${d.title}`}>Delete</button>
+                <button className={confirming === d.id ? "danger" : "ghost danger"} onClick={() => remove(d)} onBlur={() => setConfirming(null)} aria-label={confirming === d.id ? `Confirm: delete ${d.title} for good` : `Delete ${d.title}`}>
+                  {confirming === d.id ? "Confirm delete" : "Delete"}
+                </button>
               </li>
             ))}
           </ul>

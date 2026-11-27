@@ -10,6 +10,7 @@ import type { PollSpec } from "@/audience/model";
 import { search, LOW_CONFIDENCE, type SearchIndex } from "@/search/index";
 import type { PresenterAction } from "@/present/state";
 import type { useLiveSession } from "@/lib/useLiveSession";
+import { DEMO } from "@/lib/demo";
 
 type Live = ReturnType<typeof useLiveSession>;
 
@@ -54,6 +55,17 @@ export function LivePanel({
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, deck, view]);
+
+  if (!creds && DEMO) {
+    return (
+      <section className="live-panel" aria-label="Audience response">
+        <h2>Audience response</h2>
+        <p className="small muted">
+          In the full app, the room joins from their phones by QR code for live polls and moderated Q&amp;A, and each question links to the slide that answers it. Phones need a server to connect to, so this is off in the demo. Poll slides still show their questions.
+        </p>
+      </section>
+    );
+  }
 
   if (!creds) {
     return (

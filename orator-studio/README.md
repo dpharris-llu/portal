@@ -16,6 +16,8 @@ npm test           # unit tests (model, theme, layout, search, presenter, checks
 npm run typecheck
 ```
 
+`npm run demo` builds a browser-only demo into one file, `demo/dist/index.html`: the same pages with no server, so outlines use the template and audience polls and Q&A are off.
+
 With no environment variables, the app runs in **local mode**. There's no login, and decks are saved in the browser. Click **Open demo deck** to try it.
 
 To sign in and sync, copy `.env.example` to `.env.local` and fill in:

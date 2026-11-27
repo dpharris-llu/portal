@@ -20,6 +20,7 @@ import { useLiveSession } from "@/lib/useLiveSession";
 import { LivePanel } from "@/components/LivePanel";
 import { LiveContext, type LiveInfo } from "@/components/LiveContext";
 import { JoinScreen } from "@/components/JoinScreen";
+import { DEMO } from "@/lib/demo";
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60);
@@ -50,6 +51,16 @@ function Presenter({ deck }: { deck: Deck }) {
   const [now, setNow] = useState(() => Date.now());
   const [detourSec, setDetourSec] = useState(0);
   const channel = useRef<BroadcastChannel | null>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    const on = () => setFullscreen(document.fullscreenElement === stage.current);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+  const goFullscreen = () => {
+    stage.current?.requestFullscreen?.().catch(() => dispatch({ type: "notice", message: "Full screen isn't available here." }));
+  };
   const live = useLiveSession(deck.id);
   const liveInfo: LiveInfo = useMemo(
     () => ({
@@ -133,6 +144,8 @@ function Presenter({ deck }: { deck: Deck }) {
         dispatch({ type: "toggleBlank" });
       } else if (k.toLowerCase() === "v") {
         voice();
+      } else if (k.toLowerCase() === "f") {
+        goFullscreen();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -151,7 +164,17 @@ function Presenter({ deck }: { deck: Deck }) {
     <LiveContext.Provider value={liveInfo}>
       <TopBar>
         <strong>{deck.meta.title}</strong>
-        <button onClick={() => window.open(`/decks/${deck.id}/audience`, `lectern-audience-${deck.id}`, "popup")}>Open audience window</button>
+        {!DEMO && (
+          <button
+            onClick={() => {
+              const w = window.open(`/decks/${deck.id}/audience`, `lectern-audience-${deck.id}`, "popup");
+              if (!w) dispatch({ type: "notice", message: "The browser blocked the audience window. Allow pop-ups, or use Full screen on one display." });
+            }}
+          >
+            Open audience window
+          </button>
+        )}
+        <button onClick={goFullscreen} title="Show the audience view full screen; keys keep working">Full screen <span className="kbd">F</span></button>
         <button onClick={() => setCmdk({ open: true, query: "" })}>Jump <span className="kbd">Ctrl K</span></button>
         {speechAvailable() && <button onClick={voice} aria-pressed={listening}>{listening ? "Listening…" : "Voice"} <span className="kbd">V</span></button>}
         <Link href={`/decks/${deck.id}`}>Edit</Link>
@@ -159,7 +182,7 @@ function Presenter({ deck }: { deck: Deck }) {
       <div className="presenter">
         <div className="main">
           {state.notice && <div className="notice" role="status">{state.notice}</div>}
-          {preview ? (
+          {preview && (
             <>
               <div className="row">
                 <span className="preview-tag">PREVIEW · only you see this</span>
@@ -171,23 +194,25 @@ function Presenter({ deck }: { deck: Deck }) {
               </div>
               <SlideView slide={preview} theme={theme} />
             </>
-          ) : (
-            <>
-              <div className="row">
-                <span className="live-tag">LIVE</span>
-                {state.detour && <span className="small">Detour from slide {state.index + 1}</span>}
-                <span className="spacer" />
-                {state.detour && <button className="primary" onClick={() => dispatch({ type: "returnToPlace" })}>Return to slide {state.index + 1} <span className="kbd">R</span></button>}
-              </div>
-              {state.audience.kind === "join" ? (
-                <JoinScreen code={state.audience.code} url={state.audience.url} theme={theme} />
-              ) : liveSlide ? (
-                <SlideView slide={liveSlide} theme={theme} />
-              ) : (
-                <div className="slide" style={{ background: "#000" }} aria-label="Audience screen is blank" />
-              )}
-            </>
           )}
+          {!preview && (
+            <div className="row">
+              <span className="live-tag">LIVE</span>
+              {state.detour && <span className="small">Detour from slide {state.index + 1}</span>}
+              <span className="spacer" />
+              {state.detour && <button className="primary" onClick={() => dispatch({ type: "returnToPlace" })}>Return to slide {state.index + 1} <span className="kbd">R</span></button>}
+            </div>
+          )}
+          {/* Always mounted, so full screen survives a preview; hidden on the page while previewing. */}
+          <div ref={stage} className={fullscreen ? "stage stage-full" : "stage"} hidden={Boolean(preview) && !fullscreen}>
+            {state.audience.kind === "join" ? (
+              <JoinScreen code={state.audience.code} url={state.audience.url} theme={theme} />
+            ) : liveSlide ? (
+              <SlideView slide={liveSlide} theme={theme} />
+            ) : (
+              <div className="slide" style={{ background: "#000" }} aria-label="Audience screen is blank" />
+            )}
+          </div>
           <div className="row">
             <button onClick={() => dispatch({ type: "prev" })}>← Previous</button>
             <button onClick={() => dispatch({ type: "next" })}>Next →</button>

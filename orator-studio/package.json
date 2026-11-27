@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "demo": "vite build --config demo/vite.config.mts && node demo/finalize.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.14.0",
@@ -29,6 +30,8 @@
     "@types/react": "19.3.3",
     "@types/react-dom": "19.3.0",
     "typescript": "5.9.3",
+    "vite": "8.4.0",
+    "vite-plugin-singlefile": "2.3.4",
     "vitest": "5.1.2"
   }
 }
