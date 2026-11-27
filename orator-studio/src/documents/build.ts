@@ -91,9 +91,16 @@ const ASSURANCE: Finding["kind"][] = ["reconciles", "carries"];
  * `findings` defaults to everything the analysis found; the review page passes
  * only the ones the author kept.
  */
-export function draftFromSource(src: DataSource, findings: Finding[] = analyze(src).findings): DraftDeck {
-  const kept = new Set(findings.map((f) => f.id));
-  const headline = analyze(src).headline;
+export function draftFromSource(src: DataSource, findings: Finding[] = analyze(src).findings, extraSteps: { text: string; ai?: boolean }[] = []): DraftDeck {
+  const now = new Date().toISOString();
+  const aiMark = (f: { ai?: { via: string } }) =>
+    f.ai ? { provenance: { author: { kind: "ai" as const, id: "claude", via: f.ai.via }, at: now, source: src.name } } : {};
+  // Each chart's headline: the strongest finding about that row that has one (Claude's first).
+  const headline: Record<string, Finding> = {};
+  for (const s of src.series) {
+    const best = findings.filter((f) => f.claim && f.seriesIds.includes(s.id)).sort((a, b) => b.score - a.score)[0];
+    if (best) headline[s.id] = best;
+  }
   const first = src.documents[0]?.period ?? "";
   const last = src.documents[src.documents.length - 1]?.period ?? "";
   const span = first && last && first !== last ? `${first} to ${last}` : first;
@@ -107,26 +114,38 @@ export function draftFromSource(src: DataSource, findings: Finding[] = analyze(s
   const insights = findings.filter((f) => f.kind !== "summary" && !ASSURANCE.includes(f.kind));
   const shows: Slide[] = [];
   if (insights.length) {
-    const slide = newSlide("What the figures show", "inform", [{ id: newId("b"), type: "bullets", items: insights.slice(0, 5).map((f) => f.text) } as Block]);
-    slide.importNotes = ["Findings computed from the confirmed figures. Keep the ones that matter and say what they mean."];
+    const top = insights.slice(0, 5);
+    const byClaude = top.find((f) => f.ai);
+    const slide = newSlide("What the figures show", "inform", [{ id: newId("b"), type: "bullets", items: top.map((f) => f.text), ...aiMark(byClaude ?? {}) } as Block]);
+    slide.importNotes = [
+      byClaude
+        ? "Written by Claude from the confirmed figures; every number in it was checked against them. Keep what matters and say it your way."
+        : "Findings computed from the confirmed figures. Keep the ones that matter and say what they mean.",
+    ];
     slide.notes = "Every number here is computed from the confirmed figures; each chart slide lists where its figures came from.";
     shows.push(slide);
   }
 
   const charts = src.series.map((s) => {
-    const best = headline[s.id] && kept.has(headline[s.id].id) ? headline[s.id] : undefined;
+    const best = headline[s.id];
     const slide = newSlide(best?.claim ?? draftClaim(src, s), "inform", [chartFromSeries(src, s)]);
-    slide.importNotes = [REVIEW_CLAIM];
+    slide.importNotes = [best?.ai ? "Headline written by Claude; its numbers were checked against your confirmed figures. Rewrite it in your own words if you like." : REVIEW_CLAIM];
     const about = findings.filter((f) => f.seriesIds.includes(s.id) && f.kind !== "summary").map((f) => f.text);
     slide.notes = [...about, ...(about.length ? [""] : []), ...provenanceLines(src, s)].join("\n");
     return slide;
   });
 
-  const suggestions = findings.filter((f) => f.suggestion).map((f) => f.suggestion as string).slice(0, 4);
+  const steps = [
+    ...extraSteps,
+    ...findings.filter((f) => f.suggestion).map((f) => ({ text: f.suggestion as string, ai: Boolean(f.ai) })),
+  ].filter((st, i, all) => all.findIndex((x) => x.text.toLowerCase() === st.text.toLowerCase()) === i).slice(0, 5);
   const next: Slide[] = [];
-  if (suggestions.length) {
-    const slide = newSlide("Suggested next steps", "decide", [{ id: newId("b"), type: "bullets", items: suggestions } as Block]);
-    slide.importNotes = ["Suggestions drawn from the findings, not decisions. Keep, edit or remove each one."];
+  if (steps.length) {
+    const fromClaude = steps.some((st) => st.ai);
+    const slide = newSlide("Suggested next steps", "decide", [
+      { id: newId("b"), type: "bullets", items: steps.map((st) => st.text), ...(fromClaude ? aiMark({ ai: { via: "claude" } }) : {}) } as Block,
+    ]);
+    slide.importNotes = [`Suggestions${fromClaude ? " from Claude" : " drawn from the findings"}, not decisions. Keep, edit or remove each one.`];
     next.push(slide);
   }
 

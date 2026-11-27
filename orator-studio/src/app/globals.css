@@ -191,6 +191,12 @@ label.inline input { width: auto; }
 .findings input { margin-top: 3px; }
 .finding-kind { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; background: var(--blue); border-radius: 4px; padding: 1px 6px; margin-right: 4px; }
 .finding-kind.check { background: var(--ok); }
+.finding-kind.ai { background: #552255; }
+.findings li.unverified { opacity: 0.75; }
+.verify { display: block; font-size: 12px; margin-top: 2px; }
+.verify.ok { color: var(--ok); }
+.verify.bad { color: var(--err); }
+.sub-h { font-size: 15px; margin: 6px 0 0; }
 .suggestion { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
 .bound-data { background: var(--panel); border-radius: 6px; padding: 8px; display: grid; gap: 4px; font-size: 13px; }
 .bound-data ol { margin: 0; padding-left: 1.2em; font-variant-numeric: tabular-nums; }

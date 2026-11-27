@@ -17,7 +17,9 @@ export type FindingKind =
   | "carries"
   | "matches"
   | "share"
-  | "together";
+  | "together"
+  /** Written by Claude, with every number checked against the confirmed figures. */
+  | "insight";
 
 export interface Finding {
   id: string;
@@ -30,6 +32,8 @@ export interface Finding {
   suggestion?: string;
   /** Higher is more worth saying. */
   score: number;
+  /** Set when Claude wrote it; how Claude was reached. */
+  ai?: { via: string };
 }
 
 interface Point {
