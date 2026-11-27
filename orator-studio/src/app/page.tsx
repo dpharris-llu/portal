@@ -1,89 +1,70 @@
 "use client";
+/** Home: the four modules (spec 1A) and recent work. */
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { getRepo, type DeckSummary } from "@/lib/repo";
-import { sampleDeckOps } from "@/model/sample";
-import { applyOp, makeOp } from "@/model/ops";
-import { currentAuthorId } from "@/lib/repo";
-import { browserSupabase } from "@/lib/supabase/client";
 import { TopBar } from "@/components/TopBar";
-import { DEMO } from "@/lib/demo";
+import { ModeBanner } from "@/components/ModeBanner";
+import { DeckList } from "@/components/DeckList";
+import { getArguments, type ArgumentSummary } from "@/lib/argumentRepo";
 
 export default function Home() {
-  const router = useRouter();
-  const [decks, setDecks] = useState<DeckSummary[] | null>(null);
-  const [confirming, setConfirming] = useState<string | null>(null);
-
-  async function refresh() {
-    setDecks(await getRepo().list());
-  }
+  const [args, setArgs] = useState<ArgumentSummary[] | null>(null);
   useEffect(() => {
-    refresh();
+    getArguments().list().then(setArgs);
   }, []);
-
-  async function openSample() {
-    const repo = getRepo();
-    const { deck: empty, ops } = sampleDeckOps();
-    const me = { kind: "human" as const, id: await currentAuthorId() };
-    const log = ops.map((op) => makeOp(op, me, "Created demo deck"));
-    const deck = log.reduce(applyOp, { ...empty, tenantId: await repo.tenantId() });
-    await repo.save(deck, log, true);
-    router.push(`/decks/${deck.id}`);
-  }
-
-  async function remove(d: DeckSummary) {
-    // Two clicks instead of confirm(), which some embedded viewers block.
-    if (confirming !== d.id) return setConfirming(d.id);
-    setConfirming(null);
-    await getRepo().remove(d.id);
-    refresh();
-  }
 
   return (
     <>
       <TopBar />
-      {DEMO ? (
-        <div className="banner" role="status">
-          Demo: everything runs in this browser, and decks are saved only here. Audience polls and Q&amp;A from phones need the full app.
+      <ModeBanner />
+      <main className="wide stack">
+        <h1 style={{ margin: 0 }}>Build your case, then present it</h1>
+        <div className="module-grid">
+          <section className="module-card" aria-labelledby="m-research">
+            <h2 id="m-research">Orator Research</h2>
+            <p>Work out what is true and what to argue. Organize your thoughts, or start from documents, data or research papers. Every number and quote is checked against its source.</p>
+            <div className="actions"><Link href="/research"><button className="primary">Open Research</button></Link></div>
+          </section>
+          <section className="module-card" aria-labelledby="m-build">
+            <h2 id="m-build">Orator Build</h2>
+            <p>Turn an argument into slides that fit your time, or import a PowerPoint deck and keep going.</p>
+            <div className="actions"><Link href="/build"><button>Open Build</button></Link></div>
+          </section>
+          <section className="module-card" aria-labelledby="m-present">
+            <h2 id="m-present">Orator Present</h2>
+            <p>Present with a private presenter view, jump to any slide by search during questions, and export to PowerPoint or PDF.</p>
+            <div className="actions"><Link href="/present"><button>Open Present</button></Link></div>
+          </section>
+          <section className="module-card" aria-labelledby="m-engage">
+            <h2 id="m-engage">Orator Engage</h2>
+            <p>Let the room join from their phones for live polls and moderated questions, each linked to the slide that answers it.</p>
+            <div className="actions"><Link href="/engage"><button>Open Engage</button></Link></div>
+          </section>
         </div>
-      ) : (
-        !browserSupabase() && (
-          <div className="banner" role="status">
-            Local mode: decks are saved in this browser only. Set the Supabase variables in <code>.env.local</code> to sign in and sync.
-          </div>
-        )
-      )}
-      <main className="narrow stack">
-        <div className="row">
-          <h1 style={{ margin: 0 }}>Your decks</h1>
-          <span className="spacer" />
-          <button onClick={openSample}>Open demo deck</button>
-          <Link href="/import"><button>Import PPTX</button></Link>
-          <Link href="/documents"><button>Start from documents</button></Link>
-          <Link href="/data"><button>Start from a URL</button></Link>
-          <Link href="/evidence"><button>Start from research papers</button></Link>
-          <Link href="/new"><button className="primary">New deck</button></Link>
+
+        <div className="row" style={{ alignItems: "flex-start", gap: 24 }}>
+          <section className="stack" style={{ flex: 1, minWidth: 280 }} aria-labelledby="recent-args">
+            <h2 id="recent-args" style={{ margin: 0, fontSize: 18 }}>Recent arguments</h2>
+            {args === null ? (
+              <p className="muted">Loading…</p>
+            ) : args.length === 0 ? (
+              <p className="muted">None yet. <Link href="/research">Start one in Research.</Link></p>
+            ) : (
+              <ul className="deck-list">
+                {args.slice(0, 5).map((a) => (
+                  <li key={a.id}>
+                    <Link href={`/research/${a.id}`}><strong>{a.title}</strong></Link>
+                    <span className="muted small">{new Date(a.updatedAt).toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="stack" style={{ flex: 1, minWidth: 280 }} aria-labelledby="recent-decks">
+            <h2 id="recent-decks" style={{ margin: 0, fontSize: 18 }}>Recent decks</h2>
+            <DeckList action="edit" limit={5} empty={<>None yet. <Link href="/build">Start one in Build.</Link></>} />
+          </section>
         </div>
-        {decks === null ? (
-          <p className="muted">Loading…</p>
-        ) : decks.length === 0 ? (
-          <p className="muted">No decks yet. Start a new deck from a goal, or open the demo deck.</p>
-        ) : (
-          <ul className="deck-list">
-            {decks.map((d) => (
-              <li key={d.id}>
-                <Link href={`/decks/${d.id}`}><strong>{d.title}</strong></Link>
-                <span className="muted small">{new Date(d.updatedAt).toLocaleString()}</span>
-                <span className="spacer" />
-                <Link href={`/decks/${d.id}/present`}>Present</Link>
-                <button className={confirming === d.id ? "danger" : "ghost danger"} onClick={() => remove(d)} onBlur={() => setConfirming(null)} aria-label={confirming === d.id ? `Confirm: delete ${d.title} for good` : `Delete ${d.title}`}>
-                  {confirming === d.id ? "Confirm delete" : "Delete"}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </main>
     </>
   );

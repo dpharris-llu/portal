@@ -7,6 +7,7 @@ import { TopBar } from "@/components/TopBar";
 import { SlideView } from "@/components/SlideView";
 import { BlockEditor } from "@/components/BlockEditor";
 import { SourcesPanel } from "@/components/SourcesPanel";
+import { ArgumentLink } from "@/components/ArgumentLink";
 import { getTheme } from "@/theme/llu";
 import { layoutSlide, LAYOUT_NAMES } from "@/layout/engine";
 import { deckChecks } from "@/checks/checks";
@@ -104,6 +105,7 @@ export default function EditorPage() {
         <button onClick={() => { flush(); redo(); }} disabled={!canRedo}>Redo</button>
         <Link href={`/decks/${deck.id}/present`}><button className="primary">Present</button></Link>
       </TopBar>
+      <ArgumentLink deck={deck} commit={(op, reason) => { flush(); commit(op, reason); }} onSelect={select} />
       <div className="editor">
         <nav className="rail" aria-label="Slides">
           {(["narrative", "backup"] as const).map((section) => (

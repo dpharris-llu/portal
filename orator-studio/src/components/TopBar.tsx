@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { browserSupabase } from "@/lib/supabase/client";
 import { Wordmark } from "./Wordmark";
+import { ModuleNav } from "./ModuleNav";
 
 export function TopBar({ children }: { children?: React.ReactNode }) {
   const router = useRouter();
@@ -10,6 +11,7 @@ export function TopBar({ children }: { children?: React.ReactNode }) {
   return (
     <header className="topbar">
       <Link href="/" aria-label="OratorStudio home"><Wordmark size={22} /></Link>
+      <ModuleNav />
       {children}
       <span className="spacer" />
       {sb && (

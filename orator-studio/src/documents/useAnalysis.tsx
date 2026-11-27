@@ -1,4 +1,5 @@
 "use client";
+import { newId } from "@/model/ids";
 /**
  * The analysis step shared by every source page: what the deck is for, what to
  * compare against, Claude's analysis as an argument (every number checked),
@@ -121,7 +122,7 @@ export function useAnalysis(base: DataSource | null, sentWhat: string) {
   }
 
   /** The final source (with comparisons) and the deck draft: Claude's argument when there is one, else the computed draft. */
-  function finalize(src: DataSource): { source: DataSource; draft: DraftDeck } {
+  function finalize(src: DataSource): { source: DataSource; draft: DraftDeck; argument?: Argument } {
     const source = withComparisons(src);
     const ruleFindings = analyze(source).findings;
     if (fresh && claude.status === "done") {
@@ -137,8 +138,9 @@ export function useAnalysis(base: DataSource | null, sentWhat: string) {
           recommendation: r.recommendation.verified && !dropped.has("rec") ? r.recommendation : undefined,
           nextSteps: r.nextSteps.filter((st, i) => st.verified && !dropped.has(`step-${i}`)).map((st) => st.text),
           via: claude.via,
+          pointIds: points.map(() => newId("pt")),
         };
-        return { source, draft: draftArgument(source, arg, ruleFindings.filter((f) => f.kind === "reconciles" || f.kind === "carries")) };
+        return { source, argument: arg, draft: draftArgument(source, arg, ruleFindings.filter((f) => f.kind === "reconciles" || f.kind === "carries")) };
       }
     }
     return { source, draft: draftFromSource(source, ruleFindings.filter((f) => !dropped.has(f.id)), []) };

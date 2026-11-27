@@ -15,6 +15,8 @@ export interface EvidenceArgument {
   points: CheckedSynthesis["points"];
   recommendation?: CheckedSynthesis["recommendation"];
   nextSteps: string[];
+  /** Research argument point ids, one per point, recorded on the point slides. */
+  pointIds?: string[];
   openQuestions: string[];
   via: string;
 }
@@ -50,12 +52,13 @@ export function draftFromEvidence(papers: Paper[], arg: EvidenceArgument): Draft
   ]);
   title.importNotes = [arg.thesis ? "Thesis written by Claude from the confirmed findings. Make it yours before presenting." : "Write the one thing this deck should say."];
 
-  const pointSlides: Slide[] = arg.points.map((pt) => {
+  const pointSlides: Slide[] = arg.points.map((pt, i) => {
     const findings = pt.cites.map(claim).filter((x): x is NonNullable<typeof x> => Boolean(x));
     const best = findings.find((x) => x.c.kind === "finding") ?? findings[0];
     const blocks: Block[] = [{ id: newId("b"), type: "text", text: `${untag(pt.evidence)}${refs(pt.cites)}`, ...ai } as Block];
     if (best) blocks.push({ id: newId("b"), type: "quote", text: best.c.quote, attribution: `${shortCitation(best.p.citation)}, p. ${best.c.page}` } as Block);
     const slide = newSlide(pt.conclusion.replace(/[.]$/, ""), "persuade", blocks);
+    if (arg.pointIds?.[i]) slide.pointId = arg.pointIds[i];
     slide.notes = [
       `Why it matters: ${untag(pt.soWhat)}`,
       `Evidence: ${pt.agreement}; ${pt.strength} strength. ${pt.strengthReason}`,

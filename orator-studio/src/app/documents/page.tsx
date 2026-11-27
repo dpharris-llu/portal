@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TopBar } from "@/components/TopBar";
+import { pointsFromFigures, saveNewArgument } from "@/research/link";
 import { figuresInDocument, parseValue } from "@/documents/extract";
 import { alignSeries, orderDocuments, periodFromName, type CandidateRow, type ScannedDocument } from "@/documents/series";
 import { draftFromSource, formatFigure } from "@/documents/build";
@@ -126,14 +127,18 @@ export default function DocumentsPage() {
       const repo = getRepo();
       const me: Author = { kind: "human", id: await currentAuthorId() };
       const now = new Date().toISOString();
-      const { source, draft } = finalize(buildSource(now, me.id));
+      const { source, draft, argument: figArg } = finalize(buildSource(now, me.id));
+      const tenantId = await repo.tenantId();
+      const linked = figArg
+        ? await saveNewArgument({ tenantId, me, ai: { kind: "ai", id: "claude", via: figArg.via }, origin: "documents", ...pointsFromFigures(source, figArg), fields: { ...pointsFromFigures(source, figArg).fields, title: source.name, purpose: goal }, reason: "Created from documents" })
+        : null;
       const bodies: OpBody[] = [
-        { kind: "deck.setMeta", patch: { title: source.name, goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
+        { kind: "deck.setMeta", patch: { title: source.name, goal, ...(linked ? { argumentId: linked.id, argumentVersion: linked.version } : {}), timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         { kind: "source.put", source },
         ...draft.narrative.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "narrative" as const, index })),
         ...draft.backup.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "backup" as const, index })),
       ];
-      let deck = emptyDeck({}, await repo.tenantId());
+      let deck = emptyDeck({}, tenantId);
       const log: Operation[] = bodies.map((b) => makeOp(b, me, "Created from documents"));
       for (const op of log) deck = applyOp(deck, op);
       await repo.save(deck, log, true);

@@ -209,6 +209,8 @@ export interface Argument {
   points: ArgumentPoint[];
   recommendation?: { action: string; rationale: string; tradeoffs: string };
   nextSteps: string[];
+  /** Research argument point ids, one per point, recorded on the point slides. */
+  pointIds?: string[];
   via: string;
 }
 
@@ -235,7 +237,7 @@ export function draftArgument(src: DataSource, arg: Argument, checks: Finding[] 
   title.importNotes = [arg.thesis ? "Thesis written by Claude; its numbers were checked against your figures. Make it yours before presenting." : "Write the one thing this deck should say."];
   title.notes = `Source: ${src.name}.`;
 
-  const pointSlides = arg.points.map((pt) => {
+  const pointSlides = arg.points.map((pt, i) => {
     const main = pt.rows.map(byLabel).find(Boolean);
     const blocks: Block[] = [];
     if (main) {
@@ -244,6 +246,7 @@ export function draftArgument(src: DataSource, arg: Argument, checks: Finding[] 
     }
     blocks.push({ id: newId("b"), type: "text", text: pt.evidence, ...ai } as Block);
     const slide = newSlide(pt.conclusion.replace(/[.]$/, ""), "persuade", blocks);
+    if (arg.pointIds?.[i]) slide.pointId = arg.pointIds[i];
     const notes = [
       `Why it matters: ${pt.soWhat}`,
       ...(pt.drivers.length ? ["", "Possible drivers (hypotheses, not facts):", ...pt.drivers.map((d) => `- ${d.hypothesis} Check: ${d.check}`)] : []),

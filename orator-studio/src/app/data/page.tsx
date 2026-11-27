@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TopBar } from "@/components/TopBar";
+import { pointsFromFigures, saveNewArgument } from "@/research/link";
 import { parseStructured, type Table } from "@/sources/structured";
 import { applyMapping, defaultCombine, defaultGrouping, type Combine, type Grouping, type Mapped } from "@/sources/aggregate";
 import { draftFromSource } from "@/documents/build";
@@ -174,14 +175,18 @@ export default function DataUrlPage() {
       const snapshotAssetId = newId("snap");
       await putAsset(snapshotAssetId, new Blob([loaded!.text], { type: loaded!.contentType || "text/plain" }));
       base.origin!.snapshotAssetId = snapshotAssetId;
-      const { source, draft } = finalize(base);
+      const { source, draft, argument: figArg } = finalize(base);
+      const tenantId = await repo.tenantId();
+      const linked = figArg
+        ? await saveNewArgument({ tenantId, me, ai: { kind: "ai", id: "claude", via: figArg.via }, origin: "data", ...pointsFromFigures(source, figArg), fields: { ...pointsFromFigures(source, figArg).fields, title: source.name, purpose: goal }, reason: "Created from a data URL" })
+        : null;
       const bodies: OpBody[] = [
-        { kind: "deck.setMeta", patch: { title: source.name, goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
+        { kind: "deck.setMeta", patch: { title: source.name, goal, ...(linked ? { argumentId: linked.id, argumentVersion: linked.version } : {}), timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         { kind: "source.put", source },
         ...draft.narrative.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "narrative" as const, index })),
         ...draft.backup.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "backup" as const, index })),
       ];
-      let deck = emptyDeck({}, await repo.tenantId());
+      let deck = emptyDeck({}, tenantId);
       const log: Operation[] = bodies.map((b) => makeOp(b, me, "Created from a data URL"));
       for (const op of log) deck = applyOp(deck, op);
       await repo.save(deck, log, true);

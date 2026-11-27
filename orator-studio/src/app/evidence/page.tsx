@@ -30,6 +30,7 @@ import { newId } from "@/model/ids";
 import type { Author, Paper } from "@/model/types";
 import { currentAuthorId, getRepo } from "@/lib/repo";
 import { putAsset } from "@/lib/assets";
+import { saveNewArgument } from "@/research/link";
 
 interface PaperState {
   id: string; // "P1"
@@ -196,21 +197,57 @@ export default function EvidencePage() {
         });
       }
       const r = synth.result;
+      const keptPoints = r.points.filter((pt, i) => pt.verified && !dropped.has(`pt-${i}`));
+      const pointIds = keptPoints.map(() => newId("pt"));
+      const findingOf = (id: string) => {
+        const paper = used.find((x) => id.startsWith(x.id + "-"));
+        const c = paper?.claims.find((x) => x.id === id);
+        return paper && c ? { paper, c } : null;
+      };
+      const rec = r.recommendation.verified && !dropped.has("rec") ? r.recommendation : undefined;
+      const tenantId = await repo.tenantId();
+      const linked = await saveNewArgument({
+        tenantId,
+        me,
+        ai: { kind: "ai", id: "claude", via: synth.via },
+        origin: "papers",
+        reason: "Created from research papers",
+        fields: {
+          title: r.thesis.verified ? r.thesis.text.replace(/[.]$/, "") : "What the research shows",
+          purpose: goal,
+          thesis: r.thesis.verified ? r.thesis.text : "",
+          openQuestions: r.openQuestions.filter((_, i) => !dropped.has(`q-${i}`)),
+          recommendation: rec ? `${rec.action}. Why: ${rec.rationale} Tradeoffs: ${rec.tradeoffs}` : "",
+          nextSteps: r.nextSteps.filter((s, i) => s.verified && !dropped.has(`step-${i}`)).map((s) => s.text),
+        },
+        points: keptPoints.map((pt, i) => ({
+          id: pointIds[i],
+          text: pt.conclusion,
+          intent: "persuade" as const,
+          detail: `Why it matters: ${pt.soWhat}\nEvidence: ${pt.agreement}; ${pt.strength} strength. ${pt.strengthReason}${pt.gaps ? `\nNot covered: ${pt.gaps}` : ""}`,
+          evidence: pt.cites.flatMap((id) => {
+            const f = findingOf(id);
+            return f ? [{ id: newId("ev"), kind: "finding" as const, text: f.c.text, quote: f.c.quote, source: `[${f.paper.id.slice(1)}] ${shortCitation(f.paper.citation)}, p. ${f.c.page}` }] : [];
+          }),
+          byAi: true,
+        })),
+      });
       const draft = draftFromEvidence(used, {
+        pointIds,
         thesis: r.thesis.verified ? r.thesis.text : undefined,
-        points: r.points.filter((pt, i) => pt.verified && !dropped.has(`pt-${i}`)),
-        recommendation: r.recommendation.verified && !dropped.has("rec") ? r.recommendation : undefined,
+        points: keptPoints,
+        recommendation: rec,
         nextSteps: r.nextSteps.filter((s, i) => s.verified && !dropped.has(`step-${i}`)).map((s) => s.text),
         openQuestions: r.openQuestions.filter((_, i) => !dropped.has(`q-${i}`)),
         via: synth.via,
       });
       const bodies: OpBody[] = [
-        { kind: "deck.setMeta", patch: { title: r.thesis.verified ? r.thesis.text.replace(/[.]$/, "") : "What the research shows", goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
+        { kind: "deck.setMeta", patch: { argumentId: linked.id, argumentVersion: linked.version, title: r.thesis.verified ? r.thesis.text.replace(/[.]$/, "") : "What the research shows", goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         ...used.map((paper) => ({ kind: "paper.put" as const, paper })),
         ...draft.narrative.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "narrative" as const, index })),
         ...draft.backup.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "backup" as const, index })),
       ];
-      let deck = emptyDeck({}, await repo.tenantId());
+      let deck = emptyDeck({}, tenantId);
       const log: Operation[] = bodies.map((b) => makeOp(b, me, "Created from research papers"));
       for (const op of log) deck = applyOp(deck, op);
       await repo.save(deck, log, true);

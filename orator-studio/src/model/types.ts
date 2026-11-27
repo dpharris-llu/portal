@@ -133,6 +133,8 @@ export interface Slide {
   freeform?: FreeformRegion;
   /** Name of a layout to force instead of the automatic choice. */
   layoutOverride?: string;
+  /** The argument point this slide was drafted from, so argument changes can show which slides they affect. */
+  pointId?: string;
   /** What PPTX import could not convert or had to guess; cleared once reviewed (F-006). */
   importNotes?: string[];
 }
@@ -144,6 +146,9 @@ export interface DeckMeta {
   timeLimitMin: number;
   takeaway: string;
   themeId: string;
+  /** The Research argument these slides were drafted from (F-016), and its version at the time. */
+  argumentId?: string;
+  argumentVersion?: number;
 }
 
 /** One document a data source was read from, such as one month's report. */

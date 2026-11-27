@@ -12,6 +12,12 @@ import ImportPage from "../src/app/import/page";
 import DocumentsPage from "../src/app/documents/page";
 import DataUrlPage from "../src/app/data/page";
 import EvidencePage from "../src/app/evidence/page";
+import ResearchHome from "../src/app/research/page";
+import ArgumentPage from "../src/app/research/[id]/page";
+import BuildHome from "../src/app/build/page";
+import DraftFromArgument from "../src/app/build/[argumentId]/page";
+import PresentHome from "../src/app/present/page";
+import EngageHome from "../src/app/engage/page";
 import EditorPage from "../src/app/decks/[id]/page";
 import PresentPage from "../src/app/decks/[id]/present/page";
 import { OutlineRequest, templateOutline } from "../src/ai/outline";
@@ -38,7 +44,7 @@ window.fetch = async (input, init) => {
     );
   }
   // The demo has no server: Claude is reached through the page's claude.ai capability instead.
-  if (url.endsWith("/api/analyze") || url.includes("/api/evidence/")) {
+  if (url.endsWith("/api/analyze") || url.includes("/api/evidence/") || url.includes("/api/argument/")) {
     return init?.method === "POST"
       ? new Response(JSON.stringify({ error: "Open this page in claude.ai to use your Claude account.", code: "not_configured" }), { status: 501 })
       : new Response(JSON.stringify({ available: false }), { headers: { "content-type": "application/json" } });
@@ -53,6 +59,12 @@ const routes: { pattern: RegExp; keys: string[]; Page: () => React.ReactNode }[]
   { pattern: /^\/documents$/, keys: [], Page: DocumentsPage },
   { pattern: /^\/data$/, keys: [], Page: DataUrlPage },
   { pattern: /^\/evidence$/, keys: [], Page: EvidencePage },
+  { pattern: /^\/research$/, keys: [], Page: ResearchHome },
+  { pattern: /^\/research\/([^/]+)$/, keys: ["id"], Page: ArgumentPage },
+  { pattern: /^\/build$/, keys: [], Page: BuildHome },
+  { pattern: /^\/build\/([^/]+)$/, keys: ["argumentId"], Page: DraftFromArgument },
+  { pattern: /^\/present$/, keys: [], Page: PresentHome },
+  { pattern: /^\/engage$/, keys: [], Page: EngageHome },
   { pattern: /^\/decks\/([^/]+)$/, keys: ["id"], Page: EditorPage },
   { pattern: /^\/decks\/([^/]+)\/present$/, keys: ["id"], Page: PresentPage },
 ];
@@ -82,7 +94,7 @@ async function startPath(): Promise<string> {
     const log = ops.map((op) => makeOp(op, { kind: "human", id: "local-user" }, "Created demo deck"));
     const deck = log.reduce(applyOp, empty);
     await localRepo.save(deck, log, true);
-    return `/decks/${deck.id}`;
+    return "/";
   } catch {
     return "/"; // storage blocked: the pages still work, without saving
   }
