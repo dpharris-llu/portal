@@ -9,6 +9,7 @@ import { ParamsContext, usePath } from "./router";
 import Home from "../src/app/page";
 import NewDeck from "../src/app/new/page";
 import ImportPage from "../src/app/import/page";
+import DocumentsPage from "../src/app/documents/page";
 import EditorPage from "../src/app/decks/[id]/page";
 import PresentPage from "../src/app/decks/[id]/present/page";
 import { OutlineRequest, templateOutline } from "../src/ai/outline";
@@ -34,6 +35,7 @@ const routes: { pattern: RegExp; keys: string[]; Page: () => React.ReactNode }[]
   { pattern: /^\/$/, keys: [], Page: Home },
   { pattern: /^\/new$/, keys: [], Page: NewDeck },
   { pattern: /^\/import$/, keys: [], Page: ImportPage },
+  { pattern: /^\/documents$/, keys: [], Page: DocumentsPage },
   { pattern: /^\/decks\/([^/]+)$/, keys: ["id"], Page: EditorPage },
   { pattern: /^\/decks\/([^/]+)\/present$/, keys: ["id"], Page: PresentPage },
 ];

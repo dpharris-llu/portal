@@ -172,6 +172,7 @@ export default function EditorPage() {
                     block={b}
                     index={i}
                     count={view.blocks.length}
+                    sources={deck.sources}
                     onChange={(nb: Block) => edit({ ...view, blocks: view.blocks.map((x) => (x.id === nb.id ? nb : x)) })}
                     onRemove={() => structural(() => commit({ kind: "block.delete", slideId: view.id, blockId: b.id }, "Removed block"))}
                     onMove={(d) => structural(() => commit({ kind: "block.move", slideId: view.id, blockId: b.id, index: i + d }, "Moved block"))}
@@ -233,12 +234,12 @@ export default function EditorPage() {
             )}
             {view?.importNotes && (
               <button style={{ marginTop: 8 }} onClick={() => structural(() => commit({ kind: "slide.update", slideId: view.id, patch: { importNotes: null } }, "Marked import reviewed"))}>
-                Mark import notes reviewed
+                Mark reviewed
               </button>
             )}
             <p className="muted small">
               {deck.backup.concat(deck.narrative).filter((x) => deck.slides[x]?.importNotes).length > 0 &&
-                `${deck.backup.concat(deck.narrative).filter((x) => deck.slides[x]?.importNotes).length} slides need import review. `}
+                `${deck.backup.concat(deck.narrative).filter((x) => deck.slides[x]?.importNotes).length} slides need review. `}
               Deck: {issues.filter((i) => i.severity === "error").length} errors, {issues.filter((i) => i.severity === "warning").length} warnings.
             </p>
           </section>

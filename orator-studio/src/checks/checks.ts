@@ -10,8 +10,14 @@ export interface Issue {
   message: string;
 }
 
-function blockIssues(slideId: Id, b: Block): Issue[] {
+function blockIssues(slideId: Id, b: Block, deck?: Deck): Issue[] {
   const out: Issue[] = [];
+  if ((b.type === "chart" || b.type === "table") && b.binding) {
+    const src = deck?.sources?.[b.binding.sourceId];
+    if (!src || b.binding.seriesIds.some((id) => !src.series.some((s) => s.id === id))) {
+      out.push({ slideId, blockId: b.id, severity: "error", message: "The source of these figures is missing from the deck." });
+    }
+  }
   if ((b.type === "image" || b.type === "chart") && !b.alt.trim()) {
     out.push({ slideId, blockId: b.id, severity: "error", message: `${b.type === "image" ? "Image" : "Chart"} has no alt text.` });
   }
@@ -42,8 +48,8 @@ export function deckChecks(deck: Deck, theme: Theme): Issue[] {
     const s = deck.slides[id];
     if (!s) continue;
     if (!s.claim.trim()) issues.push({ slideId: id, severity: "warning", message: "Slide has no claim." });
-    for (const note of s.importNotes ?? []) issues.push({ slideId: id, severity: "warning", message: `Import: ${note}` });
-    for (const b of [...s.blocks, ...(s.freeform?.blocks ?? [])]) issues.push(...blockIssues(id, b));
+    for (const note of s.importNotes ?? []) issues.push({ slideId: id, severity: "warning", message: `Review: ${note}` });
+    for (const b of [...s.blocks, ...(s.freeform?.blocks ?? [])]) issues.push(...blockIssues(id, b, deck));
     for (const w of layoutSlide(s, theme).warnings) issues.push({ slideId: id, severity: "warning", message: w });
   }
   return issues;

@@ -181,22 +181,26 @@ function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
   const legend = block.series.length > 1;
   const pad = { l: 20, r: 20, t: legend ? 44 : 16, b: 50 };
   const colors = chartSeriesColors(theme, block.series.length);
-  // Headroom so the tallest value label stays inside the plot.
-  const max = Math.max(1, ...block.series.flatMap((s) => s.values)) * 1.12;
+  // Headroom so the tallest value label stays inside the plot; negative values hang below zero.
+  const all = block.series.flatMap((s) => s.values);
+  const max = Math.max(1, ...all) * 1.12;
+  const min = Math.min(0, ...all) * 1.12;
   const plotW = W - pad.l - pad.r;
   const plotH = H - pad.t - pad.b;
   const groupW = plotW / Math.max(1, block.labels.length);
   const barW = (groupW * 0.75) / Math.max(1, block.series.length);
-  const y = (v: number) => pad.t + plotH - (v / max) * plotH;
+  const y = (v: number) => pad.t + plotH - ((v - min) / (max - min)) * plotH;
+  const zero = y(0);
   // Value labels shrink so neighbors don't run into each other.
-  const widest = Math.max(1, ...block.series.flatMap((s) => s.values.map((v) => fmt(v).length)));
+  const valueText = (v: number): string => (block.unit === "currency" ? (v < 0 ? "-$" : "$") + fmt(Math.abs(v)) : block.unit === "percent" ? `${valueText(v)}%` : fmt(v));
+  const widest = Math.max(1, ...block.series.flatMap((s) => s.values.map((v) => valueText(v).length)));
   const slot = block.chart === "line" ? groupW : barW;
   const valueSize = Math.max(11, Math.min(20, (slot * 0.95) / (widest * 0.55)));
 
   return (
     <figure className="b-chart">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={block.alt || "Chart"} preserveAspectRatio="xMidYMid meet">
-        <line x1={pad.l} x2={W - pad.r} y1={pad.t + plotH} y2={pad.t + plotH} stroke={theme.text} strokeWidth={2} />
+        <line x1={pad.l} x2={W - pad.r} y1={zero} y2={zero} stroke={theme.text} strokeWidth={2} />
         {block.labels.map((label, li) => {
           const lines = wrapLabel(label, groupW);
           return (
@@ -219,7 +223,7 @@ function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
                   <g key={i}>
                     <circle cx={pad.l + groupW * i + groupW / 2} cy={y(v)} r={8} fill={color.hex} stroke={stroke} />
                     <text x={pad.l + groupW * i + groupW / 2} y={y(v) - 14} textAnchor="middle" fontSize={valueSize} fill={theme.text}>
-                      {fmt(v)}
+                      {valueText(v)}
                     </text>
                   </g>
                 ))}
@@ -232,9 +236,9 @@ function Chart({ block, theme }: { block: ChartBlock; theme: Theme }) {
                 const x = pad.l + groupW * i + groupW * 0.125 + barW * si;
                 return (
                   <g key={i}>
-                    <rect x={x} y={y(v)} width={barW - 4} height={pad.t + plotH - y(v)} fill={color.hex} stroke={stroke} strokeWidth={2} />
-                    <text x={x + (barW - 4) / 2} y={y(v) - 8} textAnchor="middle" fontSize={valueSize} fill={theme.text}>
-                      {fmt(v)}
+                    <rect x={x} y={Math.min(y(v), zero)} width={barW - 4} height={Math.abs(zero - y(v))} fill={color.hex} stroke={stroke} strokeWidth={2} />
+                    <text x={x + (barW - 4) / 2} y={v < 0 ? y(v) + valueSize + 4 : y(v) - 8} textAnchor="middle" fontSize={valueSize} fill={theme.text}>
+                      {valueText(v)}
                     </text>
                   </g>
                 );

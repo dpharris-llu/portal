@@ -1,6 +1,31 @@
 "use client";
 /** Structured editing for one block: authors edit meaning, never position (principle 1). */
-import type { Block } from "@/model/types";
+import type { Binding, Block, DataSource } from "@/model/types";
+import { provenanceLines } from "@/documents/build";
+
+/** Where a bound chart's or table's numbers came from, figure by figure (F-102). */
+function BoundData({ binding, sources, onUnlink }: { binding: Binding; sources?: Record<string, DataSource>; onUnlink: () => void }) {
+  const src = sources?.[binding.sourceId];
+  if (!src) return <p className="small error">The figures' source is missing from this deck.</p>;
+  return (
+    <div className="bound-data">
+      <strong>Figures from {src.name}</strong>
+      {binding.seriesIds.map((id) => {
+        const s = src.series.find((x) => x.id === id);
+        if (!s) return null;
+        return (
+          <div key={id}>
+            <span>{s.label}, confirmed {s.confirmedAt.slice(0, 10)}</span>
+            <ol>{provenanceLines(src, s).map((l, i) => <li key={i}>{l}</li>)}</ol>
+          </div>
+        );
+      })}
+      <div className="row">
+        <button className="small" onClick={onUnlink}>Unlink and edit the numbers by hand</button>
+      </div>
+    </div>
+  );
+}
 
 export function BlockEditor({
   block,
@@ -9,6 +34,7 @@ export function BlockEditor({
   onMove,
   index,
   count,
+  sources,
 }: {
   block: Block;
   onChange: (b: Block) => void;
@@ -16,6 +42,7 @@ export function BlockEditor({
   onMove: (delta: number) => void;
   index: number;
   count: number;
+  sources?: Record<string, DataSource>;
 }) {
   const strip = (b: Block): Block => ({ ...b, provenance: undefined });
   // Any human edit to AI-written content clears the AI flag on that block.
@@ -63,7 +90,10 @@ export function BlockEditor({
           <input aria-label="Attribution" placeholder="Attribution / rights" value={block.attribution ?? ""} onChange={(e) => set({ attribution: e.target.value })} />
         </>
       )}
-      {block.type === "table" && (
+      {block.type === "table" && block.binding && (
+        <BoundData binding={block.binding} sources={sources} onUnlink={() => set({ binding: undefined })} />
+      )}
+      {block.type === "table" && !block.binding && (
         <>
           <textarea
             aria-label="Table, comma separated, first line is the header"
@@ -112,6 +142,9 @@ export function BlockEditor({
               <option value="line">Line</option>
             </select>
           </div>
+          {block.binding ? (
+            <BoundData binding={block.binding} sources={sources} onUnlink={() => set({ binding: undefined })} />
+          ) : (
           <textarea
             aria-label="Chart data: first line is labels, then one line per series as name: values"
             rows={Math.max(3, block.series.length + 2)}
@@ -127,7 +160,8 @@ export function BlockEditor({
               });
             }}
           />
-          <p className="muted small">First line: labels. Then one series per line, as <code>Name: 1, 2, 3</code>.</p>
+          )}
+          {!block.binding && <p className="muted small">First line: labels. Then one series per line, as <code>Name: 1, 2, 3</code>.</p>}
           <input aria-label="Alt text" placeholder="What the chart shows (required)" value={block.alt} onChange={(e) => set({ alt: e.target.value })} />
           <input aria-label="Source" placeholder="Source of these figures" value={block.source ?? ""} onChange={(e) => set({ source: e.target.value })} />
         </>

@@ -53,12 +53,19 @@ export interface TableBlock extends BlockBase {
   header: string[];
   rows: string[][];
   caption?: string;
+  binding?: Binding;
 }
 
 export interface QuoteBlock extends BlockBase {
   type: "quote";
   text: string;
   attribution?: string;
+}
+
+/** Links a chart or table to confirmed figures in one of the deck's data sources. */
+export interface Binding {
+  sourceId: Id;
+  seriesIds: Id[];
 }
 
 export interface ChartBlock extends BlockBase {
@@ -68,8 +75,12 @@ export interface ChartBlock extends BlockBase {
   series: { name: string; values: number[] }[];
   /** Text alternative describing what the chart shows. */
   alt: string;
+  /** How value labels are written; plain numbers when omitted. */
+  unit?: "currency" | "percent" | "number";
   /** Where the numbers came from. Required before a chart can be shown without a warning (guardrail 2). */
   source?: string;
+  /** Set when the figures come from confirmed document data; the values above are a copy. */
+  binding?: Binding;
 }
 
 export type PollKind = "choice" | "rating" | "ranking" | "text" | "wordcloud";
@@ -133,6 +144,44 @@ export interface DeckMeta {
   themeId: string;
 }
 
+/** One document a data source was read from, such as one month's report. */
+export interface SourceDocument {
+  id: Id;
+  name: string;
+  /** Column heading, e.g. "Jan 2026". */
+  period: string;
+  pages: number;
+}
+
+/** One figure: read from a page, or typed in by the author where the document had none. */
+export interface SourceFigure {
+  value: number | null;
+  raw?: string;
+  page?: number;
+  entered?: boolean;
+}
+
+/** A labeled figure across all the source's documents, confirmed by a person before use. */
+export interface SourceSeries {
+  id: Id;
+  label: string;
+  unit: "currency" | "percent" | "number";
+  /** One per document, in document order. */
+  figures: SourceFigure[];
+  confirmedAt: string;
+  confirmedBy: string;
+}
+
+/** Figures read from a set of documents (spec: start from documents). */
+export interface DataSource {
+  id: Id;
+  name: string;
+  kind: "documents";
+  documents: SourceDocument[];
+  series: SourceSeries[];
+  createdAt: string;
+}
+
 export interface Deck {
   id: Id;
   tenantId: Id;
@@ -142,6 +191,8 @@ export interface Deck {
   /** Backup material, reachable by search and jump but not by "next". */
   backup: Id[];
   slides: Record<Id, Slide>;
+  /** Confirmed figures that charts and tables can be bound to. */
+  sources?: Record<Id, DataSource>;
   /** Number of operations applied. */
   version: number;
 }

@@ -3,7 +3,7 @@
  * reason (spec 3, "Rules of the model"). The deck is the fold of its operations,
  * which gives history, undo, and later claim-level diffs and co-editing.
  */
-import type { Author, Block, Deck, DeckMeta, Id, Section, Slide } from "./types";
+import type { Author, Block, DataSource, Deck, DeckMeta, Id, Section, Slide } from "./types";
 import { newId } from "./ids";
 
 type Patchable = Pick<Slide, "claim" | "intent" | "notes" | "flags" | "freeform" | "layoutOverride" | "importNotes">;
@@ -19,7 +19,9 @@ export type OpBody =
   | { kind: "block.insert"; slideId: Id; block: Block; index: number }
   | { kind: "block.replace"; slideId: Id; block: Block }
   | { kind: "block.delete"; slideId: Id; blockId: Id }
-  | { kind: "block.move"; slideId: Id; blockId: Id; index: number };
+  | { kind: "block.move"; slideId: Id; blockId: Id; index: number }
+  | { kind: "source.put"; source: DataSource }
+  | { kind: "source.delete"; sourceId: Id };
 
 export type Operation = OpBody & {
   id: Id;
@@ -129,6 +131,16 @@ export function applyOp(deck: Deck, op: OpBody): Deck {
       next = withSlide(deck, { ...s, blocks: s.blocks.filter((b) => b.id !== op.blockId) });
       break;
     }
+    case "source.put":
+      next = { ...deck, sources: { ...(deck.sources ?? {}), [op.source.id]: op.source } };
+      break;
+    case "source.delete": {
+      if (!deck.sources?.[op.sourceId]) throw new OpError(`No source ${op.sourceId}`);
+      const sources = { ...deck.sources };
+      delete sources[op.sourceId];
+      next = { ...deck, sources };
+      break;
+    }
     case "block.move": {
       const s = requireSlide(deck, op.slideId);
       const block = s.blocks.find((b) => b.id === op.blockId);
@@ -190,6 +202,15 @@ export function invertOp(before: Deck, op: OpBody): OpBody {
       const s = requireSlide(before, op.slideId);
       const index = s.blocks.findIndex((b) => b.id === op.blockId);
       return { kind: "block.move", slideId: op.slideId, blockId: op.blockId, index };
+    }
+    case "source.put": {
+      const prev = before.sources?.[op.source.id];
+      return prev ? { kind: "source.put", source: prev } : { kind: "source.delete", sourceId: op.source.id };
+    }
+    case "source.delete": {
+      const prev = before.sources?.[op.sourceId];
+      if (!prev) throw new OpError(`No source ${op.sourceId}`);
+      return { kind: "source.put", source: prev };
     }
   }
 }
