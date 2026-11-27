@@ -16,6 +16,7 @@ import type { Intent } from "@/model/types";
 import { Proposal, proposePrompt, templateProposal, type ProposeRequest } from "@/ai/argument";
 import { askClaudeFor, claudeAvailable, ClaudeError, type Transport } from "@/ai/analysis-client";
 import { briefMarkdown } from "@/research/brief";
+import { saveFile } from "@/lib/saveFile";
 
 /** A text field that keeps its own value while typing and commits when you leave it. */
 function Field({ value, onCommit, multiline, label, placeholder, rows }: { value: string; onCommit: (v: string) => void; multiline?: boolean; label: string; placeholder?: string; rows?: number }) {
@@ -130,13 +131,10 @@ export default function ArgumentPage() {
     setProposal(null);
   }
 
-  function downloadBrief() {
-    const blob = new Blob([briefMarkdown(arg!)], { type: "text/markdown" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${argumentTitle(arg!).replace(/[^\w\- ]+/g, "").slice(0, 60) || "brief"}.md`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  async function downloadBrief() {
+    const name = `${argumentTitle(arg!).replace(/[^\w\- ]+/g, "").slice(0, 60).trim() || "brief"}.md`;
+    const r = await saveFile(name, briefMarkdown(arg!), "text/markdown");
+    setError(r === "saved" || r === "declined" ? "" : r);
   }
 
   const unsupported = arg.points.filter((p) => !isSupported(p)).length;
