@@ -6,6 +6,7 @@
 import type { Block, ChartBlock, DataSource, Slide, SourceSeries, TableBlock } from "@/model/types";
 import { newId } from "@/model/ids";
 import { newSlide } from "@/model/factory";
+import { analyze, type Finding } from "./analyze";
 
 /** Format in the figure's unit; `cents` keeps currency to two decimals so a series reads consistently. */
 export function formatFigure(v: number, unit: SourceSeries["unit"], cents = false): string {
@@ -82,8 +83,17 @@ export interface DraftDeck {
 }
 
 const REVIEW_CLAIM = "Claim drafted from the figures. Rewrite it to say why this matters.";
+const ASSURANCE: Finding["kind"][] = ["reconciles", "carries"];
 
-export function draftFromSource(src: DataSource): DraftDeck {
+/**
+ * Draft deck: what the figures show, one chart per row headed by its strongest
+ * finding, suggested next steps, and backup slides for checks and the full table.
+ * `findings` defaults to everything the analysis found; the review page passes
+ * only the ones the author kept.
+ */
+export function draftFromSource(src: DataSource, findings: Finding[] = analyze(src).findings): DraftDeck {
+  const kept = new Set(findings.map((f) => f.id));
+  const headline = analyze(src).headline;
   const first = src.documents[0]?.period ?? "";
   const last = src.documents[src.documents.length - 1]?.period ?? "";
   const span = first && last && first !== last ? `${first} to ${last}` : first;
@@ -94,12 +104,39 @@ export function draftFromSource(src: DataSource): DraftDeck {
   title.importNotes = ["Write the one thing this deck should say; this title is a placeholder."];
   title.notes = `Source: ${src.documents.map((d) => d.name).join(", ")}.`;
 
+  const insights = findings.filter((f) => f.kind !== "summary" && !ASSURANCE.includes(f.kind));
+  const shows: Slide[] = [];
+  if (insights.length) {
+    const slide = newSlide("What the figures show", "inform", [{ id: newId("b"), type: "bullets", items: insights.slice(0, 5).map((f) => f.text) } as Block]);
+    slide.importNotes = ["Findings computed from the confirmed figures. Keep the ones that matter and say what they mean."];
+    slide.notes = "Every number here is computed from the confirmed figures; each chart slide lists where its figures came from.";
+    shows.push(slide);
+  }
+
   const charts = src.series.map((s) => {
-    const slide = newSlide(draftClaim(src, s), "inform", [chartFromSeries(src, s)]);
+    const best = headline[s.id] && kept.has(headline[s.id].id) ? headline[s.id] : undefined;
+    const slide = newSlide(best?.claim ?? draftClaim(src, s), "inform", [chartFromSeries(src, s)]);
     slide.importNotes = [REVIEW_CLAIM];
-    slide.notes = provenanceLines(src, s).join("\n");
+    const about = findings.filter((f) => f.seriesIds.includes(s.id) && f.kind !== "summary").map((f) => f.text);
+    slide.notes = [...about, ...(about.length ? [""] : []), ...provenanceLines(src, s)].join("\n");
     return slide;
   });
+
+  const suggestions = findings.filter((f) => f.suggestion).map((f) => f.suggestion as string).slice(0, 4);
+  const next: Slide[] = [];
+  if (suggestions.length) {
+    const slide = newSlide("Suggested next steps", "decide", [{ id: newId("b"), type: "bullets", items: suggestions } as Block]);
+    slide.importNotes = ["Suggestions drawn from the findings, not decisions. Keep, edit or remove each one."];
+    next.push(slide);
+  }
+
+  const checks = findings.filter((f) => ASSURANCE.includes(f.kind));
+  const assurance: Slide[] = [];
+  if (checks.length) {
+    const slide = newSlide("The figures check out", "inform", [{ id: newId("b"), type: "bullets", items: checks.map((f) => f.text) } as Block]);
+    slide.notes = "Checked across every confirmed figure.";
+    assurance.push(slide);
+  }
 
   // The full table goes to backup, five figures per slide so it stays readable.
   const backup: Slide[] = [];
@@ -109,5 +146,5 @@ export function draftFromSource(src: DataSource): DraftDeck {
     slide.notes = group.map((s) => `${s.label}\n${provenanceLines(src, s).join("\n")}`).join("\n\n");
     backup.push(slide);
   }
-  return { narrative: [title, ...charts], backup };
+  return { narrative: [title, ...shows, ...charts, ...next], backup: [...assurance, ...backup] };
 }

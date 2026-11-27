@@ -198,6 +198,7 @@ Priority: **P0** = required for that stage to ship, **P1** = should have, **P2**
 | F-009 | Offline presenting from a downloaded deck | P0 |
 | F-010 | One theme, with contrast and alt-text checks | P1 |
 | F-011 | Speaker notes and rehearsal timer | P1 |
+| F-013 | Analysis of confirmed figures: swings and their peak periods, steady trends, rising totals, totals concentrated in a few periods, offsets between rows, rows that add up or carry over between periods; each finding raises a suggested next step. Findings become the deck's summary slide, chart headlines and a "suggested next steps" slide, all flagged for the author | P1 |
 | F-012 | Start from documents: read labeled figures from text-based PDFs in the browser, line them up across documents, let the author correct and confirm them, and draft a deck of bound charts (section 7) | P1 |
 
 Also in Stage 0: Magic Link login (P0) and the audience response features in section 5A (A-01 to A-05 are P0 for version .3).
@@ -216,7 +217,7 @@ Also in Stage 0: Magic Link login (P0) and the audience response features in sec
 | F-108 | Sensitivity labels on decks and slides; restrict AI and sharing by label | P1 |
 | F-109 | Predicted hard questions with draft answers grounded in the deck | P1 |
 | F-110 | Teams and Outlook integration for sharing and scheduling | P2 |
-| F-111 | Document sources, extended: scanned PDFs (OCR), saved layouts for recurring report types, Excel and CSV in the same review grid, and reconciliation checks (for example, opening balance plus changes equals closing balance) | P1 |
+| F-111 | Document sources, extended: scanned PDFs (OCR), saved layouts for recurring report types, and Excel and CSV in the same review grid | P1 |
 
 ### Stage 2: faculty
 
@@ -339,7 +340,8 @@ Many decks restate figures from recurring reports: monthly finance packs, enroll
 - Lines that only look like figures are skipped: transaction lists, page numbers, account, box and phone numbers, dates, and numbers inside sentences.
 - The author checks the grid, types over or fills any value, and confirms each row. Nothing unconfirmed can be used. A value printed twice in one document with different amounts is flagged.
 - Confirmed rows become a data source stored with the deck. A draft deck follows: one bound chart per row, a claim computed from the figures (flagged for the author to rewrite), a backup table, and every figure's document and page in the notes and the editor.
-- First release: text-based PDFs only, matched by rules rather than AI, so results are predictable and checkable. Scanned PDFs, saved layouts per report type, and reconciliation checks are F-111.
+- Before drafting, an analysis of the confirmed rows (F-013) lists what the figures show: which periods drove a swing, steady trends, totals concentrated in a few periods, how much one row offsets another, and whether rows add up and carry over between documents. Each finding can raise a suggested next step ("Check what the credits in April and September were for"). The author unticks anything not wanted. Every number in a finding is computed from confirmed figures, so the no-invented-numbers rule holds.
+- First release: text-based PDFs only, matched and analyzed by rules rather than AI, so results are predictable and checkable. Scanned PDFs and saved layouts per report type are F-111. An AI-written reading of the findings (what they might mean, in the deck's context) is a later option, limited to confirmed figures, with every number it writes checked against them, and only where sensitivity labels allow.
 
 Tested on ten monthly credit card statements: the summary figures (balances, purchases, payments, credits) were found in all ten and matched the reconciled values exactly. One figure changed layout partway through the year and was found in only seven; the gaps were visible in the grid and filled by hand, as designed.
 

@@ -10,6 +10,7 @@ import { TopBar } from "@/components/TopBar";
 import { figuresInDocument, parseValue } from "@/documents/extract";
 import { alignSeries, orderDocuments, periodFromName, type CandidateRow, type ScannedDocument } from "@/documents/series";
 import { draftFromSource, formatFigure } from "@/documents/build";
+import { analyze } from "@/documents/analyze";
 import { applyOp, makeOp, type OpBody, type Operation } from "@/model/ops";
 import { emptyDeck } from "@/model/factory";
 import { newId } from "@/model/ids";
@@ -27,6 +28,19 @@ interface RowEdit {
 
 const MAX_FILE_MB = 50;
 
+const KIND_LABEL: Record<string, string> = {
+  volatile: "Swings",
+  trend: "Trend",
+  cumulative: "Rising",
+  concentration: "Concentrated",
+  summary: "Summary",
+  reconciles: "Check",
+  carries: "Check",
+  matches: "Match",
+  share: "Share",
+  together: "Together",
+};
+
 export default function DocumentsPage() {
   const router = useRouter();
   const [docs, setDocs] = useState<Doc[]>([]);
@@ -35,6 +49,8 @@ export default function DocumentsPage() {
   const [showAll, setShowAll] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  /** Findings the author unticked; kept out of the deck. */
+  const [dropped, setDropped] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
 
   const ready = docs.filter((d) => d.status === "ready");
@@ -92,31 +108,39 @@ export default function DocumentsPage() {
     return { value: parseValue(typed.replace(/\s/g, ""))!.value, raw: typed.trim(), entered: true };
   }
 
+  /** The confirmed rows as a data source. Row ids come from their labels, so findings keep their ids while you edit. */
+  function buildSource(now: string, by: string): DataSource {
+    const span = ready.length > 1 ? `${ready[0].period} to ${ready[ready.length - 1].period}` : ready[0]?.period ?? "";
+    return {
+      id: newId("src"),
+      name: name.trim() || `Figures, ${span}`,
+      kind: "documents",
+      createdAt: now,
+      documents: ready.map((d) => ({ id: d.id, name: d.name, period: d.period, pages: d.pages })),
+      series: confirmed.map(
+        (r): SourceSeries => ({
+          id: "ser-" + r.key.replace(/[^a-z0-9]+/g, "-"),
+          label: (edits[r.key]?.label ?? r.label).trim() || r.label,
+          unit: r.unit,
+          figures: ready.map((_, di) => figureFor(r, di)),
+          confirmedAt: now,
+          confirmedBy: by,
+        }),
+      ),
+    };
+  }
+
+  const analysis = confirmed.length ? analyze(buildSource("", "")) : null;
+  const shown = analysis ? analysis.findings.filter((f) => f.kind !== "summary") : [];
+
   async function createDeck() {
     setBusy(true);
     try {
       const repo = getRepo();
       const me: Author = { kind: "human", id: await currentAuthorId() };
       const now = new Date().toISOString();
-      const span = ready.length > 1 ? `${ready[0].period} to ${ready[ready.length - 1].period}` : ready[0].period;
-      const source: DataSource = {
-        id: newId("src"),
-        name: name.trim() || `Figures, ${span}`,
-        kind: "documents",
-        createdAt: now,
-        documents: ready.map((d) => ({ id: d.id, name: d.name, period: d.period, pages: d.pages })),
-        series: confirmed.map(
-          (r): SourceSeries => ({
-            id: newId("ser"),
-            label: (edits[r.key]?.label ?? r.label).trim() || r.label,
-            unit: r.unit,
-            figures: ready.map((_, di) => figureFor(r, di)),
-            confirmedAt: now,
-            confirmedBy: me.id,
-          }),
-        ),
-      };
-      const draft = draftFromSource(source);
+      const source = buildSource(now, me.id);
+      const draft = draftFromSource(source, analyze(source).findings.filter((f) => !dropped.has(f.id)));
       const bodies: OpBody[] = [
         { kind: "deck.setMeta", patch: { title: source.name, goal: "", timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         { kind: "source.put", source },
@@ -258,6 +282,40 @@ export default function DocumentsPage() {
               </table>
             </div>
             {visible.length === 0 && <p className="muted">No figures match.</p>}
+          </section>
+        )}
+
+        {shown.length > 0 && (
+          <section className="stack" aria-labelledby="analysis-h">
+            <h2 id="analysis-h" style={{ margin: 0, fontSize: 18 }}>What the analysis found</h2>
+            <p className="small muted" style={{ margin: 0 }}>
+              Computed from the confirmed rows: patterns, how rows relate, and checks that they add up. Untick anything you don&apos;t want in the deck.
+              Suggestions are starting points, not decisions.
+            </p>
+            <ul className="findings">
+              {shown.map((f) => (
+                <li key={f.id}>
+                  <label className="inline">
+                    <input
+                      type="checkbox"
+                      checked={!dropped.has(f.id)}
+                      onChange={(e) =>
+                        setDropped((d) => {
+                          const next = new Set(d);
+                          if (e.target.checked) next.delete(f.id);
+                          else next.add(f.id);
+                          return next;
+                        })
+                      }
+                    />
+                    <span>
+                      <span className={`finding-kind ${f.kind === "reconciles" || f.kind === "carries" ? "check" : ""}`}>{KIND_LABEL[f.kind]}</span> {f.text}
+                      {f.suggestion && <span className="suggestion">Suggestion: {f.suggestion}</span>}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
