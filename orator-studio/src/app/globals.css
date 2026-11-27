@@ -155,7 +155,12 @@ label.inline input { width: auto; }
 @media (max-width: 1000px) {
   .editor { grid-template-columns: 1fr; height: auto; }
   .rail, .side { border: none; }
-  .canvas > .slide { position: static; }
+  /* Not sticky here, but still relative: the slide's parts are positioned inside it. */
+  .canvas > .slide { position: relative; top: auto; }
+  /* Thumbnails become a scrolling strip so the editor stays near the top. */
+  .rail { padding: 8px 16px; }
+  .thumbs { grid-auto-flow: column; grid-auto-columns: 150px; overflow-x: auto; padding-bottom: 4px; }
+  .rail > div > button { width: auto !important; }
   .presenter { grid-template-columns: 1fr; height: auto; }
   .cmdk-results { grid-template-columns: 1fr; }
 }
