@@ -50,8 +50,6 @@ Last updated: November 28, 2026. The product spec ([`product-spec.md`](product-s
 
 ## Next, in order
 
-An alternative ordering, with Curate at the center and outputs chosen up front, is proposed in [`alternative-plan.md`](alternative-plan.md) for the product owner to decide on.
-
 1. **The talk** (in a few days): use the live site; fix only what the dry run shows.
 2. **A slight redesign** (requested; scope to be agreed).
 3. **Word study:** follow a concept across related words (Claude suggests, data confirms); spell out grammar codes.
