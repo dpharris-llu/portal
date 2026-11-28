@@ -48,4 +48,6 @@ export interface LandscapeSection {
   note: string;
   results: Candidate[];
   error?: string;
+  /** Set when the exact topic found nothing and a broader search stood in. */
+  broadened?: string;
 }

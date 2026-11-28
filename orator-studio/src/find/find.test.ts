@@ -141,8 +141,11 @@ describe("Discover landscape", () => {
       ["reports", 0, true],
     ]);
     const esearch = seen.filter((x) => x.includes("esearch"));
-    expect(esearch.some((x) => x.includes("AND (systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])") && x.endsWith("sort=pub_date"))).toBe(true);
-    expect(esearch.some((x) => x.includes("NOT (review[pt] OR systematic[sb]") && x.endsWith("sort=pub_date"))).toBe(true);
+    // Best match first (relevance), recent for primary studies, case reports left out.
+    expect(esearch.some((x) => x.includes("AND (systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])") && x.endsWith("sort=relevance"))).toBe(true);
+    expect(esearch.some((x) => /"20\d\d"\[dp\] : "3000"\[dp\]/.test(x) && x.includes("case reports[pt]") && x.endsWith("sort=relevance"))).toBe(true);
+    // Shown newest first.
+    expect(secs[0].results.map((c) => c.year)).toEqual(["2025", "2024"]);
     expect(seen.find((x) => x.includes("clinicaltrials"))).toBe("clinicaltrials.gov/api/v2/studies walking AND type AND diabetes | RECRUITING|NOT_YET_RECRUITING|ACTIVE_NOT_RECRUITING|ENROLLING_BY_INVITATION");
     expect(seen.find((x) => x.includes("europepmc"))).toContain("(walking type 2 diabetes) AND SRC:NBK");
   });
@@ -154,5 +157,29 @@ describe("registry search words", () => {
     expect(ctGovTerms("Walking program for people with diabetes")).toBe("walking AND diabetes");
     expect(ctGovTerms("Telehealth follow-up after heart failure discharge")).toBe("telehealth AND follow-up AND heart AND failure AND discharge");
     expect(ctGovTerms("of the")).toBe("of the");
+  });
+});
+
+describe("broader fallback", () => {
+  it("uses the broader search for reviews only when the exact topic has none, and says so", async () => {
+    const { landscape } = await import("./server");
+    const terms: string[] = [];
+    const fake = (async (url: string) => {
+      const u = new URL(url);
+      if (url.includes("esearch")) {
+        const term = u.searchParams.get("term") ?? "";
+        terms.push(term);
+        const none = term.startsWith("(Filipino") && term.includes("systematic[sb]");
+        return new Response(none ? '{"esearchresult":{"idlist":[]}}' : fx("pubmed-esearch.json"));
+      }
+      if (url.includes("efetch")) return new Response(fx("pubmed-efetch.xml"));
+      if (url.includes("clinicaltrials")) return new Response('{"studies":[]}');
+      return new Response('{"resultList":{"result":[]}}');
+    }) as unknown as typeof fetch;
+    const secs = await landscape("Filipino[tiab] AND bone neoplasms[mh]", "Filipinos and bone cancer", fake, "bone neoplasms[mh]");
+    expect(secs[0].broadened).toBe("bone neoplasms[mh]");
+    expect(secs[0].results).toHaveLength(2);
+    expect(terms.some((t) => t.startsWith("(bone neoplasms[mh]) AND (systematic[sb]"))).toBe(true);
+    expect(secs[1].broadened).toBeUndefined();
   });
 });

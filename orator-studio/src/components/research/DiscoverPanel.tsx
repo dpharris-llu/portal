@@ -18,6 +18,7 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
   const topic = (arg.topic ?? "").trim();
   const [transport, setTransport] = useState<Transport | null | undefined>(undefined);
   const [query, setQuery] = useState("");
+  const [broader, setBroader] = useState("");
   const [note, setNote] = useState("");
   const [sections, setSections] = useState<LandscapeSection[] | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -36,6 +37,7 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
     setError("");
     setSections(null);
     let q = useQuery ?? query;
+    let wide = broader;
     try {
       if (!q && transport) {
         setBusy("Claude is writing the searches from your topic…");
@@ -53,6 +55,8 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
           });
           q = value.query;
           setQuery(value.query);
+          setBroader(value.broader ?? "");
+          wide = value.broader ?? "";
           setNote(value.note);
         } catch {
           q = topic;
@@ -60,7 +64,7 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
       }
       if (!q) q = topic;
       setBusy("Searching PubMed, ClinicalTrials.gov and government reports…");
-      const { sections } = await post<{ sections: LandscapeSection[] }>("/api/sources/landscape", { query: q, words: topic });
+      const { sections } = await post<{ sections: LandscapeSection[] }>("/api/sources/landscape", { query: q, words: topic, ...(wide ? { broader: wide } : {}) });
       setSections(sections);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -130,6 +134,7 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
               <div key={sec.key} className="landscape-section">
                 <h3 className="sub-h" style={{ margin: 0 }}>{sec.title} <span className="small muted">({sec.results.length})</span></h3>
                 <p className="small muted" style={{ margin: 0 }}>{sec.note}</p>
+                {sec.broadened && <p className="small notice" style={{ margin: 0 }}>Nothing matched your exact topic, so these are on the broader topic: <em>{sec.broadened}</em>.</p>}
                 {sec.error && <p className="small warn-text" style={{ margin: 0 }}>{sec.error}</p>}
                 {!sec.error && sec.results.length === 0 && <p className="small muted" style={{ margin: 0 }}>None found.</p>}
                 <ul className="candidates">

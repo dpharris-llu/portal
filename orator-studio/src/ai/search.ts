@@ -5,7 +5,7 @@
 import { z } from "zod";
 import type { Provider } from "@/find/types";
 
-export const SearchPlan = z.object({ query: z.string().max(500), note: z.string().max(400) });
+export const SearchPlan = z.object({ query: z.string().max(500), broader: z.string().max(500).optional(), note: z.string().max(400) });
 export type SearchPlan = z.infer<typeof SearchPlan>;
 
 export function searchPlanPrompt(o: { provider: Provider; want: string; purpose: string; thesis: string }): string {
@@ -21,6 +21,11 @@ export function searchPlanPrompt(o: { provider: Provider; want: string; purpose:
     `Thesis so far: ${o.thesis || "none yet"}`,
     `What the author is looking for: ${o.want}`,
     "",
-    'Reply with only JSON: {"query":"...","note":"one sentence on what the search targets"}',
+    o.provider === "europepmc"
+      ? "Also give broader: the same search without its narrowest concept (for example without the population or setting), for when the exact topic has no reviews. Leave it out if the search has only one concept."
+      : "",
+    o.provider === "europepmc"
+      ? 'Reply with only JSON: {"query":"...","broader":"...","note":"one sentence on what the search targets"}'
+      : 'Reply with only JSON: {"query":"...","note":"one sentence on what the search targets"}',
   ].join("\n");
 }

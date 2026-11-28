@@ -179,8 +179,13 @@ export async function fullText(pmcid: string, fetchImpl?: typeof fetch) {
  * trials, and government reports. Sections run in parallel and fail on their
  * own; a slow source never holds up the others.
  */
-export async function landscape(query: string, plainWords: string, fetchImpl?: typeof fetch): Promise<LandscapeSection[]> {
+/** Newest first, for display: the search itself ranks by best match. */
+const byYear = (list: Candidate[]) => [...list].sort((a, b) => Number(b.year ?? 0) - Number(a.year ?? 0));
+
+export async function landscape(query: string, plainWords: string, fetchImpl?: typeof fetch, broader?: string): Promise<LandscapeSection[]> {
   const q = `(${query})`;
+  const recent = `("${new Date().getFullYear() - 5}"[dp] : "3000"[dp])`;
+  const REVIEWS = "(systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])";
   const run = async (key: LandscapeSection["key"], title: string, note: string, f: () => Promise<Candidate[]>): Promise<LandscapeSection> => {
     try {
       return { key, title, note, results: await f() };
@@ -188,12 +193,17 @@ export async function landscape(query: string, plainWords: string, fetchImpl?: t
       return { key, title, note, results: [], error: e instanceof SearchError ? e.message : "This search failed." };
     }
   };
+  const broadenedNote: Partial<Record<LandscapeSection["key"], string>> = {};
   const secs = await Promise.all([
-    run("strongest", "Strongest evidence", "Systematic reviews, meta-analyses and guidelines, newest first (PubMed)", () =>
-      searchPubmed(`${q} AND (systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])`, { newest: true, pageSize: 8 }, fetchImpl),
-    ),
-    run("newest", "Newest studies", "Primary research, newest first (PubMed)", () =>
-      searchPubmed(`${q} NOT (review[pt] OR systematic[sb] OR meta-analysis[pt] OR editorial[pt] OR comment[pt] OR letter[pt])`, { newest: true, pageSize: 10 }, fetchImpl),
+    run("strongest", "Strongest evidence", "Systematic reviews, meta-analyses and guidelines: the best matches, shown newest first (PubMed)", async () => {
+      const exact = byYear(await searchPubmed(`${q} AND ${REVIEWS}`, { pageSize: 8 }, fetchImpl));
+      if (exact.length || !broader?.trim()) return exact;
+      const wide = byYear(await searchPubmed(`(${broader}) AND ${REVIEWS}`, { pageSize: 8 }, fetchImpl));
+      if (wide.length) broadenedNote.strongest = broader;
+      return wide;
+    }),
+    run("newest", "Newest studies", "Primary research from the last five years: the best matches, shown newest first (PubMed)", async () =>
+      byYear(await searchPubmed(`${q} AND ${recent} NOT (review[pt] OR systematic[sb] OR meta-analysis[pt] OR editorial[pt] OR comment[pt] OR letter[pt] OR case reports[pt])`, { pageSize: 10 }, fetchImpl)),
     ),
     run("ongoing", "Ongoing trials", "Recruiting or active studies that may change the picture (ClinicalTrials.gov)", async () => {
       const strict = parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), ctGovTerms(plainWords), { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl)));
@@ -206,5 +216,5 @@ export async function landscape(query: string, plainWords: string, fetchImpl?: t
   ]);
   // A paper shows once: the first section it appears in keeps it.
   const seen = new Set<string>();
-  return secs.map((sec) => ({ ...sec, results: sec.results.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true))) }));
+  return secs.map((sec) => ({ ...sec, ...(broadenedNote[sec.key] ? { broadened: broadenedNote[sec.key] } : {}), results: sec.results.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true))) }));
 }
