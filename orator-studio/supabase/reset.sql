@@ -12,7 +12,7 @@ drop table if exists
   public.presentation_ops, public.presentations,
   public.deck_ops, public.decks,
   public.live_votes, public.live_questions, public.live_responses, public.live_devices, public.live_polls, public.live_sessions,
-  public.ai_usage,
+  public.ai_usage, public.invitations, public.app_admins,
   public.memberships, public.tenants
   cascade;
 
@@ -22,7 +22,7 @@ begin
   for f in
     select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
-      and (p.proname like 'live\_%' or p.proname in ('is_member', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
+      and (p.proname like 'live\_%' or p.proname in ('is_member', 'is_app_admin', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
   loop
     execute format('drop function if exists %s cascade', f.sig);
   end loop;

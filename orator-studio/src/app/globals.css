@@ -534,3 +534,6 @@ a.list-row:hover, .list-row:has(> a:hover) { background: var(--panel); color: in
 .source-list input[type="checkbox"] { width: 18px; height: 18px; min-height: 0; flex: none; }
 blockquote.scripture { margin: 0; padding: 12px 14px; border-left: 3px solid var(--navy); background: var(--panel); border-radius: 10px; display: flex; flex-direction: column; gap: 6px; font-family: var(--serif); font-size: 16px; line-height: 1.5; }
 blockquote.scripture footer { font-family: var(--sans); }
+a.button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--line-strong); text-decoration: none; font-weight: 600; font-size: 14px; }
+a.button.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+a.button.primary:hover { background: #0a2f6b; color: #fff; }

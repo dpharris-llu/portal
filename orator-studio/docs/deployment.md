@@ -66,6 +66,17 @@ Which model does which task is set in one table, `src/ai/models.ts`: Claude Sonn
 
 The estimate is for watching spend; the bill is in the Claude Console → **Usage** and **Cost**. Compare the two each month: the request ids match the console's. Claude used inside claude.ai runs on the person's own Claude plan and isn't recorded here. Database searches are free.
 
+## Inviting people
+
+OratorStudio is invite-only: open sign-ups are off in Supabase (Authentication → Sign In / Providers → "Allow new users to sign up" off), and administrators invite people on the **People** page (`/people`, in the top bar for administrators).
+
+1. **Once:** run `supabase/migrations/0005_invites.sql` in the Supabase SQL Editor (it only adds tables), then `supabase/make-admin.sql` with your own address in place of `you@example.org`, to make yourself the first administrator.
+2. **To invite:** People → enter the email → **Invite**. This creates the person's account with their own private space. The page then gives you an invitation to send from your own email (**Open in my email** or **Copy the text**), with a link to the sign-in page.
+3. **The invitee** opens the link, clicks "Email me a sign-in link", and signs in from the email. Someone who wasn't invited is told to ask an administrator.
+4. **Block / Restore** stops or restores someone's sign-in without deleting their work. **Make admin** lets them invite people too.
+
+**Sign-in emails need an email service for real use.** Supabase's built-in sender is for testing: it sends only a few emails an hour and, for new projects, only to members of the Supabase organization's team. Before inviting colleagues, set up custom SMTP: Supabase → Authentication → Emails → SMTP Settings, with LLU's mail service or a transactional email provider. Until then, invited people may not receive their sign-in emails.
+
 ## Bible passages (API.Bible)
 
 "Add a Bible passage" fetches NIV, NKJV, NLT (licensed through API.Bible's free non-commercial Starter plan) and KJV (public domain). To confirm the setup: open `https://<your-vercel-address>/api/sources/bible`; it should say `"available": true` and list the versions on the account. API.Bible's terms are built in: the copyright line with every passage, a visible "Scripture provided by API.Bible" link, the text never altered, each displayed passage reported through API.Bible's usage tracker (FUMS), and stored text fetched again before 30 days pass (when the presentation is opened). The Starter plan allows 5,000 requests a month; the NKJV only while the app has 5,000 or fewer monthly users. Keep the app non-commercial on this plan.

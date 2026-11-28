@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { browserSupabase } from "@/lib/supabase/client";
 import { BrandHero } from "@/components/BrandHero";
@@ -9,6 +9,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
+  // An invitation links here with the invited address filled in.
+  useEffect(() => {
+    const e = new URLSearchParams(window.location.search).get("email");
+    if (e) setEmail(e);
+  }, []);
 
   if (!supabase) {
     return (
@@ -25,11 +30,12 @@ export default function LoginPage() {
     setState("sending");
     const { error } = await supabase!.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: false },
     });
     if (error) {
       setState("error");
-      setMessage(error.message);
+      // Sign-ups are off: an address nobody invited can't get a link.
+      setMessage(/signups? not allowed|not allowed for otp|user not found/i.test(error.message) ? "This email hasn't been invited to OratorStudio. Ask an OratorStudio administrator for an invitation, or check the address." : error.message);
     } else {
       setState("sent");
     }

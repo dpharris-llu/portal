@@ -1,6 +1,6 @@
 -- OratorStudio: the whole database, for pasting once into the Supabase SQL Editor.
 -- Part 1 removes anything from an earlier setup (DELETES ALL APP DATA; signed-in users are kept).
--- Part 2 creates everything (migrations 0001 to 0004). Generated from supabase/reset.sql and supabase/migrations/.
+-- Part 2 creates everything (migrations 0001 to 0005). Generated from supabase/reset.sql and supabase/migrations/.
 
 -- ===== Part 1: reset.sql =====
 -- OratorStudio: remove every table, function, policy and trigger the app
@@ -17,7 +17,7 @@ drop table if exists
   public.presentation_ops, public.presentations,
   public.deck_ops, public.decks,
   public.live_votes, public.live_questions, public.live_responses, public.live_devices, public.live_polls, public.live_sessions,
-  public.ai_usage,
+  public.ai_usage, public.invitations, public.app_admins,
   public.memberships, public.tenants
   cascade;
 
@@ -27,7 +27,7 @@ begin
   for f in
     select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
-      and (p.proname like 'live\_%' or p.proname in ('is_member', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
+      and (p.proname like 'live\_%' or p.proname in ('is_member', 'is_app_admin', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
   loop
     execute format('drop function if exists %s cascade', f.sig);
   end loop;
@@ -612,3 +612,53 @@ create policy "members read usage" on public.ai_usage
 grant select on public.ai_usage to authenticated;
 grant select, insert on public.ai_usage to service_role;
 grant usage, select on all sequences in schema public to service_role;
+
+-- ===== Part 2: migrations/0005_invites.sql =====
+-- Invitations and administrators (spec F-126). OratorStudio is invite-only:
+-- open sign-ups are off in Supabase, and an administrator invites people by
+-- email. An invited person gets an account and their own private space (the
+-- on_auth_user_created trigger in 0001), then signs in with a sign-in link.
+-- Safe to run on a database that already has data: it only adds tables.
+
+create table if not exists public.app_admins (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  added_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.invitations (
+  id bigint generated always as identity primary key,
+  email text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  invited_by uuid references auth.users(id) on delete set null,
+  note text,
+  created_at timestamptz not null default now()
+);
+create index if not exists invitations_email_idx on public.invitations (lower(email));
+
+create or replace function public.is_app_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (select 1 from public.app_admins a where a.user_id = (select auth.uid()));
+$$;
+
+alter table public.app_admins enable row level security;
+alter table public.invitations enable row level security;
+
+-- Administrators can read both lists; everyone can see whether they are one.
+-- All changes go through the server (service key), which checks the caller is an administrator.
+drop policy if exists "admins read admins" on public.app_admins;
+create policy "admins read admins" on public.app_admins
+  for select using (public.is_app_admin() or user_id = (select auth.uid()));
+drop policy if exists "admins read invitations" on public.invitations;
+create policy "admins read invitations" on public.invitations
+  for select using (public.is_app_admin());
+
+grant select on public.app_admins, public.invitations to authenticated;
+grant all on public.app_admins, public.invitations to service_role;
+grant usage, select on all sequences in schema public to service_role;
+grant execute on function public.is_app_admin() to authenticated, service_role;
