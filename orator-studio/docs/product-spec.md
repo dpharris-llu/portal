@@ -119,6 +119,7 @@ Each stage adds a user type with different needs. Admin features are not assumed
 | LLU admin | Board, budget, enrollment and accreditation presentations | Correct numbers, consistent brand, quick review and approval | Every number in a board deck traceable to its source |
 | Faculty | Lectures, grand rounds, conference talks | Legacy import, handouts, accessibility, image attribution | Lectures that reflect the latest research, without rebuilding hundreds of slides |
 | Student / audience | Viewing a deck or handout | Readable, accessible, searchable material | Material they can check, with sources they can follow |
+| Student as researcher | A research paper or class presentation, in a course | To learn to find, read, judge and cite evidence themselves, with feedback | Every fact read, summarized and quoted by the student, with a record the instructor can see |
 | Institutional buyer (IT, compliance, procurement) | N/A | SSO, audit trail, privacy, accessibility compliance | An audit trail for every fact and AI suggestion, with data kept within the institution |
 
 **Primary use cases, in the order of the journey**
@@ -135,6 +136,7 @@ Each stage adds a user type with different needs. Admin features are not assumed
 10. Review a colleague's changes point by point and approve or reject each.
 11. Publish a lecture as slides, a handout and an accessible study guide, and let viewers ask questions answered only from its evidence.
 12. Add images once to a shared library, as slide images or as evidence with their source.
+13. Learn to research: in a course set to learning mode, a student discovers sources, reads them, writes each fact with its quote and page, and builds the message, with Claude as coach rather than reader; the instructor sees the record of the student's own work (F-209, F-210).
 ## 5. The presentation model
 
 The model follows the journey: a presentation holds its curation (where the evidence lives) and its slides (where the design lives). Keeping the two apart, and linked, is what separates this product from a PowerPoint with an AI sidebar.
@@ -279,6 +281,8 @@ The audience response features in section 8 (A-01 to A-05 are P0 for version .3)
 | F-206 | Engage | Student-facing Q&A grounded only in the published deck, with citations to slides | P1 |
 | F-207 | Build | Medical and scientific content blocks: structured citations, units, equations, anatomical image handling | P1 |
 | F-208 | Present | Live captions and slide-synced transcripts | P2 |
+| F-209 | Curate | Learning mode, for teaching students to research. The instructor sets it per course; students in that course can't turn it off. Discovery works as usual and shows its search with a short explanation of why it was built that way (terms, synonyms, AND and OR), or the student writes the search and Claude critiques it. Results are links (through the library's access, so paywalled papers open when the institution subscribes). Claude does not read papers or propose facts: the student reads each source and writes each fact in their own words with the quote and page, and the app checks that the quote is on that page (no AI needed). Claude coaches on request instead of answering: whether a summary matches its quote, how strong a study is, what would contradict the message, whether a point is supported. The student writes the message, points and outline. The instructor chooses how strict: coaching only, or Claude's reading unlocked for a source after the student has written their own summary of it, to compare | P0 |
+| F-210 | Curate | Research record for instructors: from the operation log, show per student and presentation what the student wrote and what Claude contributed (searches, facts, summaries, coaching asked for and given), the sources found, read and discarded, and when. Shared with the instructor by the student's enrollment in the course; exportable with the submitted work | P0 |
 
 ### Stage 3: commercial
 
@@ -359,6 +363,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 | Semantic search and voice | Matches spoken or typed queries to slides | Presenter preview before audience sees it |
 | Illustrations (Build) | Generates images from a prompt through the institution's image provider (F-116) | Illustration only; labeled as AI-generated; clinical- or data-looking images blocked or flagged |
 | Viewer Q&A (Engage) | Answers viewer questions from a published deck | Restricted to deck content; shows source slides; says "not covered" otherwise |
+| Coaching (Curate, learning mode) | Asks the student questions about their own summaries, the strength of their evidence and their message; critiques their search (F-209) | Never reads sources or writes facts, points or the message for the student; every exchange is in the research record (F-210) |
 
 **Guardrails**
 
@@ -577,6 +582,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 | Audience abuse or off-topic submissions | Disrupted sessions | Moderation queue, rate limits, rotating codes |
 | Built entirely with AI-assisted coding | Hidden defects, security gaps | Tests, code review passes, security checklist, staged rollout |
 | AI-generated image mistaken for evidence in a clinical or research deck | Misleading content | Illustration-only rule; labels; clinical- and data-looking images blocked or flagged (F-116) |
+| Learning mode used to outsource the research instead of learning it | Students don't learn; work isn't theirs | Claude doesn't read or write facts in learning mode; student-written facts quote-checked; the research record shows the instructor who did what (F-209, F-210) |
 | Scope across four modules | Slow progress on what matters most | Curate and Build first; Present kept to essentials; Engage on its own schedule |
 | Vendor lock-in | Costly later move | Standard Postgres, open file format |
 | URL fetcher used to reach internal systems | Data exposure | Per-institution host allowlist; private addresses blocked; fetches logged |
@@ -594,7 +600,8 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 - [ ] Should institution-assigned AI keys be one per person, or one institutional key with usage tracked per person (F-114)?
 - [ ] Should a written brief from Curate (F-016) follow an LLU template?
 - [ ] Which databases should discovery add next: OpenAlex (all fields), CDC and CMS data, IPEDS for institutional comparisons?
-- [ ] Can LLU's library provide access to paywalled full texts, so discovery is not limited to abstracts for those papers?
+- [ ] Can LLU's library provide access to paywalled full texts, so discovery is not limited to abstracts for those papers? Learning mode (F-209) needs the library's link format so students reach full texts.
+- [ ] For learning mode (F-209): which courses pilot it, how strict should the default be (coaching only, or reading unlocked after the student's own summary), and should the research record (F-210) go to Canvas with the submission (F-205)?
 - [ ] Which recurring reports (finance, enrollment, accreditation) do admins build decks from, and in which formats: PDF, Excel, or a reporting system?
 
 # Appendices
