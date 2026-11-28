@@ -12,6 +12,7 @@ import { paperForClaude } from "@/evidence/text";
 import { formatCitation, PaperReading, readPaperPrompt, shortCitation, verifyReading, type CheckedReading } from "@/ai/evidence";
 import { askClaudeFor, claudeAvailable, ClaudeError, type Transport } from "@/ai/analysis-client";
 import type { NewFact, NewSource } from "@/knowledge/repo";
+import { cachedReading, cacheReading, textKey } from "./readingCache";
 
 export interface SourceDoc {
   name: string;
@@ -32,6 +33,8 @@ export function ReadSource({ doc, onKeep, onCancel, busy }: { doc: SourceDoc; on
   const [error, setError] = useState("");
   const [reading, setReading] = useState<CheckedReading | null>(null);
   const [keep, setKeep] = useState<Set<string>>(new Set());
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const [fresh, setFresh] = useState(0);
   const where = (page: number) => doc.labels?.[page] ?? `p. ${page}`;
   // Section pages start with their heading line; it isn't part of any sentence.
   const body = (p: { page: number; text: string }) => {
@@ -48,6 +51,15 @@ export function ReadSource({ doc, onKeep, onCancel, busy }: { doc: SourceDoc; on
 
   useEffect(() => {
     if (mode !== "claude" || reading) return;
+    // Read before? Use that reading: no new request, no new cost.
+    const key = textKey(doc.name, doc.pages);
+    const hit = fresh ? null : cachedReading(key);
+    if (hit) {
+      setReading(hit.reading);
+      setCachedAt(hit.at);
+      setKeep(new Set(hit.reading.claims.map((c, i) => (c.verified ? `c${i}` : "")).filter(Boolean)));
+      return;
+    }
     let live = true;
     (async () => {
       setStatus("Claude is reading it…");
@@ -66,6 +78,8 @@ export function ReadSource({ doc, onKeep, onCancel, busy }: { doc: SourceDoc; on
         });
         if (!live) return;
         const r = verifyReading(value, doc.pages);
+        cacheReading(key, r);
+        setCachedAt(null);
         setReading(r);
         setKeep(new Set(r.claims.map((c, i) => (c.verified ? `c${i}` : "")).filter(Boolean)));
       } catch (e) {
@@ -77,7 +91,7 @@ export function ReadSource({ doc, onKeep, onCancel, busy }: { doc: SourceDoc; on
     return () => {
       live = false;
     };
-  }, [mode, reading, doc]);
+  }, [mode, reading, doc, fresh]);
 
   const toggle = (k: string, on: boolean) =>
     setKeep((s) => {
@@ -112,6 +126,12 @@ export function ReadSource({ doc, onKeep, onCancel, busy }: { doc: SourceDoc; on
       {error && <p className="small error" role="alert">{error}</p>}
       {mode === "claude" && reading && (
         <>
+          {cachedAt && (
+            <p className="small muted" style={{ margin: 0 }}>
+              Claude read this on {new Date(cachedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}; shown again at no cost.{" "}
+              <button className="small ghost" onClick={() => { setReading(null); setCachedAt(null); setFresh((n) => n + 1); }}>Read it again</button>
+            </p>
+          )}
           {(reading.design || reading.sample) && <p className="small muted" style={{ margin: 0 }}>{[reading.design, reading.sample].filter(Boolean).join(" · ")}</p>}
           <ul className="findings">
             {reading.claims.map((c, i) => (

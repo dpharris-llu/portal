@@ -29,6 +29,8 @@ export default function DiscoverPage() {
   const [kind, setKind] = useState<SourceKind | "all">("all");
   const [showDiscarded, setShowDiscarded] = useState(false);
   const [error, setError] = useState("");
+  const [searched, setSearched] = useState<Set<string>>(new Set());
+  const onSearched = useCallback((topic: string) => setSearched((s) => (s.has(topic.toLowerCase()) ? s : new Set(s).add(topic.toLowerCase()))), []);
 
   const load = useCallback(async () => {
     try {
@@ -87,9 +89,10 @@ export default function DiscoverPage() {
           ))}
         </div>
         <div className="discover-panel">
-          {tab === "find" && <FindEvidence start={start} kept={kept} onKept={onKept} />}
-          {tab === "explore" && <ExploreIdea onSearch={(w) => { setStart(w); setTab("find"); }} />}
-          {tab === "own" && <AddYourOwn sources={sources ?? []} onKept={onKept} />}
+          {/* All three stay mounted, so switching tabs never loses results. */}
+          <div hidden={tab !== "find"}><FindEvidence start={start} kept={kept} onKept={onKept} onSearched={onSearched} /></div>
+          <div hidden={tab !== "explore"}><ExploreIdea searched={searched} onSearch={(w) => { setStart(w); setTab("find"); }} /></div>
+          <div hidden={tab !== "own"}><AddYourOwn sources={sources ?? []} onKept={onKept} /></div>
         </div>
 
         <section className="stack" style={{ gap: 12 }} aria-labelledby="bok-h">

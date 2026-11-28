@@ -580,3 +580,13 @@ a.button.primary:hover { background: #0a2f6b; color: #fff; }
 .build-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .build-assertion { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--panel); border-radius: 12px; }
 .assertion-line { font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--navy); }
+/* Drawer: per-item work over a list that stays put */
+.drawer-root { position: fixed; inset: 0; z-index: 50; }
+.drawer-backdrop { position: absolute; inset: 0; background: rgba(15, 27, 45, 0.35); }
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(760px, 92vw); background: #fff; box-shadow: -8px 0 32px rgba(15, 27, 45, 0.18); display: flex; flex-direction: column; outline: none; }
+.drawer-head { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.drawer-head strong { flex: 1; font-size: 16px; }
+.drawer-body { flex: 1; overflow: auto; padding: 18px 20px 28px; display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 699px) { .drawer { width: 100vw; } }
+.recent-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.recent-list button { font-weight: 400; }

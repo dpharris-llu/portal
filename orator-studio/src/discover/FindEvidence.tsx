@@ -16,6 +16,24 @@ import type { Source } from "@/knowledge/types";
 import { candidateDoc, post } from "./candidates";
 import { ReadSource, type SourceDoc } from "./ReadSource";
 import { LinkToTopics } from "./LinkToTopics";
+import { Drawer } from "@/components/Drawer";
+
+/** A saved search: what was asked, where, and what came back, so it can be reopened without running again. */
+export type SearchRecord = {
+  kind: "search";
+  topic: string;
+  query: string;
+  broader?: string;
+  words: string;
+  note?: string;
+  sources: string[];
+  by: "claude" | "author";
+  at: string;
+  counts: { key: string; title: string; n: number }[];
+  sections: LandscapeSection[];
+};
+const isSearch = (r: unknown): r is SearchRecord => Boolean(r && typeof r === "object" && (r as SearchRecord).kind === "search" && Array.isArray((r as SearchRecord).sections));
+const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 const SHOW = 4;
 const SCOPE_KEY = "orator-discover-scope";
@@ -57,7 +75,7 @@ function ResultCard({ c, kept, busy, onKeep }: { c: Candidate; kept: boolean; bu
   );
 }
 
-export function FindEvidence({ start = "", kept, onKept }: { start?: string; kept: Set<string>; onKept: (s: Source) => void }) {
+export function FindEvidence({ start = "", kept, onKept, onSearched }: { start?: string; kept: Set<string>; onKept: (s: Source) => void; onSearched?: (topic: string) => void }) {
   const k = knowledge();
   const [want, setWant] = useState(start);
   const [transport, setTransport] = useState<Transport | null | undefined>(undefined);
@@ -75,6 +93,31 @@ export function FindEvidence({ start = "", kept, onKept }: { start?: string; kep
   const [error, setError] = useState("");
   const [reading, setReading] = useState<{ c: Candidate; doc: SourceDoc } | null>(null);
   const [justKept, setJustKept] = useState<Source | null>(null);
+  const [recent, setRecent] = useState<SearchRecord[]>([]);
+  const [shownFrom, setShownFrom] = useState<string | null>(null);
+
+  // Saved searches, newest first: reopen one without running it again.
+  useEffect(() => {
+    k.db
+      .select("search_runs")
+      .then((rows) => {
+        const runs = rows.sort((a, b) => b.created_at.localeCompare(a.created_at)).map((r) => r.record).filter(isSearch);
+        setRecent(runs);
+        runs.forEach((r) => onSearched?.(r.topic));
+      })
+      .catch(() => undefined);
+  }, [k]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function openRun(r: SearchRecord) {
+    setWant(r.topic);
+    setQuery(r.query);
+    setBroader(r.broader ?? "");
+    setWords(r.words);
+    setNote(r.note ?? "");
+    setSections(r.sections);
+    setShownFrom(r.at);
+    setError("");
+  }
 
   useEffect(() => {
     claudeAvailable().then(setTransport);
@@ -84,7 +127,29 @@ export function FindEvidence({ start = "", kept, onKept }: { start?: string; kep
       setUserChose(true);
     }
   }, []);
-  useEffect(() => setWant(start), [start]);
+  // Arriving with a topic (from Explore or a topic's page): reopen its saved results if there are any.
+  useEffect(() => {
+    if (!start) return;
+    const saved = recent.find((r) => r.topic.toLowerCase() === start.toLowerCase());
+    if (saved) openRun(saved);
+    else {
+      setWant(start);
+      setSections(null);
+      setQuery("");
+      setNote("");
+      setShownFrom(null);
+      setAutoRun(true);
+    }
+  }, [start, recent.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A new topic arriving from Explore runs straight away (once the box holds it).
+  const [autoRun, setAutoRun] = useState(false);
+  useEffect(() => {
+    if (autoRun && want === start && transport !== undefined) {
+      setAutoRun(false);
+      discover();
+    }
+  }, [autoRun, want, start, transport]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleSource(id: string) {
     const next = cleanSelection(scope.includes(id) ? scope.filter((x) => x !== id) : [...scope, id]);
@@ -140,7 +205,11 @@ export function FindEvidence({ start = "", kept, onKept }: { start?: string; kep
       setBusy(`Searching ${s.map(sourceName).join(", ")}…`);
       const { sections } = await post<{ sections: LandscapeSection[] }>("/api/sources/landscape", { query: q, words: topic, plain, sources: s, ...(wide ? { broader: wide } : {}) });
       setSections(sections);
-      await k.recordSearch({ topic, query: q, broader: wide || undefined, words: plain, sources: s, by: edited ? "author" : transport ? "claude" : "author", counts: sections.map((x) => ({ key: x.key, title: x.title, n: x.results.length })), at: new Date().toISOString() }).catch(() => undefined);
+      setShownFrom(null);
+      const record: SearchRecord = { kind: "search", topic, query: q, ...(wide ? { broader: wide } : {}), words: plain, ...(note ? { note } : {}), sources: s, by: edited ? "author" : transport ? "claude" : "author", at: new Date().toISOString(), counts: sections.map((x) => ({ key: x.key, title: x.title, n: x.results.length })), sections };
+      setRecent((r) => [record, ...r.filter((x) => x.topic.toLowerCase() !== topic.toLowerCase())]);
+      onSearched?.(topic);
+      await k.recordSearch(record).catch(() => undefined);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -162,38 +231,40 @@ export function FindEvidence({ start = "", kept, onKept }: { start?: string; kep
     }
   }
 
-  if (justKept) return <LinkToTopics source={justKept} hint={want} onDone={() => setJustKept(null)} />;
-  if (reading)
-    return (
-      <section className="stack" style={{ gap: 10 }} aria-label="Read and keep">
-        <p className="small" style={{ margin: 0 }}>
-          Reading <strong>{reading.doc.meta?.short}</strong>: {reading.c.title} <span className="pill">{reading.doc.meta?.access}</span>
-        </p>
-        <ReadSource
-          doc={reading.doc}
-          busy={Boolean(busy)}
-          onCancel={() => setReading(null)}
-          onKeep={async (source, facts) => {
-            setBusy("Keeping…");
-            try {
-              const { source: s } = await k.keepSource(source, facts);
-              onKept(s);
-              setReading(null);
-              setJustKept(s);
-            } catch (e) {
-              setError(e instanceof Error ? e.message : String(e));
-            } finally {
-              setBusy("");
-            }
-          }}
-        />
-        {error && <p className="small error" role="alert">{error}</p>}
-      </section>
-    );
-
   const total = sections?.reduce((n, s) => n + s.results.length, 0) ?? 0;
   return (
     <section className="stack" style={{ gap: 12 }} aria-label="Find evidence">
+      {reading && (
+        <Drawer title={`Read and keep: ${reading.doc.meta?.short ?? reading.c.title}`} onClose={() => setReading(null)}>
+          <p className="small" style={{ margin: 0 }}>
+            {reading.c.title} <span className="pill">{reading.doc.meta?.access}</span>
+          </p>
+          <ReadSource
+            doc={reading.doc}
+            busy={Boolean(busy)}
+            onCancel={() => setReading(null)}
+            onKeep={async (source, facts) => {
+              setBusy("Keeping…");
+              try {
+                const { source: kept } = await k.keepSource(source, facts);
+                onKept(kept);
+                setReading(null);
+                setJustKept(kept);
+              } catch (e) {
+                setError(e instanceof Error ? e.message : String(e));
+              } finally {
+                setBusy("");
+              }
+            }}
+          />
+          {error && <p className="small error" role="alert">{error}</p>}
+        </Drawer>
+      )}
+      {justKept && (
+        <Drawer title="Link it to topics" onClose={() => setJustKept(null)}>
+          <LinkToTopics source={justKept} hint={want} onDone={() => setJustKept(null)} />
+        </Drawer>
+      )}
       <form
         className="row"
         style={{ alignItems: "flex-end" }}
@@ -208,7 +279,22 @@ export function FindEvidence({ start = "", kept, onKept }: { start?: string; kep
         </label>
         <button className="primary" disabled={Boolean(busy) || want.trim().length < 2}>Find evidence</button>
       </form>
-      {busy && <p className="small" role="status" style={{ margin: 0 }}>{busy}</p>}
+      {busy && !reading && <p className="small" role="status" style={{ margin: 0 }}>{busy}</p>}
+      {recent.length > 0 && (
+        <div className="stack" style={{ gap: 4 }}>
+          <span className="small muted">Recent searches (reopen without running again):</span>
+          <div className="recent-list">
+            {recent.slice(0, 8).map((r) => (
+              <button key={r.at} className="small" onClick={() => openRun(r)} title={`Searched ${day(r.at)}`}>{r.topic}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {shownFrom && sections && (
+        <p className="small notice" style={{ margin: 0 }}>
+          Results saved on {day(shownFrom)}. <button className="small ghost" disabled={Boolean(busy)} onClick={() => discover(query || undefined)}>Search again for anything newer</button>
+        </p>
+      )}
       <div className="source-scope">
         <button className="small ghost" aria-expanded={showSources} onClick={() => setShowSources((v) => !v)}>
           Where to search: {scope.map(sourceName).join(", ")} {showSources ? "▴" : "▾"}
