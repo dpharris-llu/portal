@@ -32,7 +32,7 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 
 ### Setting up a Supabase project
 
-1. Create a project, then apply the migrations in `supabase/migrations/` in order (`npx supabase link` then `npx supabase db push`, or paste them into the SQL editor).
+1. Create a project, then apply the migrations in `supabase/migrations/` in order (`npx supabase link` then `npx supabase db push`), or paste `supabase/setup-all.sql`, which holds all of them in order, into the SQL Editor once. Regenerate that file when a migration is added.
 2. **Authentication → URL configuration:** add `https://<your-domain>/auth/callback` as a redirect URL.
 3. **Realtime → Settings:** turn off "Allow public access", so only the private, access-checked channels work.
 4. Set the three Supabase variables above in Vercel (or `.env.local`).
