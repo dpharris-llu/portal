@@ -5,7 +5,8 @@
  * Every result is a candidate; the author adds what matters.
  */
 import { useEffect, useState } from "react";
-import type { ArgOpBody, Argument } from "@/model/argument";
+import type { ArgOpBody, Argument, SearchRecord } from "@/model/argument";
+import { newId } from "@/model/ids";
 import type { Candidate, LandscapeSection } from "@/find/types";
 import { SearchPlan, searchPlanPrompt } from "@/ai/search";
 import { askClaudeFor, claudeAvailable, type Transport } from "@/ai/analysis-client";
@@ -16,11 +17,13 @@ const SHOW = 4;
 
 export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpBody[], reason: string) => void }) {
   const topic = (arg.topic ?? "").trim();
+  // The last Discover run is saved with the presentation: start from it.
+  const last = [...(arg.searches ?? [])].reverse().find((s) => s.sections);
   const [transport, setTransport] = useState<Transport | null | undefined>(undefined);
-  const [query, setQuery] = useState("");
-  const [broader, setBroader] = useState("");
-  const [note, setNote] = useState("");
-  const [sections, setSections] = useState<LandscapeSection[] | null>(null);
+  const [query, setQuery] = useState(last?.query ?? "");
+  const [broader, setBroader] = useState(last?.broader ?? "");
+  const [note, setNote] = useState(last?.note ?? "");
+  const [sections, setSections] = useState<LandscapeSection[] | null>(last?.sections ?? null);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -38,6 +41,8 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
     setSections(null);
     let q = useQuery ?? query;
     let wide = broader;
+    let plannedNote = note;
+    let by: SearchRecord["by"] = useQuery !== undefined ? "author" : query ? (last?.by ?? "claude") : "claude";
     try {
       if (!q && transport) {
         setBusy("Claude is writing the searches from your topic…");
@@ -57,15 +62,31 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
           setQuery(value.query);
           setBroader(value.broader ?? "");
           wide = value.broader ?? "";
+          plannedNote = value.note;
           setNote(value.note);
         } catch {
           q = topic;
         }
       }
-      if (!q) q = topic;
+      if (!q) {
+        q = topic;
+        by = "author";
+      }
       setBusy("Searching PubMed, ClinicalTrials.gov and government reports…");
       const { sections } = await post<{ sections: LandscapeSection[] }>("/api/sources/landscape", { query: q, words: topic, ...(wide ? { broader: wide } : {}) });
       setSections(sections);
+      const record: SearchRecord = {
+        id: newId("srch"),
+        at: new Date().toISOString(),
+        topic,
+        query: q,
+        ...(wide ? { broader: wide } : {}),
+        ...(plannedNote ? { note: plannedNote } : {}),
+        by,
+        counts: sections.map((s) => ({ key: s.key, title: s.title, n: s.results.length })),
+        sections,
+      };
+      apply([{ kind: "search.put", search: record }], `Discovered: ${q.slice(0, 80)}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

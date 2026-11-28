@@ -9,6 +9,7 @@
  */
 import type { Author, Id, Intent } from "./types";
 import { newId } from "./ids";
+import type { LandscapeSection } from "@/find/types";
 
 export interface EvidenceItem {
   id: Id;
@@ -86,6 +87,27 @@ export interface Probe {
   via: string;
 }
 
+/**
+ * One Discover run, kept with the presentation so a reload or a restart
+ * doesn't lose it, and so the presentation records how its evidence was
+ * found (the search record). Only the latest few keep their full results;
+ * older ones keep the query and how many each section found.
+ */
+export interface SearchRecord {
+  id: Id;
+  at: string;
+  topic: string;
+  query: string;
+  broader?: string;
+  note?: string;
+  /** Who wrote the query: Claude, or the author. */
+  by: "claude" | "author";
+  counts: { key: string; title: string; n: number }[];
+  sections?: LandscapeSection[];
+}
+
+export const SEARCHES_WITH_RESULTS = 3;
+
 /** What a probe may propose. The author accepts or dismisses each one. */
 export type ProbeAction =
   | { kind: "add_point"; text: string; intent: Intent; detail: string; factIds: Id[] }
@@ -128,6 +150,7 @@ export interface Argument {
   sources?: WorkspaceSource[];
   facts?: Fact[];
   probes?: Probe[];
+  searches?: SearchRecord[];
   /** Number of operations applied. */
   version: number;
 }
@@ -142,7 +165,8 @@ export type ArgOpBody =
   | { kind: "source.put"; source: WorkspaceSource }
   | { kind: "fact.put"; fact: Fact }
   | { kind: "probe.put"; probe: Probe }
-  | { kind: "item.remove"; list: "sources" | "facts" | "probes"; id: Id };
+  | { kind: "search.put"; search: SearchRecord }
+  | { kind: "item.remove"; list: "sources" | "facts" | "probes" | "searches"; id: Id };
 
 export interface ArgOp {
   id: Id;
@@ -225,6 +249,13 @@ export function applyArgOp(arg: Argument, op: ArgOp): Argument {
     case "probe.put":
       next = { ...arg, probes: upsert(arg.probes, b.probe) };
       break;
+    case "search.put": {
+      // Full results for the latest few only, so the saved presentation stays small.
+      const all = upsert(arg.searches, b.search);
+      const keep = all.length - SEARCHES_WITH_RESULTS;
+      next = { ...arg, searches: all.map((x, i) => (i < keep && x.sections ? { ...x, sections: undefined } : x)) };
+      break;
+    }
     case "item.remove":
       next = { ...arg, [b.list]: ((arg[b.list] ?? []) as { id: Id }[]).filter((x) => x.id !== b.id) };
       break;
@@ -259,9 +290,14 @@ export function invertArgOp(before: Argument, body: ArgOpBody): ArgOpBody {
       if (!prev) return { kind: "item.remove", list, id: item.id };
       return list === "sources" ? { kind: "source.put", source: prev as WorkspaceSource } : list === "facts" ? { kind: "fact.put", fact: prev as Fact } : { kind: "probe.put", probe: prev as Probe };
     }
+    case "search.put": {
+      const prev = before.searches?.find((x) => x.id === body.search.id);
+      return prev ? { kind: "search.put", search: prev } : { kind: "item.remove", list: "searches", id: body.search.id };
+    }
     case "item.remove": {
       const prev = (before[body.list] as { id: Id }[] | undefined)?.find((x) => x.id === body.id);
       if (!prev) return body;
+      if (body.list === "searches") return { kind: "search.put", search: prev as SearchRecord };
       return body.list === "sources" ? { kind: "source.put", source: prev as WorkspaceSource } : body.list === "facts" ? { kind: "fact.put", fact: prev as Fact } : { kind: "probe.put", probe: prev as Probe };
     }
   }

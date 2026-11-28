@@ -149,3 +149,22 @@ describe("years in answers", () => {
     expect(v.problems).toEqual([]);
   });
 });
+
+import { SEARCHES_WITH_RESULTS, type SearchRecord } from "./argument";
+
+describe("search record", () => {
+  it("keeps Discover runs with the presentation, full results for the latest few, and undoes", async () => {
+    const { applyArgOp, emptyArgument, invertArgOp, makeArgOp } = await import("./argument");
+    const me = { kind: "human" as const, id: "u" };
+    const rec = (i: number): SearchRecord => ({ id: `s${i}`, at: "2026-11-28T00:00:00Z", topic: "t", query: `q${i}`, by: "claude", counts: [{ key: "strongest", title: "Strongest", n: 1 }], sections: [{ key: "strongest", title: "Strongest", note: "", results: [] }] });
+    let a = emptyArgument("t1");
+    for (let i = 1; i <= SEARCHES_WITH_RESULTS + 2; i++) a = applyArgOp(a, makeArgOp({ kind: "search.put", search: rec(i) }, me));
+    expect(a.searches).toHaveLength(SEARCHES_WITH_RESULTS + 2);
+    expect(a.searches!.filter((s) => s.sections).map((s) => s.id)).toEqual(["s3", "s4", "s5"]);
+    expect(a.searches![0].query).toBe("q1");
+    const body = { kind: "search.put" as const, search: rec(9) };
+    const after = applyArgOp(a, makeArgOp(body, me));
+    const undone = applyArgOp(after, makeArgOp(invertArgOp(a, body), me));
+    expect(undone.searches!.map((s) => s.id)).toEqual(a.searches!.map((s) => s.id));
+  });
+});
