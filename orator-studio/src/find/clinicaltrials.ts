@@ -3,7 +3,8 @@ import type { Candidate } from "./types";
 
 export const CTGOV_BASE = "https://clinicaltrials.gov/api/v2";
 
-export const ctGovSearchUrl = (base: string, query: string) => `${base}/studies?query.term=${encodeURIComponent(query.trim())}&pageSize=15&format=json`;
+export const ctGovSearchUrl = (base: string, query: string, o: { ongoingOnly?: boolean; pageSize?: number } = {}) =>
+  `${base}/studies?query.term=${encodeURIComponent(query.trim())}${o.ongoingOnly ? "&filter.overallStatus=RECRUITING|NOT_YET_RECRUITING|ACTIVE_NOT_RECRUITING|ENROLLING_BY_INVITATION" : ""}&pageSize=${o.pageSize ?? 15}&format=json`;
 
 interface Study {
   protocolSection?: {

@@ -267,7 +267,7 @@ export default function EvidencePage() {
       <main className="wide stack">
         <h1 style={{ margin: 0 }}>Start from research papers</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Add the papers your argument rests on. Claude reads each one and pulls out its findings and limitations, each with an exact quote and
+          Add the papers your presentation rests on. Claude reads each one and pulls out its findings and limitations, each with an exact quote and
           page; OratorStudio checks every quote and number against the paper. You confirm the findings, state what the deck is for, and Claude
           argues across the papers, citing only what you confirmed.
         </p>
@@ -373,7 +373,7 @@ export default function EvidencePage() {
                   <span className="finding-kind ai">Claude</span> <strong>{synth.result.thesis.text}</strong>
                   {!synth.result.thesis.verified && <span className="verify bad">Left out: {synth.result.thesis.problems.join("; ")}</span>}
                 </div>
-                <h3 className="sub-h">The argument</h3>
+                <h3 className="sub-h">The analysis</h3>
                 <ul className="findings">
                   {synth.result.points.map((pt, i) => (
                     <li key={i} className={pt.verified ? undefined : "unverified"}>

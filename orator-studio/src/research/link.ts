@@ -42,7 +42,7 @@ export function workspaceFromPapers(papers: Paper[]): { sources: WorkspaceSource
   const factOf = new Map<string, string>();
   papers.forEach((p, i) => {
     const sid = `S${i + 1}`;
-    sources.push({ id: sid, kind: "paper", title: p.citation.title, citation: formatCitation(p.citation), short: shortCitation(p.citation), ...(p.design ? { design: p.design } : {}), ...(p.sample ? { sample: p.sample } : {}), status: "active", addedAt: now });
+    sources.push({ id: sid, kind: "paper", origin: "yours", title: p.citation.title, citation: formatCitation(p.citation), short: shortCitation(p.citation), ...(p.design ? { design: p.design } : {}), ...(p.sample ? { sample: p.sample } : {}), status: "active", addedAt: now });
     for (const c of p.claims) {
       const fid = `F${facts.length + 1}`;
       factOf.set(c.id, fid);
@@ -63,7 +63,7 @@ export function evidenceFor(sources: WorkspaceSource[], facts: Fact[], factIds: 
 
 /** The argument behind a deck drafted from figures (documents or a data URL): one source, one checked figure fact per point. */
 export function pointsFromFigures(src: DataSource, arg: FiguresArgument, kind: "document" | "data" = "document"): { fields: Partial<ArgFields>; points: ArgPoint[]; sources: WorkspaceSource[]; facts: Fact[] } {
-  const source: WorkspaceSource = { id: "S1", kind, title: src.name, citation: src.name, short: src.name, status: "active", addedAt: new Date().toISOString() };
+  const source: WorkspaceSource = { id: "S1", kind, origin: "yours", title: src.name, citation: src.name, short: src.name, status: "active", addedAt: new Date().toISOString() };
   const facts: Fact[] = arg.points.map((pt, i) => ({ id: `F${i + 1}`, sourceId: "S1", kind: "figure", text: pt.evidence, checked: true, status: "active" }));
   return {
     sources: [source],

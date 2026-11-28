@@ -19,7 +19,7 @@ export function noteBodies(a: Argument, text: string, from: string): { bodies: A
   const bodies: ArgOpBody[] = [];
   let source = existing;
   if (!source) {
-    source = { id: nextId("S", a.sources), kind: "note", title: citation, citation, short: citation, status: "active", addedAt: new Date().toISOString() };
+    source = { id: nextId("S", a.sources), kind: "note", origin: "yours", title: citation, citation, short: citation, status: "active", addedAt: new Date().toISOString() };
     bodies.push({ kind: "source.put", source });
   }
   const fact: Fact = { id: nextId("F", a.facts), sourceId: source.id, kind: "note", text, checked: false, status: "active" };
@@ -97,6 +97,7 @@ export function WorkspacePanel({ arg, apply, highlight, find }: { arg: Argument;
               <span className="id-chip">{s.id}</span>
               <span className="ws-title">{s.short}</span>
               <span className="pill">{KIND[s.kind]}</span>
+              {s.origin && <span className={s.origin === "discovered" ? "pill navy" : "pill"}>{s.origin === "discovered" ? "Discovered" : "Yours"}</span>}
               <span className="small muted">{facts.length} {facts.length === 1 ? "fact" : "facts"}</span>
             </summary>
             <div className="ws-body">

@@ -12,8 +12,8 @@ import { getRepo, type DeckSummary } from "@/lib/repo";
 import { emptyArgument } from "@/model/argument";
 
 const BLURB: Record<string, string> = {
-  research: "Work out what is true and what to argue. Every quote and number checked against its source.",
-  build: "Turn an argument into slides that fit your time, or import a PowerPoint deck.",
+  research: "Discover what is known, curate the evidence and hone your message. Every fact traceable to its source.",
+  build: "Turn your outline into slides that fit your time, or import a PowerPoint deck.",
   present: "A private presenter view, and search to any slide during questions.",
   engage: "Live polls and moderated questions from phones, linked to your slides.",
 };
@@ -52,7 +52,7 @@ export default function Home() {
   async function newArgument() {
     const arg = emptyArgument(await getRepo().tenantId());
     await getArguments().save(arg, [], true);
-    router.push(`/research/${arg.id}`);
+    router.push(`/curate/${arg.id}`);
   }
 
   return (
@@ -64,10 +64,10 @@ export default function Home() {
           <div>
             <p className="eyebrow">Ideas first. Slides follow.</p>
             <h1>{hello}</h1>
-            <p className="lede">Pick up an argument, or start something new.</p>
+            <p className="lede">Pick up a presentation, or start a new one.</p>
           </div>
           <button className="primary" style={{ minHeight: 44, padding: "0 20px", fontSize: 15 }} onClick={newArgument}>
-            <Icon name="plus" size={18} /> New argument
+            <Icon name="plus" size={18} /> New presentation
           </button>
         </header>
 
@@ -86,12 +86,12 @@ export default function Home() {
           {recent === null ? (
             <p className="muted">Loading…</p>
           ) : recent.length === 0 ? (
-            <p className="muted">Nothing yet. Start an argument in Research, or open the demo deck from Build.</p>
+            <p className="muted">Nothing yet. Start a presentation in Curate, or open the demo deck from Build.</p>
           ) : (
             <div className="list-card">
               {recent.map((r) => (
-                <Link key={r.kind + r.id} href={r.kind === "argument" ? `/research/${r.id}` : `/decks/${r.id}`} className="list-row">
-                  <span className={r.kind === "argument" ? "pill navy" : "pill"}>{r.kind === "argument" ? "Argument" : "Deck"}</span>
+                <Link key={r.kind + r.id} href={r.kind === "argument" ? `/curate/${r.id}` : `/decks/${r.id}`} className="list-row">
+                  <span className={r.kind === "argument" ? "pill navy" : "pill"}>{r.kind === "argument" ? "Presentation" : "Slides"}</span>
                   <span className="title">{r.title}</span>
                   <span className="meta">Edited {when(r.updatedAt)}</span>
                 </Link>

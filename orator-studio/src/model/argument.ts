@@ -41,6 +41,10 @@ export interface WorkspaceSource {
   sample?: string;
   /** The public record, for sources found by search (F-119). */
   url?: string;
+  /** Publication year, when known. */
+  year?: string;
+  /** Brought by the author, or found by discovery (F-020). */
+  origin?: "yours" | "discovered";
   /** What was read: the full text, only the abstract, or a registry record. */
   access?: "full text" | "abstract" | "registry record";
   /** Names for "pages" that are really sections (full texts from PubMed Central). */
@@ -110,6 +114,8 @@ export interface Argument {
   id: Id;
   tenantId: Id;
   title: string;
+  /** What the presentation is about, before any position is taken (F-019). */
+  topic?: string;
   purpose: string;
   audience: string;
   takeaway: string;
@@ -126,7 +132,7 @@ export interface Argument {
   version: number;
 }
 
-export type ArgFields = Pick<Argument, "title" | "purpose" | "audience" | "takeaway" | "thesis" | "openQuestions" | "recommendation" | "nextSteps">;
+export type ArgFields = Pick<Argument, "title" | "topic" | "purpose" | "audience" | "takeaway" | "thesis" | "openQuestions" | "recommendation" | "nextSteps">;
 
 export type ArgOpBody =
   | { kind: "arg.set"; patch: Partial<ArgFields> }
@@ -278,8 +284,8 @@ export function changesSince(log: ArgOp[], version: number): { points: Set<Id>; 
   return { points, framing, count: later.length };
 }
 
-export const argumentTitle = (a: Pick<Argument, "title" | "thesis" | "purpose">) =>
-  (a.title.trim() || a.thesis.trim().slice(0, 80) || a.purpose.trim().slice(0, 80) || "Untitled argument").replace(/[.]+$/, "");
+export const argumentTitle = (a: Pick<Argument, "title" | "thesis" | "purpose"> & { topic?: string }) =>
+  (a.title.trim() || a.topic?.trim().slice(0, 80) || a.thesis.trim().slice(0, 80) || a.purpose.trim().slice(0, 80) || "Untitled presentation").replace(/[.]+$/, "");
 
 // ---- Workspace helpers (F-118) ----
 

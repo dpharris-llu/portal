@@ -32,7 +32,7 @@ export default function DraftFromArgument() {
     });
   }, [argumentId]);
 
-  if (stored === null) return <main className="narrow"><p>This argument was not found. <Link href="/build">Back to Build</Link></p></main>;
+  if (stored === null) return <main className="narrow"><p>This presentation was not found. <Link href="/build">Back to Build</Link></p></main>;
   if (!stored) return <main className="narrow muted">Loading…</main>;
   const arg = stored.argument;
   const include = (id: string) => !out.has(id);
@@ -55,7 +55,7 @@ export default function DraftFromArgument() {
         ...draft.backup.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "backup" as const, index })),
       ];
       let deck = emptyDeck({}, await repo.tenantId());
-      const log: Operation[] = bodies.map((b) => makeOp(b, me, "Drafted from an argument"));
+      const log: Operation[] = bodies.map((b) => makeOp(b, me, "Drafted from the outline"));
       for (const op of log) deck = applyOp(deck, op);
       await repo.save(deck, log, true);
       router.push(`/decks/${deck.id}`);
@@ -71,7 +71,7 @@ export default function DraftFromArgument() {
       <main className="narrow stack">
         <h1 style={{ margin: 0 }}>Draft slides</h1>
         <p className="muted" style={{ margin: 0 }}>
-          From the argument <Link href={`/research/${arg.id}`}>{argumentTitle(arg)}</Link>. The argument stays in Research; changes there will show here as slides to review.
+          From the outline of <Link href={`/curate/${arg.id}`}>{argumentTitle(arg)}</Link>. The outline stays in Curate; changes there will show here as slides to review.
         </p>
         <div className="row">
           <label style={{ flex: 3, minWidth: 220 }}>
@@ -84,7 +84,7 @@ export default function DraftFromArgument() {
           </label>
         </div>
         {arg.points.length === 0 ? (
-          <p className="notice small">This argument has no points yet. <Link href={`/research/${arg.id}`}>Add them in Research</Link>, or draft a title slide and build from there.</p>
+          <p className="notice small">This presentation has no points yet. <Link href={`/curate/${arg.id}`}>Add them in Curate</Link>, or draft a title slide and build from there.</p>
         ) : (
           <section className="stack" aria-labelledby="pts-h">
             <h2 id="pts-h" style={{ margin: 0, fontSize: 18 }}>Points in the talk</h2>

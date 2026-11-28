@@ -29,22 +29,22 @@ export default function BuildHome() {
         <header className="page-head">
           <div>
             <p className="eyebrow">Orator Build</p>
-            <h1>Turn the argument into slides</h1>
+            <h1>Turn the outline into slides</h1>
             <p className="lede">Slides that fit your time. Layout follows the content.</p>
           </div>
         </header>
         <div className="start-grid">
           <div className="start-card" style={{ cursor: "default" }}>
             <span className="icon-tile"><Icon name="research" /></span>
-            <strong>From an argument</strong>
+            <strong>From a presentation</strong>
             {args === null ? (
               <span className="small muted">Loading…</span>
             ) : args.length === 0 ? (
-              <span className="small">No arguments yet. <Link href="/research">Organize your thoughts in Research first.</Link></span>
+              <span className="small">No presentations yet. <Link href="/curate">Start one in Curate.</Link></span>
             ) : (
               <>
                 <label className="small">
-                  Argument
+                  Presentation
                   <select value={pick} onChange={(e) => setPick(e.target.value)}>
                     {args.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
                   </select>

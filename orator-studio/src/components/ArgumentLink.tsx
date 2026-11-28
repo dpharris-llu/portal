@@ -29,7 +29,7 @@ export function ArgumentLink({ deck, commit, onSelect }: { deck: Deck; commit: (
   return (
     <div className={`linked-banner${changed ? " changed" : ""}`} role="status">
       <span>
-        Drafted from the argument <Link href={`/research/${arg.id}`}>{argumentTitle(arg)}</Link>.
+        Drafted from the outline of <Link href={`/curate/${arg.id}`}>{argumentTitle(arg)}</Link>.
       </span>
       {changed && (
         <>
@@ -46,10 +46,10 @@ export function ArgumentLink({ deck, commit, onSelect }: { deck: Deck; commit: (
               </>
             )}
             {added > 0 && `${added} new point${added === 1 ? "" : "s"} not in the deck. `}
-            {changed.framing && "The thesis, recommendation or next steps changed. "}
+            {changed.framing && "The message, recommendation or next steps changed. "}
             {!affected.length && !added && !changed.framing && "Points were removed or reordered. "}
           </span>
-          <button className="small" onClick={() => commit({ kind: "deck.setMeta", patch: { argumentVersion: arg.version } }, "Reviewed argument changes")}>Mark as reviewed</button>
+          <button className="small" onClick={() => commit({ kind: "deck.setMeta", patch: { argumentVersion: arg.version } }, "Reviewed outline changes")}>Mark as reviewed</button>
         </>
       )}
     </div>

@@ -4,7 +4,7 @@ import "server-only";
  * reached, built from the query; the browser never supplies an address, so
  * this is not an open fetcher. Time and size limits as for data URLs.
  */
-import type { Candidate, Provider, SearchOptions } from "./types";
+import type { Candidate, LandscapeSection, Provider, SearchOptions } from "./types";
 import { EUROPEPMC_BASE, europePmcFullTextUrl, europePmcSearchUrl, jatsPages, parseEuropePmc } from "./europepmc";
 import { CTGOV_BASE, ctGovSearchUrl, parseCtGov } from "./clinicaltrials";
 import { EUTILS_BASE, parsePubmed, pmcFullTextUrl, pubmedAbstractUrl, pubmedAbstracts, pubmedIds, pubmedSearchUrl, pubmedSummaryUrl } from "./pubmed";
@@ -130,4 +130,38 @@ export async function fullText(pmcid: string, fetchImpl?: typeof fetch) {
   const r = jatsPages(await get(europePmcFullTextUrl(epmc(), pmcid), "application/xml", fetchImpl));
   if (!hasBody(r)) throw new SearchError("No free full text is available for this paper.", 404);
   return r;
+}
+
+/**
+ * The discovery landscape for a topic (F-020): strongest evidence (systematic
+ * reviews, meta-analyses, guidelines), the newest primary studies, ongoing
+ * trials, and government reports. Sections run in parallel and fail on their
+ * own; a slow source never holds up the others.
+ */
+export async function landscape(query: string, plainWords: string, fetchImpl?: typeof fetch): Promise<LandscapeSection[]> {
+  const q = `(${query})`;
+  const run = async (key: LandscapeSection["key"], title: string, note: string, f: () => Promise<Candidate[]>): Promise<LandscapeSection> => {
+    try {
+      return { key, title, note, results: await f() };
+    } catch (e) {
+      return { key, title, note, results: [], error: e instanceof SearchError ? e.message : "This search failed." };
+    }
+  };
+  const secs = await Promise.all([
+    run("strongest", "Strongest evidence", "Systematic reviews, meta-analyses and guidelines, newest first (PubMed)", () =>
+      searchPubmed(`${q} AND (systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])`, { newest: true, pageSize: 8 }, fetchImpl),
+    ),
+    run("newest", "Newest studies", "Primary research, newest first (PubMed)", () =>
+      searchPubmed(`${q} NOT (review[pt] OR systematic[sb] OR meta-analysis[pt] OR editorial[pt] OR comment[pt] OR letter[pt])`, { newest: true, pageSize: 10 }, fetchImpl),
+    ),
+    run("ongoing", "Ongoing trials", "Recruiting or active studies that may change the picture (ClinicalTrials.gov)", async () =>
+      parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), plainWords, { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl))),
+    ),
+    run("reports", "Government reports", "NCBI Bookshelf, such as AHRQ evidence reviews (Europe PMC)", async () =>
+      parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), `(${plainWords}) AND SRC:NBK`, { pageSize: 5 }), "application/json", fetchImpl, EPMC_TIMEOUT_MS))).filter((c) => c.kind === "report"),
+    ),
+  ]);
+  // A paper shows once: the first section it appears in keeps it.
+  const seen = new Set<string>();
+  return secs.map((sec) => ({ ...sec, results: sec.results.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true))) }));
 }

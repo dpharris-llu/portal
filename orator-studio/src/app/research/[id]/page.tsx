@@ -18,6 +18,8 @@ import { askClaudeFor, claudeAvailable, ClaudeError, type Transport } from "@/ai
 import { briefMarkdown } from "@/research/brief";
 import { saveFile } from "@/lib/saveFile";
 import { ProbePanel } from "@/components/research/ProbePanel";
+import { DiscoverPanel } from "@/components/research/DiscoverPanel";
+import { MessageSuggest } from "@/components/research/MessageSuggest";
 import { noteBodies, WorkspacePanel } from "@/components/research/WorkspacePanel";
 
 /** A text field that keeps its own value while typing and commits when you leave it. */
@@ -72,6 +74,7 @@ export default function ArgumentPage() {
   const [error, setError] = useState("");
   const [highlight, setHighlight] = useState<string | null>(null);
   const [find, setFind] = useState<{ want: string; n: number } | null>(null);
+  const [step, setStep] = useState<"evidence" | "outline" | null>(null);
   const showFact = (id: string) => {
     setHighlight(id);
     setTimeout(() => document.getElementById(`fact-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
@@ -81,10 +84,11 @@ export default function ArgumentPage() {
     claudeAvailable().then(setTransport);
   }, []);
 
-  if (missing) return <main className="narrow"><p>This argument was not found. <Link href="/research">Back to Research</Link></p></main>;
+  if (arg && step === null) setStep(arg.points.length || arg.thesis ? "outline" : "evidence");
+  if (missing) return <main className="narrow"><p>This presentation was not found. <Link href="/curate">Back to Curate</Link></p></main>;
   if (!arg) return <main className="narrow muted">Loading…</main>;
 
-  const set = (patch: Partial<ArgFields>) => apply([{ kind: "arg.set", patch }], "Edited argument");
+  const set = (patch: Partial<ArgFields>) => apply([{ kind: "arg.set", patch }], "Edited the presentation");
   const putPoint = (point: ArgPoint, reason = "Edited point") => apply([{ kind: "point.put", point }], reason);
 
   async function propose(a: Argument) {
@@ -157,31 +161,55 @@ export default function ArgumentPage() {
       </TopBar>
       <main className="wide stack" style={{ maxWidth: 1360, gap: 24 }}>
         <div className="stack" style={{ gap: 4 }}>
-          <p className="eyebrow">Argument</p>
+          <p className="eyebrow">Presentation</p>
           <div className="title-input"><Field label="Title" value={arg.title} placeholder={argumentTitle(arg)} onCommit={(title) => set({ title })} /></div>
         </div>
-        <div className="row" style={{ alignItems: "flex-start" }}>
-          <label style={{ flex: 2, minWidth: 260 }}>
-            Purpose: what should happen because of this?
-            <Field multiline label="Purpose" value={arg.purpose} placeholder="Get approval to pilot the new advising model in two schools" onCommit={(purpose) => set({ purpose })} />
-          </label>
-          <label style={{ flex: 1, minWidth: 200 }}>
-            Audience
-            <Field label="Audience" value={arg.audience} placeholder="Deans' council" onCommit={(audience) => set({ audience })} />
-          </label>
-        </div>
         <label>
-          Key takeaway
-          <Field label="Key takeaway" value={arg.takeaway} placeholder="The one thing they should remember" onCommit={(takeaway) => set({ takeaway })} />
+          Topic: what is this presentation about?
+          <Field label="Topic" value={arg.topic ?? ""} placeholder="For example: walking programs for adults with type 2 diabetes" onCommit={(topic) => set({ topic })} />
         </label>
-        <div className="stack arg-thesis" style={{ gap: 4 }}>
-          <span className="eyebrow">Thesis</span>
-          <span className="small muted">The one sentence everything supports.</span>
-          <Field multiline label="Thesis" value={arg.thesis} placeholder="Write the one sentence your argument supports" onCommit={(thesis) => set({ thesis })} />
+        <details className="occasion" open={Boolean(arg.purpose || arg.audience || arg.takeaway)}>
+          <summary className="small"><strong>The occasion</strong> (optional): who it's for, and what should happen</summary>
+          <div className="stack" style={{ gap: 12, paddingTop: 10 }}>
+            <div className="row" style={{ alignItems: "flex-start" }}>
+              <label style={{ flex: 2, minWidth: 260 }}>
+                Purpose: what should happen because of this?
+                <Field multiline label="Purpose" value={arg.purpose} placeholder="Get approval to pilot the new advising model in two schools" onCommit={(purpose) => set({ purpose })} />
+              </label>
+              <label style={{ flex: 1, minWidth: 200 }}>
+                Audience
+                <Field label="Audience" value={arg.audience} placeholder="Deans' council" onCommit={(audience) => set({ audience })} />
+              </label>
+            </div>
+            <label>
+              Key takeaway
+              <Field label="Key takeaway" value={arg.takeaway} placeholder="The one thing they should remember" onCommit={(takeaway) => set({ takeaway })} />
+            </label>
+          </div>
+        </details>
+        <div className="step-tabs" role="tablist" aria-label="Curate in two steps">
+          <button role="tab" aria-selected={step === "evidence"} onClick={() => setStep("evidence")}>1. Evidence</button>
+          <button role="tab" aria-selected={step === "outline"} onClick={() => setStep("outline")}>2. Message &amp; outline</button>
         </div>
 
         <div className="research-grid">
         <div className="stack research-main" style={{ gap: 24 }}>
+        {step === "evidence" && (
+          <>
+            <DiscoverPanel arg={arg} apply={apply} />
+            <p className="small muted" style={{ margin: 0 }}>
+              Add your own sources and facts in <strong>Sources and facts</strong>, then ask <strong>Summarize what&apos;s known</strong>. When the picture is clear, go to <button className="link-button" onClick={() => setStep("outline")}>2. Message &amp; outline</button>.
+            </p>
+          </>
+        )}
+        {step === "outline" && (
+        <>
+        <div className="stack arg-thesis" style={{ gap: 4 }}>
+          <span className="eyebrow">Message</span>
+          <span className="small muted">The one sentence everything supports.</span>
+          <Field multiline label="Message" value={arg.thesis} placeholder="Write the one sentence your presentation supports" onCommit={(thesis) => set({ thesis })} />
+        </div>
+        <MessageSuggest arg={arg} apply={apply} onFact={showFact} />
         <section className="stack" aria-labelledby="points-h">
           <div className="row">
             <h2 id="points-h" className="section-h" style={{ margin: 0 }}>Points, in order</h2>
@@ -194,7 +222,7 @@ export default function ArgumentPage() {
           <div className="row">
             {transport ? (
               <button onClick={() => propose(arg)} disabled={thinking !== null || (!arg.purpose.trim() && !arg.points.length && !notes.trim())}>
-                {arg.points.length ? "Ask Claude to strengthen the outline" : "Ask Claude to propose points"}
+                {arg.points.length ? "Ask Claude to strengthen the points" : "Ask Claude to propose points"}
               </button>
             ) : transport === null ? (
               <span className="small muted">Claude isn&apos;t connected here, so it can&apos;t propose points.</span>
@@ -213,7 +241,7 @@ export default function ArgumentPage() {
               {proposal.value.thesis && (
                 <label className="inline">
                   <input type="checkbox" checked={proposal.useThesis} onChange={(e) => setProposal({ ...proposal, useThesis: e.target.checked })} />
-                  <span>Thesis: {proposal.value.thesis}</span>
+                  <span>Message: {proposal.value.thesis}</span>
                 </label>
               )}
               <ol className="stack" style={{ gap: 4, margin: 0 }}>
@@ -306,7 +334,7 @@ export default function ArgumentPage() {
 
         <label>
           What we don&apos;t know yet (one per line)
-          <Field multiline rows={3} label="Open questions" value={arg.openQuestions.join("\n")} onCommit={(v) => set({ openQuestions: lines(v) })} />
+          <Field multiline rows={3} label="What we don't know yet" value={arg.openQuestions.join("\n")} onCommit={(v) => set({ openQuestions: lines(v) })} />
         </label>
         <label>
           Recommendation
@@ -316,6 +344,8 @@ export default function ArgumentPage() {
           Next steps (one per line)
           <Field multiline rows={3} label="Next steps" value={arg.nextSteps.join("\n")} onCommit={(v) => set({ nextSteps: lines(v) })} />
         </label>
+        </>
+        )}
         <p className="small muted">Version {arg.version} · {log.length} changes recorded</p>
         </div>
         <aside className="research-side" aria-label="Research workspace">

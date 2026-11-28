@@ -94,7 +94,7 @@ describe("drafting slides from an argument", () => {
 
   it("writes the argument as a brief", () => {
     const md = briefMarkdown(arg);
-    expect(md).toContain("## The argument");
+    expect(md).toContain("## Points");
     expect(md).toContain('- Calls cut readmissions ("readmissions fell by a third") ([1] Lee et al., 2023, p. 5)');
     expect(md).toContain("_No evidence yet._");
     expect(md).toContain("proposed by Claude");

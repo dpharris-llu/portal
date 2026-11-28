@@ -28,22 +28,24 @@ export type ProbeAnswer = z.infer<typeof ProbeAnswer>;
 
 /** What goes to Claude: the argument, the ACTIVE sources and facts, recent probes, and the question. Nothing discarded. */
 export interface ProbeRequest {
+  topic?: string;
   purpose: string;
   audience: string;
   thesis: string;
   points: { n: number; text: string; detail: string; factIds: string[]; unsupportedNote?: string }[];
-  sources: { id: string; kind: string; short: string; citation: string; design?: string; sample?: string }[];
+  sources: { id: string; kind: string; short: string; citation: string; design?: string; sample?: string; year?: string; origin?: string; access?: string }[];
   facts: { id: string; sourceId: string; kind: string; text: string; quote?: string; page?: number; checked: boolean }[];
   history: { question: string; answer: string; outcome: string }[];
   question: string;
 }
 
 export const ProbeRequestSchema = z.object({
+  topic: z.string().max(500).optional(),
   purpose: z.string().max(2000),
   audience: z.string().max(1000),
   thesis: z.string().max(1000),
   points: z.array(z.object({ n: z.number().int(), text: z.string().max(500), detail: z.string().max(2000), factIds: Ids, unsupportedNote: z.string().optional() })).max(40),
-  sources: z.array(z.object({ id: z.string(), kind: z.string(), short: z.string().max(200), citation: z.string().max(800), design: z.string().max(300).optional(), sample: z.string().max(300).optional() })).max(60),
+  sources: z.array(z.object({ id: z.string(), kind: z.string(), short: z.string().max(200), citation: z.string().max(800), design: z.string().max(300).optional(), sample: z.string().max(300).optional(), year: z.string().max(10).optional(), origin: z.string().max(20).optional(), access: z.string().max(30).optional() })).max(60),
   facts: z.array(z.object({ id: z.string(), sourceId: z.string(), kind: z.string(), text: z.string().max(1000), quote: z.string().max(1500).optional(), page: z.number().int().optional(), checked: z.boolean() })).max(300),
   history: z.array(z.object({ question: z.string().max(2000), answer: z.string().max(1500), outcome: z.string().max(600) })).max(8),
   question: z.string().min(1).max(2000),
@@ -55,6 +57,7 @@ export function probeRequest(a: Argument, question: string): ProbeRequest {
   const facts = activeFacts(a);
   const live = new Set(facts.map((f) => f.id));
   return {
+    topic: a.topic ?? "",
     purpose: a.purpose,
     audience: a.audience,
     thesis: a.thesis,
@@ -63,7 +66,17 @@ export function probeRequest(a: Argument, question: string): ProbeRequest {
       const typed = p.evidence.filter((e) => !e.factId).length;
       return { n: i + 1, text: p.text, detail: p.detail, factIds, ...(typed ? { unsupportedNote: `${typed} evidence note(s) typed by the author, not from a source` } : {}) };
     }),
-    sources: activeSources(a).map((s) => ({ id: s.id, kind: s.kind, short: s.short, citation: s.citation, ...(s.design ? { design: s.design } : {}), ...(s.sample ? { sample: s.sample } : {}) })),
+    sources: activeSources(a).map((s) => ({
+      id: s.id,
+      kind: s.kind,
+      short: s.short,
+      citation: s.citation,
+      ...(s.design ? { design: s.design } : {}),
+      ...(s.sample ? { sample: s.sample } : {}),
+      ...(s.year ? { year: s.year } : {}),
+      ...(s.origin ? { origin: s.origin } : {}),
+      ...(s.access ? { access: s.access } : {}),
+    })),
     facts: facts.map((f) => ({ id: f.id, sourceId: f.sourceId, kind: f.kind, text: f.text, ...(f.quote ? { quote: f.quote } : {}), ...(f.page ? { page: f.page } : {}), checked: f.checked })),
     history: (a.probes ?? []).slice(-HISTORY).map((p) => ({
       question: p.question,
@@ -80,13 +93,16 @@ export function probePrompt(r: ProbeRequest): string {
     "",
     `Purpose: ${r.purpose || "not stated"}`,
     `Audience: ${r.audience || "not stated"}`,
-    `Thesis: ${r.thesis || "none yet"}`,
+    `Topic: ${r.topic || "not stated"}`,
+    `Message (the one sentence the presentation supports): ${r.thesis || "none yet"}`,
     "",
     "Points so far (numbered):",
     r.points.length ? r.points.map((p) => `${p.n}. ${p.text}${p.detail ? ` (${p.detail})` : ""}; evidence: ${p.factIds.join(", ") || "none"}${p.unsupportedNote ? `; ${p.unsupportedNote}` : ""}`).join("\n") : "(none)",
     "",
-    "Sources (id, short name, citation):",
-    r.sources.length ? r.sources.map((s) => `${s.id} [${s.kind}] ${s.short}: ${s.citation}${s.design ? `; design: ${s.design}` : ""}${s.sample ? `; sample: ${s.sample}` : ""}`).join("\n") : "(none)",
+    "Sources (id, kind, short name, citation; 'author's own' were brought by the author, 'discovered' were found by search; 'abstract only' means only the abstract was read):",
+    r.sources.length
+      ? r.sources.map((s) => `${s.id} [${s.kind}${s.origin === "discovered" ? ", discovered" : s.origin === "yours" ? ", author's own" : ""}${s.access === "abstract" ? ", abstract only" : ""}${s.year ? `, ${s.year}` : ""}] ${s.short}: ${s.citation}${s.design ? `; design: ${s.design}` : ""}${s.sample ? `; sample: ${s.sample}` : ""}`).join("\n")
+      : "(none)",
     "",
     "Facts (id, source, kind, text, quote, page; 'checked' means the app verified the quote against the source):",
     r.facts.length ? r.facts.map((f) => `${f.id} (${f.sourceId}, ${f.kind}${f.checked ? ", checked" : ", unchecked"}): ${f.text}${f.quote ? ` | quote: "${f.quote}"` : ""}${f.page ? ` | p. ${f.page}` : ""}`).join("\n") : "(none)",
@@ -111,7 +127,11 @@ export function probePrompt(r: ProbeRequest): string {
 }
 
 /** Tags and point numbers are references, not figures. */
-const plain = (s: string) => s.replace(/\[?\b[FS]\d+\b\]?/g, " ").replace(/\b(points?|slides?|steps?|questions?|Q|A)\s*\d+\b/gi, " ");
+const plain = (s: string) =>
+  s
+    .replace(/\[?\b[FS]\d+\b\]?/g, " ")
+    .replace(/\b(points?|slides?|steps?|questions?)\s+\d+\b/gi, " ")
+    .replace(/\b[QA]\d+\b/g, " "); // "Q1", "A2" from the history, case-sensitive so the word "a" is left alone
 
 export interface CheckedProbe {
   answer: string;
@@ -129,7 +149,7 @@ export function verifyProbe(a: Argument, r: ProbeAnswer): CheckedProbe {
       const f = byId.get(id);
       if (!f) return [];
       const s = sources.get(f.sourceId);
-      return [`${f.text} ${f.quote ?? ""} ${s?.sample ?? ""} ${s?.design ?? ""}`];
+      return [`${f.text} ${f.quote ?? ""} ${s?.sample ?? ""} ${s?.design ?? ""} ${s?.year ?? ""} ${s?.short ?? ""}`];
     });
   const unknown = (ids: string[]) => ids.filter((id) => !byId.has(id));
   const numbers = (text: string, ids: string[]) => {
@@ -208,4 +228,14 @@ export function describeAction(a: Argument, x: ProbeAction): string {
     case "find_sources":
       return `Search for: ${x.want}`;
   }
+}
+
+/** Preset probes (F-021, F-022). They are ordinary probes: same checks, same proposals. */
+export const SUMMARY_QUESTION =
+  "Write a discovery summary of this workspace under four headings, each on its own line: Established, New, Contested, Unknown. Under each, give short statements citing facts like [F3]. In New, say where a newer source supersedes or updates an older one, especially one that is the author's own. In Contested, say where sources disagree. In Unknown, name what the facts don't settle; for each unknown that matters to the topic, propose find_sources, and propose add_open_question for the most important ones.";
+
+export function challengeQuestion(message: string): string {
+  return message.trim()
+    ? `Challenge the message: "${message.trim()}". What in the facts cuts against it or limits it (populations, durations, effect sizes, study quality, contradicting results)? Be specific and fair, citing facts. Then name up to three kinds of evidence that could contradict it which this workspace may be missing, and propose find_sources for each. Propose add_open_question for any objection the facts don't answer.`
+    : "There is no message yet. Challenge the direction the current points take: what in the facts cuts against them or limits them? Cite facts. Then name up to three kinds of contradicting evidence the workspace may be missing, and propose find_sources for each.";
 }

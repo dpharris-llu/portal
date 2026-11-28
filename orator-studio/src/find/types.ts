@@ -32,9 +32,20 @@ export interface SearchOptions {
   openAccessOnly?: boolean;
   fromYear?: number;
   pageSize?: number;
+  /** Newest first instead of best match. */
+  newest?: boolean;
 }
 
 export const PROVIDERS: Record<Provider, { name: string; covers: string }> = {
   europepmc: { name: "Papers and reports", covers: "PubMed, the NIH's database of journal articles (including CDC's MMWR), with free full texts from PubMed Central; plus government reports from NCBI Bookshelf (such as AHRQ evidence reviews) and preprints, through Europe PMC" },
   clinicaltrials: { name: "Registered trials", covers: "ClinicalTrials.gov, the U.S. National Library of Medicine's registry of clinical studies" },
 };
+
+/** One part of the discovery landscape (F-020). */
+export interface LandscapeSection {
+  key: "strongest" | "newest" | "ongoing" | "reports";
+  title: string;
+  note: string;
+  results: Candidate[];
+  error?: string;
+}

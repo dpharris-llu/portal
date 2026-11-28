@@ -13,7 +13,7 @@ export function pubmedSearchUrl(base: string, query: string, o: SearchOptions = 
   let q = query.trim();
   if (o.openAccessOnly) q = `(${q}) AND free full text[sb]`;
   if (o.fromYear) q = `(${q}) AND ${o.fromYear}:3000[dp]`;
-  return `${base}/esearch.fcgi?db=pubmed&retmode=json&retmax=15&sort=relevance&${TOOL}&term=${encodeURIComponent(q)}`;
+  return `${base}/esearch.fcgi?db=pubmed&retmode=json&retmax=${o.pageSize ?? 15}&sort=${o.newest ? "pub_date" : "relevance"}&${TOOL}&term=${encodeURIComponent(q)}`;
 }
 export const pubmedSummaryUrl = (base: string, ids: string[]) => `${base}/esummary.fcgi?db=pubmed&retmode=json&${TOOL}&id=${ids.join(",")}`;
 export const pubmedAbstractUrl = (base: string, ids: string[]) => `${base}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&${TOOL}&id=${ids.join(",")}`;

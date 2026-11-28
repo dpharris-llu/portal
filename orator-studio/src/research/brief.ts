@@ -5,9 +5,9 @@ export function briefMarkdown(a: Argument): string {
   const out: string[] = [`# ${argumentTitle(a)}`, ""];
   if (a.purpose) out.push(`**Purpose:** ${a.purpose}`, "");
   if (a.audience) out.push(`**Audience:** ${a.audience}`, "");
-  if (a.thesis) out.push(`## Summary`, "", a.thesis, "");
+  if (a.thesis) out.push(`## Message`, "", a.thesis, "");
   if (a.points.length) {
-    out.push("## The argument", "");
+    out.push("## Points", "");
     a.points.forEach((p, i) => {
       out.push(`### ${i + 1}. ${p.text || "Untitled point"}`, "");
       if (p.detail) out.push(p.detail, "");

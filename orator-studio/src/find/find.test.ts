@@ -103,3 +103,30 @@ describe("PubMed fallback", () => {
     expect(Object.values(r.labels)).toEqual(["Abstract", "Methods", "Results", "Limitations"]);
   });
 });
+
+describe("Discover landscape", () => {
+  it("runs four searches in parallel, each with its own filter, and lets one fail alone", async () => {
+    const { landscape } = await import("./server");
+    const seen: string[] = [];
+    const fake = (async (url: string) => {
+      const u = new URL(url);
+      seen.push(u.host + u.pathname + " " + decodeURIComponent(u.searchParams.get("term") ?? u.searchParams.get("query") ?? u.searchParams.get("query.term") ?? "") + (u.searchParams.get("filter.overallStatus") ? " | " + u.searchParams.get("filter.overallStatus") : "") + (u.searchParams.get("sort") ? " | sort=" + u.searchParams.get("sort") : ""));
+      if (url.includes("europepmc")) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
+      if (url.includes("clinicaltrials")) return new Response(fx("ctgov-search.json"));
+      const body = url.includes("esearch") ? fx("pubmed-esearch.json") : url.includes("esummary") ? fx("pubmed-esummary.json") : fx("pubmed-efetch.xml");
+      return new Response(body);
+    }) as unknown as typeof fetch;
+    const secs = await landscape('("walking"[tiab]) AND ("type 2 diabetes"[MeSH Terms])', "walking type 2 diabetes", fake);
+    expect(secs.map((s) => [s.key, s.results.length, Boolean(s.error)])).toEqual([
+      ["strongest", 2, false],
+      ["newest", 0, false],
+      ["ongoing", 1, false],
+      ["reports", 0, true],
+    ]);
+    const esearch = seen.filter((x) => x.includes("esearch"));
+    expect(esearch.some((x) => x.includes("AND (systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])") && x.endsWith("sort=pub_date"))).toBe(true);
+    expect(esearch.some((x) => x.includes("NOT (review[pt] OR systematic[sb]") && x.endsWith("sort=pub_date"))).toBe(true);
+    expect(seen.find((x) => x.includes("clinicaltrials"))).toBe("clinicaltrials.gov/api/v2/studies walking type 2 diabetes | RECRUITING|NOT_YET_RECRUITING|ACTIVE_NOT_RECRUITING|ENROLLING_BY_INVITATION");
+    expect(seen.find((x) => x.includes("europepmc"))).toContain("(walking type 2 diabetes) AND SRC:NBK");
+  });
+});

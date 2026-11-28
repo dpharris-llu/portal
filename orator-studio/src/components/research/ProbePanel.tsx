@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import type { Author } from "@/model/types";
 import { activeFacts, discardBodies, evidenceFromFact, newPoint, type ArgOpBody, type Argument, type Probe, type ProbeAction } from "@/model/argument";
-import { describeAction, ProbeAnswer, probePrompt, probeRequest, verifyProbe } from "@/ai/probe";
+import { challengeQuestion, describeAction, ProbeAnswer, probePrompt, probeRequest, SUMMARY_QUESTION, verifyProbe } from "@/ai/probe";
 import { askClaudeFor, claudeAvailable, ClaudeError, type Transport } from "@/ai/analysis-client";
 import { newId } from "@/model/ids";
 
@@ -74,7 +74,8 @@ export function ProbePanel({ arg, apply, onFact, onFind }: { arg: Argument; appl
     claudeAvailable().then(setTransport);
   }, []);
 
-  async function ask(q: string) {
+  /** `shown` is what the thread displays for a preset question. */
+  async function ask(q: string, shown?: string) {
     const text = q.trim();
     if (!text) return;
     setError("");
@@ -95,7 +96,7 @@ export function ProbePanel({ arg, apply, onFact, onFind }: { arg: Argument; appl
       const v = verifyProbe(arg, value);
       const probe: Probe = {
         id: newId("probe"),
-        question: text,
+        question: shown ?? text,
         at: new Date().toISOString(),
         answer: v.answer,
         cites: v.cites,
@@ -105,7 +106,7 @@ export function ProbePanel({ arg, apply, onFact, onFind }: { arg: Argument; appl
         via,
       };
       apply([{ kind: "probe.put", probe }], "Asked Claude", { kind: "ai", id: "claude", via });
-      setQuestion("");
+      if (!shown) setQuestion("");
     } catch (e) {
       setError(e instanceof ClaudeError ? e.message : "Claude couldn't be reached. Try again.");
     } finally {
@@ -142,6 +143,10 @@ export function ProbePanel({ arg, apply, onFact, onFind }: { arg: Argument; appl
             ask(question);
           }}
         >
+          <div className="row">
+            <button type="button" className="small" disabled={thinking !== null || !transport || factCount === 0} onClick={() => ask(SUMMARY_QUESTION, "Summarize what's known")} title={factCount ? undefined : "Add sources first"}>Summarize what&apos;s known</button>
+            <button type="button" className="small" disabled={thinking !== null || !transport || factCount === 0} onClick={() => ask(challengeQuestion(arg.thesis), arg.thesis ? "Challenge my message" : "Challenge my points")}>Challenge {arg.thesis ? "my message" : "my points"}</button>
+          </div>
           <label className="sr-only" htmlFor="probe-q">Your question</label>
           <textarea
             id="probe-q"
@@ -173,7 +178,15 @@ export function ProbePanel({ arg, apply, onFact, onFind }: { arg: Argument; appl
         {probes.map((p) => (
           <li key={p.id} className="probe">
             <p className="probe-q">{p.question}</p>
-            <div className="probe-a"><WithFactChips text={p.answer} onFact={onFact} /></div>
+            <div className="probe-a">
+              {p.answer.split("\n").map((line, i) =>
+                /^(Established|New|Contested|Unknown):?$/.test(line.trim()) ? (
+                  <strong key={i} className="probe-heading">{line.trim().replace(/:$/, "")}</strong>
+                ) : (
+                  <div key={i}><WithFactChips text={line} onFact={onFact} /></div>
+                ),
+              )}
+            </div>
             {p.problems.length > 0 && <p className="verify bad">Check this answer: {p.problems.join("; ")}.</p>}
             {p.proposals.length > 0 && (
               <ul className="proposals">

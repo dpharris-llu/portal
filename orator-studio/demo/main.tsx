@@ -39,7 +39,7 @@ window.fetch = async (input, init) => {
     });
   }
   // Pages on claude.ai can't make requests to other sites, so URLs are fetched only by the full app's server.
-  if (/\/api\/sources\/(search|fulltext|plan)$/.test(url)) {
+  if (/\/api\/sources\/(search|fulltext|plan|landscape)$/.test(url)) {
     return new Response(JSON.stringify({ error: "Searching databases needs the full app: this demo can't reach outside sites. Upload a PDF or add a fact instead." }), { status: 501 });
   }
   if (url.endsWith("/api/sources/fetch")) {
@@ -64,8 +64,8 @@ const routes: { pattern: RegExp; keys: string[]; Page: () => React.ReactNode }[]
   { pattern: /^\/documents$/, keys: [], Page: DocumentsPage },
   { pattern: /^\/data$/, keys: [], Page: DataUrlPage },
   { pattern: /^\/evidence$/, keys: [], Page: EvidencePage },
-  { pattern: /^\/research$/, keys: [], Page: ResearchHome },
-  { pattern: /^\/research\/([^/]+)$/, keys: ["id"], Page: ArgumentPage },
+  { pattern: /^\/(research|curate)$/, keys: [], Page: ResearchHome },
+  { pattern: /^\/(?:research|curate)\/([^/]+)$/, keys: ["id"], Page: ArgumentPage },
   { pattern: /^\/build$/, keys: [], Page: BuildHome },
   { pattern: /^\/build\/([^/]+)$/, keys: ["argumentId"], Page: DraftFromArgument },
   { pattern: /^\/present$/, keys: [], Page: PresentHome },

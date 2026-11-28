@@ -90,10 +90,10 @@ export function ReadAndPick({ arg, apply, doc, onDone }: { arg: Argument; apply:
     const sid = nextId("S", arg.sources);
     const fromReading = reading && mode === "claude";
     const meta: Omit<WorkspaceSource, "id" | "status" | "addedAt"> = doc.meta
-      ? { ...doc.meta, design: doc.meta.design ?? reading?.design, sample: doc.meta.sample ?? reading?.sample }
+      ? { origin: "yours", ...doc.meta, design: doc.meta.design ?? reading?.design, sample: doc.meta.sample ?? reading?.sample }
       : reading
-        ? { kind: "paper", title: reading.citation.title, citation: formatCitation(reading.citation), short: shortCitation(reading.citation), design: reading.design, sample: reading.sample }
-        : { kind: "document", title: doc.name, citation: doc.name, short: doc.name };
+        ? { kind: "paper", origin: "yours", title: reading.citation.title, citation: formatCitation(reading.citation), short: shortCitation(reading.citation), design: reading.design, sample: reading.sample }
+        : { kind: "document", origin: "yours", title: doc.name, citation: doc.name, short: doc.name };
     const bodies: ArgOpBody[] = [{ kind: "source.put", source: { ...meta, ...(doc.labels && Object.keys(doc.labels).length ? { pageLabels: doc.labels } : {}), id: sid, status: "active", addedAt: new Date().toISOString() } }];
     let facts: Fact[] = [...(arg.facts ?? [])];
     const push = (f: Omit<Fact, "id" | "sourceId" | "status">) => {

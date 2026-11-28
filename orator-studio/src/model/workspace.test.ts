@@ -99,3 +99,53 @@ describe("probes", () => {
     expect(r.history).toEqual([{ question: "What supports point 1?", answer: "F1 does.", outcome: "set_thesis: dismissed" }]);
   });
 });
+
+describe("discovery and messages", () => {
+  it("tells Claude each source's origin, year and access, and the topic", async () => {
+    let a = workspace();
+    a = run(a, [
+      { kind: "arg.set", patch: { topic: "Walking programs for type 2 diabetes" } },
+      { kind: "source.put", source: { ...a.sources![0], origin: "discovered", year: "2025", access: "abstract" } },
+      { kind: "source.put", source: { ...a.sources![1], origin: "yours", year: "2019" } },
+    ]).arg;
+    const prompt = probePrompt(probeRequest(a, "What's new?"));
+    expect(prompt).toContain("Topic: Walking programs for type 2 diabetes");
+    expect(prompt).toContain("S1 [paper, discovered, abstract only, 2025] Delgado et al., 2025");
+    expect(prompt).toContain("S2 [paper, author's own, 2019] Whitfield and Haddad, 2025");
+  });
+
+  it("checks candidate messages and their points against the facts", async () => {
+    const { verifyMessages } = await import("@/ai/messages");
+    const a = workspace();
+    const v = verifyMessages(a, {
+      candidates: [
+        { message: "Fund coached walking.", why: "Decision", points: [
+          { text: "Coaching lowered HbA1c 0.5 points", intent: "persuade", detail: "", factIds: ["F1"] },
+          { text: "It saves 30% of costs", intent: "persuade", detail: "", factIds: ["F1"] },
+          { text: "Feedback alone failed", intent: "inform", detail: "", factIds: ["F3", "F99"] },
+        ] },
+        { message: "Walking cuts HbA1c by 3 points.", why: "Bold", points: [] },
+      ],
+    });
+    expect(v[0].problems).toEqual([]);
+    expect(v[0].points.map((p) => p.problems)).toEqual([[], ["30 not in the facts cited"], ["uses F99, not active facts"]]);
+    expect(v[0].points[2].factIds).toEqual(["F3"]);
+    expect(v[1].problems).toEqual(["3 not in the facts"]);
+  });
+
+  it("presets: the summary asks for the four headings; the challenge quotes the message", async () => {
+    const { SUMMARY_QUESTION, challengeQuestion } = await import("@/ai/probe");
+    expect(SUMMARY_QUESTION).toContain("Established, New, Contested, Unknown");
+    expect(challengeQuestion("Fund coached walking.")).toContain('Challenge the message: "Fund coached walking."');
+    expect(challengeQuestion("")).toContain("There is no message yet");
+  });
+});
+
+describe("years in answers", () => {
+  it("accepts a source's publication year in an answer that cites it", () => {
+    let a = workspace();
+    a = run(a, [{ kind: "source.put", source: { ...a.sources![0], year: "2025" } }]).arg;
+    const v = verifyProbe(a, { answer: "The 2025 trial found a 0.5 point drop [F1].", cites: ["F1"], proposals: [] });
+    expect(v.problems).toEqual([]);
+  });
+});
