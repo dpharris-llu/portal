@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { outputSchema } from "./schema";
 import { Outline, outlinePrompt, type OutlineRequest } from "./outline";
 
 const MODEL = "claude-opus-5-5";
@@ -20,7 +21,7 @@ export async function draftOutline(req: OutlineRequest): Promise<Outline | null>
     max_tokens: 16000,
     output_config: {
       effort: "medium",
-      format: { type: "json_schema", schema: z.toJSONSchema(Outline) as Record<string, unknown> },
+      format: { type: "json_schema", schema: outputSchema(Outline) },
     },
     // On a policy decline, the API retries on a fallback model inside the same call.
     betas: ["server-side-fallback-2026-07-01"],

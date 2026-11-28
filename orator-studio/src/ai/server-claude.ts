@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { outputSchema } from "./schema";
 import { aiConfigured } from "./claude";
 import { serverAccess } from "@/lib/serverAccess";
 
@@ -19,7 +20,7 @@ export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T,
     const stream = client.beta.messages.stream({
       model: "claude-opus-5-5",
       max_tokens: 32000,
-      output_config: { effort: "high", format: { type: "json_schema", schema: z.toJSONSchema(schema) as Record<string, unknown> } },
+      output_config: { effort: "high", format: { type: "json_schema", schema: outputSchema(schema) } },
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       messages: [{ role: "user", content: prompt }],
