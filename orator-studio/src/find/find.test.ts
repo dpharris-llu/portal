@@ -183,3 +183,32 @@ describe("broader fallback", () => {
     expect(secs[1].broadened).toBeUndefined();
   });
 });
+
+describe("OpenAlex", () => {
+  it("rebuilds abstracts and maps works to candidates", async () => {
+    const { parseOpenAlex, openAlexSearchUrl } = await import("./openalex");
+    const list = parseOpenAlex(JSON.parse(fx("openalex-search.json")));
+    expect(list).toHaveLength(2);
+    expect(list[0]).toMatchObject({ provider: "openalex", id: "openalex:W1000000001", doi: "10.9999/fictional.2024.001", pmid: "40000001", pmcid: "PMC9000001", abstract: "Students walked more with coaching.", access: "full text", venue: "Journal of Imaginary Education", year: "2024", url: "https://doi.org/10.9999/fictional.2024.001" });
+    expect(list[1]).toMatchObject({ kind: "paper", access: "link only", url: "https://example.org/b", badges: ["Review"] });
+    const u = new URL(openAlexSearchUrl("https://api.openalex.org", "walking coaching", { fromYear: 2016, pageSize: 10, apiKey: "k" }));
+    expect(u.searchParams.get("search")).toBe("walking coaching");
+    expect(u.searchParams.get("filter")).toContain("from_publication_date:2016-01-01");
+    expect(u.searchParams.get("api_key")).toBe("k");
+  });
+
+  it("searches only the chosen sources, and shows a paper once across them", async () => {
+    const { landscape } = await import("./server");
+    const hosts = new Set<string>();
+    const fake = (async (url: string) => {
+      hosts.add(new URL(url).host);
+      if (url.includes("openalex")) return new Response(fx("openalex-search.json"));
+      return new Response(url.includes("esearch") ? fx("pubmed-esearch.json") : fx("pubmed-efetch.xml"));
+    }) as unknown as typeof fetch;
+    const secs = await landscape("walking[tiab]", "walking", fake, undefined, ["pubmed", "openalex"], "walking coaching");
+    expect(secs.map((s) => s.key)).toEqual(["strongest", "newest", "allfields"]);
+    expect([...hosts].sort()).toEqual(["api.openalex.org", "eutils.ncbi.nlm.nih.gov"]);
+    const ids = secs.flatMap((s) => s.results.map((c) => c.pmid).filter(Boolean));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});

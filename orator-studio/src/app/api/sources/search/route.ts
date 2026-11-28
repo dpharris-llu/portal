@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 const Body = z.object({
-  provider: z.enum(["europepmc", "clinicaltrials"]),
+  provider: z.enum(["europepmc", "clinicaltrials", "openalex"]),
   query: z.string().min(2).max(500),
   openAccessOnly: z.boolean().optional(),
   fromYear: z.number().int().min(1900).max(2100).optional(),

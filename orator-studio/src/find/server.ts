@@ -7,6 +7,8 @@ import "server-only";
 import type { Candidate, LandscapeSection, Provider, SearchOptions } from "./types";
 import { EUROPEPMC_BASE, europePmcFullTextUrl, europePmcSearchUrl, jatsPages, parseEuropePmc } from "./europepmc";
 import { CTGOV_BASE, ctGovSearchUrl, ctGovTerms, parseCtGov } from "./clinicaltrials";
+import { OPENALEX_BASE, openAlexSearchUrl, parseOpenAlex } from "./openalex";
+import { STANDARD_IDS } from "./catalog";
 import { EUTILS_BASE, parsePubmedArticles, pmcFullTextUrl, pubmedAbstractUrl, pubmedIds, pubmedSearchUrl } from "./pubmed";
 
 const TIMEOUT_MS = 20000;
@@ -17,6 +19,7 @@ const MAX_BYTES = 8 * 1024 * 1024;
 const epmc = () => process.env.EUROPEPMC_BASE || EUROPEPMC_BASE;
 const ctgov = () => process.env.CTGOV_BASE || CTGOV_BASE;
 const eutils = () => process.env.EUTILS_BASE || EUTILS_BASE;
+const openalex = () => process.env.OPENALEX_BASE || OPENALEX_BASE;
 
 export class SearchError extends Error {
   constructor(message: string, readonly status = 502) {
@@ -106,7 +109,13 @@ export async function searchSources(provider: Provider, query: string, o: Search
   return (await searchWithSource(provider, query, o, fetchImpl)).results;
 }
 
+/** OpenAlex: scholarly works in every field, by relevance. An optional free key (OPENALEX_API_KEY) raises the daily limit. */
+export async function searchOpenAlex(words: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<Candidate[]> {
+  return parseOpenAlex(JSON.parse(await get(openAlexSearchUrl(openalex(), words, { fromYear: o.fromYear, pageSize: o.pageSize, apiKey: process.env.OPENALEX_API_KEY }), "application/json", fetchImpl)));
+}
+
 export async function searchWithSource(provider: Provider, query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<{ results: Candidate[]; from: string; note?: string }> {
+  if (provider === "openalex") return { results: await searchOpenAlex(query, o, fetchImpl), from: "OpenAlex" };
   if (provider !== "europepmc") return { results: await searchCtGov(query, o, fetchImpl), from: "ClinicalTrials.gov" };
   // Reports (NCBI Bookshelf) and preprints aren't in PubMed; ask Europe PMC for just those, with a short wait.
   const extras = o.openAccessOnly
@@ -152,6 +161,7 @@ export async function checkConnections(fetchImpl?: typeof fetch) {
     probe("Europe PMC", `${epmc()}/search?query=diabetes&format=json&resultType=lite&pageSize=1`),
     probe("PubMed (NCBI)", `${eutils()}/esearch.fcgi?db=pubmed&retmode=json&retmax=1&tool=oratorstudio&term=diabetes`),
     probe("ClinicalTrials.gov", `${ctgov()}/studies?query.term=diabetes&pageSize=1&format=json`),
+    probe("OpenAlex", openAlexSearchUrl(openalex(), "diabetes", { pageSize: 1, apiKey: process.env.OPENALEX_API_KEY })),
   ]);
 }
 
@@ -182,7 +192,14 @@ export async function fullText(pmcid: string, fetchImpl?: typeof fetch) {
 /** Newest first, for display: the search itself ranks by best match. */
 const byYear = (list: Candidate[]) => [...list].sort((a, b) => Number(b.year ?? 0) - Number(a.year ?? 0));
 
-export async function landscape(query: string, plainWords: string, fetchImpl?: typeof fetch, broader?: string): Promise<LandscapeSection[]> {
+/**
+ * `sources` are catalog ids (src/find/catalog.ts): pubmed powers the strongest
+ * and newest sections, openalex the all-fields section, clinicaltrials the
+ * ongoing trials, bookshelf the government reports. `words` are plain
+ * keywords, for the databases that don't take PubMed's syntax.
+ */
+export async function landscape(query: string, plainWords: string, fetchImpl?: typeof fetch, broader?: string, sources: readonly string[] = STANDARD_IDS, words = plainWords): Promise<LandscapeSection[]> {
+  const on = new Set(sources);
   const q = `(${query})`;
   const recent = `("${new Date().getFullYear() - 5}"[dp] : "3000"[dp])`;
   const REVIEWS = "(systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])";
@@ -195,26 +212,38 @@ export async function landscape(query: string, plainWords: string, fetchImpl?: t
   };
   const broadenedNote: Partial<Record<LandscapeSection["key"], string>> = {};
   const secs = await Promise.all([
-    run("strongest", "Strongest evidence", "Systematic reviews, meta-analyses and guidelines: the best matches, shown newest first (PubMed)", async () => {
+    !on.has("pubmed") ? null : run("strongest", "Strongest evidence", "Systematic reviews, meta-analyses and guidelines: the best matches, shown newest first (PubMed)", async () => {
       const exact = byYear(await searchPubmed(`${q} AND ${REVIEWS}`, { pageSize: 8 }, fetchImpl));
       if (exact.length || !broader?.trim()) return exact;
       const wide = byYear(await searchPubmed(`(${broader}) AND ${REVIEWS}`, { pageSize: 8 }, fetchImpl));
       if (wide.length) broadenedNote.strongest = broader;
       return wide;
     }),
-    run("newest", "Newest studies", "Primary research from the last five years: the best matches, shown newest first (PubMed)", async () =>
+    !on.has("pubmed") ? null : run("newest", "Newest studies", "Primary research from the last five years: the best matches, shown newest first (PubMed)", async () =>
       byYear(await searchPubmed(`${q} AND ${recent} NOT (review[pt] OR systematic[sb] OR meta-analysis[pt] OR editorial[pt] OR comment[pt] OR letter[pt] OR case reports[pt])`, { pageSize: 10 }, fetchImpl)),
     ),
-    run("ongoing", "Ongoing trials", "Recruiting or active studies that may change the picture (ClinicalTrials.gov)", async () => {
+    !on.has("openalex")
+      ? null
+      : run("allfields", "Research in all fields", "Studies, reviews and reports from every discipline since " + (new Date().getFullYear() - 10) + ": the best matches, shown newest first (OpenAlex)", async () =>
+          byYear(await searchOpenAlex(words, { fromYear: new Date().getFullYear() - 10, pageSize: 10 }, fetchImpl)),
+        ),
+    !on.has("clinicaltrials") ? null : run("ongoing", "Ongoing trials", "Recruiting or active studies that may change the picture (ClinicalTrials.gov)", async () => {
       const strict = parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), ctGovTerms(plainWords), { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl)));
       // Too strict for this topic? Fall back to matching any of the words.
       return strict.length ? strict : parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), plainWords, { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl)));
     }),
-    run("reports", "Government reports", "NCBI Bookshelf, such as AHRQ evidence reviews (Europe PMC)", async () =>
+    !on.has("bookshelf") ? null : run("reports", "Government reports", "NCBI Bookshelf, such as AHRQ evidence reviews (Europe PMC)", async () =>
       parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), `(${plainWords}) AND SRC:NBK`, { pageSize: 5 }), "application/json", fetchImpl, EPMC_TIMEOUT_MS))).filter((c) => c.kind === "report"),
     ),
   ]);
-  // A paper shows once: the first section it appears in keeps it.
+  // A paper shows once: the first section it appears in keeps it, matched by id, PubMed id or DOI.
   const seen = new Set<string>();
-  return secs.map((sec) => ({ ...sec, ...(broadenedNote[sec.key] ? { broadened: broadenedNote[sec.key] } : {}), results: sec.results.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true))) }));
+  const keys = (c: Candidate) => [c.id, c.pmid && `pmid:${c.pmid}`, c.doi && `doi:${c.doi.toLowerCase()}`].filter(Boolean) as string[];
+  const first = (c: Candidate) => {
+    const k = keys(c);
+    if (k.some((x) => seen.has(x))) return false;
+    k.forEach((x) => seen.add(x));
+    return true;
+  };
+  return secs.filter((s): s is LandscapeSection => s !== null).map((sec) => ({ ...sec, ...(broadenedNote[sec.key] ? { broadened: broadenedNote[sec.key] } : {}), results: sec.results.filter(first) }));
 }

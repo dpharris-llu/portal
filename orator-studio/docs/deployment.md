@@ -27,6 +27,7 @@ Vercel marks each variable as **Config** (readable after saving) or **Secret** (
 | `ANTHROPIC_API_KEY` | **Secret** | Claude Console (console.anthropic.com) → API keys | Claude on the server. Takes effect only when the Supabase variables are set, so only signed-in people can use it. Set a monthly spending limit in the console. |
 | `AI_MONTHLY_BUDGET_USD` | Config | Your choice, for example `25` | Optional. A monthly limit on the estimated Claude cost, per tenant. When this month's estimate reaches it, Claude requests are refused until the 1st; the usage page warns at 80%. A safety net on top of the console's own spending limit. |
 | `NCBI_API_KEY` | **Secret** | NCBI: sign in at ncbi.nlm.nih.gov → Account settings → **API Key Management** → Create | Optional. Raises PubMed's limit from about 3 to 10 requests a second, so discovery doesn't hit "too many requests" (429) on Vercel's shared addresses. The app already paces and retries without it. |
+| `OPENALEX_API_KEY` | **Secret** | openalex.org: create a free account and API key | Optional. Raises OpenAlex's daily limit for the "Research in all fields" part of Discover. Without it, OpenAlex is searched with the free anonymous allowance. |
 | `SOURCE_ALLOWED_HOSTS` | Config | Your choice, for example `api.open-meteo.com` | Hosts that data URL sources may be fetched from. Empty means any public host. Database searches (PubMed, Europe PMC, ClinicalTrials.gov) don't use this list. |
 | `REQUIRE_SIGN_IN` | Config | `1` | Only for hosts other than Vercel: turns off Claude and URL fetching when sign-in isn't configured. Automatic on Vercel. |
 
@@ -66,7 +67,7 @@ The estimate is for watching spend; the bill is in the Claude Console → **Usag
 
 ## Checks
 
-- **Database connections:** open `https://<your-vercel-address>/api/sources/search`. It reports whether Europe PMC, PubMed and ClinicalTrials.gov answer from Vercel, and how fast. On Nov 28, 2026: PubMed 136 ms, ClinicalTrials.gov 75 ms, Europe PMC 8.4 s (which is why paper searches go to PubMed first).
+- **Database connections:** open `https://<your-vercel-address>/api/sources/search`. It reports whether Europe PMC, PubMed, ClinicalTrials.gov and OpenAlex answer from Vercel, and how fast. On Nov 28, 2026: PubMed 136 ms, ClinicalTrials.gov 75 ms, Europe PMC 8.4 s (which is why paper searches go to PubMed first).
 - **Sign-in emails:** Supabase's built-in email sender allows only a few emails an hour. Fine for one person; set up a transactional email service (Supabase → Authentication → Emails → SMTP) before inviting colleagues.
 - **Free plans:** Vercel's Hobby plan is for personal, non-commercial use, so move to Pro or an LLU arrangement before colleagues rely on it. Supabase free projects pause after a period without use and need a click to resume. Check both providers' current terms.
 

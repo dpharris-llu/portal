@@ -3,7 +3,7 @@
  * databases only. Results are candidates; nothing enters the workspace until
  * the author adds it, and what is added is read and checked like any source.
  */
-export type Provider = "europepmc" | "clinicaltrials";
+export type Provider = "europepmc" | "clinicaltrials" | "openalex";
 
 export interface Candidate {
   provider: Provider;
@@ -19,7 +19,7 @@ export interface Candidate {
   pmcid?: string;
   abstract: string;
   /** What can be read: the full text (open access), the abstract only, or the registry record. */
-  access: "full text" | "abstract" | "registry record";
+  access: "full text" | "abstract" | "registry record" | "link only";
   /** The public page for the record. */
   url: string;
   /** Short facts for the list: trial status, enrollment, publication type. */
@@ -39,11 +39,12 @@ export interface SearchOptions {
 export const PROVIDERS: Record<Provider, { name: string; covers: string }> = {
   europepmc: { name: "Papers and reports", covers: "PubMed, the NIH's database of journal articles (including CDC's MMWR), with free full texts from PubMed Central; plus government reports from NCBI Bookshelf (such as AHRQ evidence reviews) and preprints, through Europe PMC" },
   clinicaltrials: { name: "Registered trials", covers: "ClinicalTrials.gov, the U.S. National Library of Medicine's registry of clinical studies" },
+  openalex: { name: "All fields", covers: "OpenAlex, open data on scholarly works in every field: education, social sciences, business, engineering, the humanities, as well as medicine" },
 };
 
 /** One part of the discovery landscape (F-020). */
 export interface LandscapeSection {
-  key: "strongest" | "newest" | "ongoing" | "reports";
+  key: "strongest" | "newest" | "allfields" | "ongoing" | "reports";
   title: string;
   note: string;
   results: Candidate[];

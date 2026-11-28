@@ -189,6 +189,8 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 | F-020 | Curate | Discover: from the topic, build the current landscape from named databases (F-119): systematic reviews, meta-analyses and guidelines first, then the newest studies, ongoing trials and government reports, with dates prominent. Each result is a candidate until the author adds it. Sources the author brings are marked as theirs; discovered ones as discovered | P0 |
 | F-119 | Curate | Find sources: search named scientific and government databases from the workspace. PubMed at the NIH (journal articles, including CDC's MMWR) with open-access full text from PubMed Central; Europe PMC alongside for NCBI Bookshelf government reports and preprints; and ClinicalTrials.gov. PubMed comes first because it answers fast (about 0.1 s from the host, against about 8 s for Europe PMC). Claude may write the search from the author's words; the author sees and can edit it. Results show access (free full text, abstract only, or registry record). Nothing is added unless the author chooses it; added sources are read and checked like uploads (open-access full text by section; otherwise the abstract, labeled as such; trials as their registry record), or, without Claude, the author ticks sentences to keep word for word. A probe that finds a gap can propose a search | P0 |
 | F-023 | Curate | Follow a thread: from a source, find newer work that cites it or is closely related, as candidates | P1 |
+| F-121 | Curate | Source catalog and selection: one curated list of searchable sources (spec 10, Source scope), each with its kind of evidence, owner, coverage, access and status (live or planned); the author chooses per presentation which live sources Discover searches, and the choice is saved with the presentation. Each Discover run is kept as a search record (sources, searches, who wrote them, date, counts) | P0 |
+| F-122 | Curate | Claude proposes where to search: from the topic, Claude chooses which catalog sources fit, with a one-line reason for each, and writes the searches (PubMed syntax, and plain keywords for the others). The author's own choice, once made, always wins; Claude's reasons stay visible beside each source | P0 |
 | F-120 | Curate | Keep watching: re-run a presentation's discovery searches on request or on a schedule, and flag sources published since the last look, so a presentation given again is still current | P2 |
 
 **Evidence: the author's own sources**
@@ -379,7 +381,7 @@ AI is used where it saves real effort, and always as a proposal the user can ins
    - Each point of the outline must cite confirmed findings. A point with a number that is not in the findings it cites is left out.
    - Each point states how strong and how consistent the evidence is and what it does not cover. Claude's general knowledge is labeled and kept to speaker notes, as in F-013.
 8. **Images are not evidence unless sourced.** AI-generated images are illustrations, labeled as such, and never shown as patients, scans, results or data. Evidence images carry their source, and anything read from them is confirmed before use.
-9. **Only the author's sources, found in named databases.** AI reads only the sources the author added to the presentation. There is no open web search: Find sources (F-119) searches named scientific and government databases (PubMed and PubMed Central at the NIH; Europe PMC for NCBI Bookshelf reports and preprints; ClinicalTrials.gov), and a result enters the workspace only when the author adds it, after which it is read and checked like any source. URL fetches go only to hosts on the institution's allowed list.
+9. **Only the author's sources, found in named databases.** AI reads only the sources the author added to the presentation. There is no open web search: Find sources (F-119) searches named scientific and government databases from the source catalog (F-121: PubMed and PubMed Central at the NIH; OpenAlex for every field; Europe PMC for NCBI Bookshelf reports and preprints; ClinicalTrials.gov), and a result enters the workspace only when the author adds it, after which it is read and checked like any source. URL fetches go only to hosts on the institution's allowed list.
 
 **Evaluation.** Each AI capability has a test set built from real LLU decks (with permission). Targets for the first release: at least 90% of AI-proposed outlines accepted with minor edits, under 1% of drafted slides containing an unsupported figure, and search top-3 recall of at least 95% on a labeled query set. These targets are starting points to revise after the first measurements.
 
@@ -392,7 +394,48 @@ In the order of the journey: the sources a presentation draws on (found by disco
 - From the topic, the server searches named databases only, at fixed endpoints: PubMed and PubMed Central at the NIH (journal articles, including CDC's MMWR, and free full texts), ClinicalTrials.gov (registered and ongoing studies), and Europe PMC for NCBI Bookshelf government reports and preprints. PubMed comes first because it answers fastest from the host.
 - The landscape has four parts: strongest evidence (systematic reviews, meta-analyses, guidelines, newest first), the newest primary studies, ongoing trials, and government reports. A result appears once, in the first part it fits.
 - Claude may write the PubMed search from the topic; it is shown and editable. Without Claude, the topic's words are searched as typed.
-- Each result shows its date and how much can be read: free full text (read by section, with quotes checked against the text), abstract only (labeled wherever it is used), or the registry record. Nothing enters the workspace until the author adds it.
+- Each result shows its date and how much can be read: free full text (read by section, with quotes checked against the text), abstract only (labeled wherever it is used), the registry record, or a link only (no abstract available: the author opens it and uploads the PDF). Nothing enters the workspace until the author adds it.
+- Which databases are searched is decided in layers, below (F-121, F-122). OpenAlex adds a fifth part, research in all fields, when chosen.
+
+**Source scope: which databases, and who decides (F-121, F-122)**
+
+OratorStudio serves presenters on any topic, so the question is not which databases a topic needs but which kinds of evidence presenters rely on, and the smallest set of sources that covers them. Each kind gets one general source that works for almost any topic; specialist sources are added only where real use shows the general one falls short.
+
+| Kind of evidence | Example point it supports | General source | Status |
+| --- | --- | --- | --- |
+| Research findings | "Coached walking lowered HbA1c 0.5 points" | PubMed (biomedical depth); OpenAlex (every field) | Live |
+| Statistics | "1 in 10 adults in California has diabetes" | Data Commons (Census, CDC, BLS, WHO, World Bank) | Planned |
+| Guidance and standards | "The USPSTF recommends screening from age 35" | NCBI Bookshelf; guidelines through PubMed; Federal Register for rules | Bookshelf live; Federal Register planned |
+| Work underway | "Three trials are recruiting now" | ClinicalTrials.gov; NIH RePORTER later | Live (clinical) |
+| News and announcements | "The FDA approved this last month" | Government newsrooms (NIH, CDC, FDA, CMS, WHO), EurekAlert!, KFF Health News | Planned |
+| The institution's own | "Our readmissions rose 12%" | Uploads and data URLs; institutional connectors later (F-113) | Live |
+
+*The admission rule.* A database enters the catalog only if it passes all six:
+
+1. **Authority:** scientific, governmental or peer-reviewed. No open web, no social media.
+2. **Verifiability:** every record has a stable id, a date and quotable text, so the checks work.
+3. **Access:** a documented API whose terms allow this use, with workable rate limits.
+4. **Coverage gain:** it adds evidence the catalog misses, not duplicates.
+5. **Cost and upkeep:** licensing, keys, how often the API changes.
+6. **Privacy:** search terms leave the institution; acceptable for the topics people search.
+
+A source that fails 1 or 2 is out however popular. Licensed library databases (Scopus, CINAHL, Web of Science) pass 1 and 2 but need the institution's subscriptions, so they belong to the institution layer.
+
+*Three layers decide what is searched.*
+
+| Layer | Who | Decides |
+| --- | --- | --- |
+| 1. The catalog | The product owner and the developer | Which sources OratorStudio can search at all, by the admission rule. Kept in one list in code (`src/find/catalog.ts`): name, owner, kind of evidence, coverage, access, status |
+| 2. The institution (later) | An institution administrator | Which catalog sources are on for the institution, plus what it licenses (library databases, a wire service) |
+| 3. The presentation | The author | Which sources to search for this topic. Claude proposes a choice per topic with a one-line reason for each source; the author ticks and unticks from there, and the choice is saved with the presentation |
+
+*News is a different kind of evidence.* A news story is usually secondary: it reports a study, a policy or an event. News comes in labeled "News, not peer-reviewed", is used for context and as a lead, and each news fact offers "Find the original study" so the point cites the primary source. Free, authoritative sources first; AP or Reuters only under a license the institution already holds; GDELT later for broad coverage.
+
+*The search record.* Each presentation keeps what was searched: which sources, which searches, who wrote them (Claude or the author), when, and how many results each part found (full results for the latest three runs). It can be shown like a methods section ("Sources searched: PubMed, OpenAlex, ClinicalTrials.gov, Nov 28, 2026"), on the references slide and in the brief, and it makes "nothing found" meaningful.
+
+*How the catalog grows: measured, not guessed.*
+- **An evaluation set** of 25 to 30 real topics across the institution's range (medicine, nursing, public health, dentistry, allied health, education, administration, religion and ethics). Discover runs on each; someone who knows each field judges whether the results were relevant and what was missing. Each gap points at a source to add, and the set is rerun after every change, as a test.
+- **Usage signals**, aggregate only, no content stored: searches that come back empty, the sections authors add sources from, what authors upload that discovery never found, and what Claude's "search for…" proposals ask for.
 
 **Sources: uploads and URLs (F-014, F-112, F-113)**
 
@@ -599,7 +642,8 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 - [ ] Which image provider will LLU approve, and is it already covered by an existing Microsoft or Google agreement, including a BAA?
 - [ ] Should institution-assigned AI keys be one per person, or one institutional key with usage tracked per person (F-114)?
 - [ ] Should a written brief from Curate (F-016) follow an LLU template?
-- [ ] Which databases should discovery add next: OpenAlex (all fields), CDC and CMS data, IPEDS for institutional comparisons?
+- [ ] Which databases after the planned ones (Data Commons, Federal Register, the news tier): CDC and CMS data directly, IPEDS for institutional comparisons, NIH RePORTER for funded work? Decide from the evaluation set.
+- [ ] Which 25 to 30 topics make the evaluation set, and who judges the results in each field?
 - [ ] Can LLU's library provide access to paywalled full texts, so discovery is not limited to abstracts for those papers? Learning mode (F-209) needs the library's link format so students reach full texts.
 - [ ] For learning mode (F-209): which courses pilot it, how strict should the default be (coaching only, or reading unlocked after the student's own summary), and should the research record (F-210) go to Canvas with the submission (F-205)?
 - [ ] Which recurring reports (finance, enrollment, accreditation) do admins build decks from, and in which formats: PDF, Excel, or a reporting system?

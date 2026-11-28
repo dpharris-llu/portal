@@ -40,7 +40,7 @@ export async function candidateDoc(c: Candidate): Promise<{ doc: SourceDoc; note
     citation: citationOf(c),
     short: c.provider === "clinicaltrials" ? c.id : shortFor(c),
     url: c.url,
-    access: c.access,
+    access: c.access === "link only" ? ("abstract" as const) : c.access,
     origin: "discovered" as const,
     ...(c.year ? { year: c.year } : {}),
   };
@@ -55,7 +55,7 @@ export async function candidateDoc(c: Candidate): Promise<{ doc: SourceDoc; note
       note = "The full text couldn't be fetched, so only the abstract is used.";
     }
   }
-  if (!c.abstract) throw new Error("This record has no abstract to read. Upload the PDF if you have it.");
+  if (!c.abstract) throw new Error("This record has no abstract to read. Open the link, and upload the PDF if you can get it.");
   return { note, doc: { name: c.title, pages: [{ page: 1, text: c.abstract }], labels: { 1: "Abstract" }, meta: { ...meta, access: "abstract" }, context: "Only the abstract is available. Extract findings from the abstract alone and note that the full paper was not read." } };
 }
 
@@ -66,7 +66,7 @@ export function CandidateCard({ c, inWorkspace, busy, onAdd }: { c: Candidate; i
       <strong className="cand-title">{c.title}</strong>
       <span className="small muted">{[c.authors.slice(0, 3).join(", ") + (c.authors.length > 3 ? " et al." : ""), c.venue, c.year].filter(Boolean).join(" · ")}</span>
       <span className="row small">
-        <span className={c.access === "full text" ? "pill ok" : c.access === "registry record" ? "pill navy" : "pill"}>{c.access === "full text" ? "Free full text" : c.access === "abstract" ? "Abstract only" : "Registry record"}</span>
+        <span className={c.access === "full text" ? "pill ok" : c.access === "registry record" ? "pill navy" : "pill"}>{c.access === "full text" ? "Free full text" : c.access === "abstract" ? "Abstract only" : c.access === "link only" ? "Link only" : "Registry record"}</span>
         {c.badges.map((b) => <span key={b} className="pill">{b}</span>)}
       </span>
       {c.abstract && (
@@ -78,7 +78,13 @@ export function CandidateCard({ c, inWorkspace, busy, onAdd }: { c: Candidate; i
       <span className="row">
         <a className="small" href={c.url} target="_blank" rel="noopener noreferrer">View the record</a>
         <span className="spacer" />
-        {inWorkspace ? <span className="pill ok">In the workspace</span> : <button className="small primary" disabled={busy} onClick={onAdd}>Add to workspace</button>}
+        {inWorkspace ? (
+          <span className="pill ok">In the workspace</span>
+        ) : c.access === "link only" ? (
+          <span className="small muted">No abstract to read here: open it, and upload the PDF to add it</span>
+        ) : (
+          <button className="small primary" disabled={busy} onClick={onAdd}>Add to workspace</button>
+        )}
       </span>
     </li>
   );

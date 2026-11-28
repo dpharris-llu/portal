@@ -102,6 +102,10 @@ export interface SearchRecord {
   note?: string;
   /** Who wrote the query: Claude, or the author. */
   by: "claude" | "author";
+  /** Catalog sources searched (src/find/catalog.ts). */
+  sources?: string[];
+  /** Plain keywords used for OpenAlex and ClinicalTrials.gov. */
+  words?: string;
   counts: { key: string; title: string; n: number }[];
   sections?: LandscapeSection[];
 }
@@ -151,11 +155,15 @@ export interface Argument {
   facts?: Fact[];
   probes?: Probe[];
   searches?: SearchRecord[];
+  /** Catalog sources Discover searches for this presentation (src/find/catalog.ts); the standard set when unset. */
+  sourceScope?: string[];
+  /** Claude's reason for using or skipping each source, from the last plan. */
+  sourceReasons?: Record<string, { use: boolean; why: string }>;
   /** Number of operations applied. */
   version: number;
 }
 
-export type ArgFields = Pick<Argument, "title" | "topic" | "purpose" | "audience" | "takeaway" | "thesis" | "openQuestions" | "recommendation" | "nextSteps">;
+export type ArgFields = Pick<Argument, "title" | "topic" | "purpose" | "audience" | "takeaway" | "thesis" | "openQuestions" | "recommendation" | "nextSteps" | "sourceScope" | "sourceReasons">;
 
 export type ArgOpBody =
   | { kind: "arg.set"; patch: Partial<ArgFields> }
@@ -313,7 +321,7 @@ export function changesSince(log: ArgOp[], version: number): { points: Set<Id>; 
   let framing = false;
   for (const op of later) {
     const b = op.body;
-    if (b.kind === "arg.set") framing = framing || Object.keys(b.patch).some((k) => k !== "title");
+    if (b.kind === "arg.set") framing = framing || Object.keys(b.patch).some((k) => !["title", "sourceScope", "sourceReasons"].includes(k));
     else if (b.kind === "point.put") points.add(b.point.id);
     else if (b.kind === "point.delete" || b.kind === "point.move") points.add(b.pointId);
   }

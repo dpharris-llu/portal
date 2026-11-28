@@ -5,7 +5,7 @@ import { claudeJson, guard } from "@/ai/server-claude";
 
 export const dynamic = "force-dynamic";
 
-const Body = z.object({ provider: z.enum(["europepmc", "clinicaltrials"]), want: z.string().min(2).max(1000), purpose: z.string().max(2000), thesis: z.string().max(1000) });
+const Body = z.object({ provider: z.enum(["europepmc", "clinicaltrials", "openalex"]), want: z.string().min(2).max(1000), purpose: z.string().max(2000), thesis: z.string().max(1000) });
 
 /** Claude writes a database search from the author's words (F-119). */
 export async function POST(request: Request) {

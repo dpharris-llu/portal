@@ -62,3 +62,14 @@ describe("fitToLimits", () => {
     expect(Answer.safeParse(v).success).toBe(true);
   });
 });
+
+import { DiscoverPlan, discoverPlanPrompt } from "./search";
+describe("discover plan", () => {
+  it("is accepted by structured output and lists only live sources as choices", () => {
+    const s = JSON.stringify(outputSchema(DiscoverPlan));
+    expect(s).not.toMatch(/maxLength|maxItems/);
+    const p = discoverPlanPrompt({ topic: "t", purpose: "", thesis: "" });
+    expect(p).toContain("- openalex: OpenAlex");
+    expect(p).not.toContain("- datacommons:");
+  });
+});

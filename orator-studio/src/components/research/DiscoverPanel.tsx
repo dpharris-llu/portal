@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import type { ArgOpBody, Argument, SearchRecord } from "@/model/argument";
 import { newId } from "@/model/ids";
 import type { Candidate, LandscapeSection } from "@/find/types";
-import { SearchPlan, searchPlanPrompt } from "@/ai/search";
+import { DiscoverPlan, discoverPlanPrompt } from "@/ai/search";
+import { CATALOG, cleanSelection, LIVE, sourceName } from "@/find/catalog";
 import { askClaudeFor, claudeAvailable, type Transport } from "@/ai/analysis-client";
 import { CandidateCard, candidateDoc, post } from "./FindSources";
 import { ReadAndPick, type SourceDoc } from "./ReadAndPick";
@@ -22,6 +23,10 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
   const [transport, setTransport] = useState<Transport | null | undefined>(undefined);
   const [query, setQuery] = useState(last?.query ?? "");
   const [broader, setBroader] = useState(last?.broader ?? "");
+  const [words, setWords] = useState(last?.words ?? "");
+  const chosen = cleanSelection(arg.sourceScope);
+  const reasons = arg.sourceReasons ?? {};
+  const [showSources, setShowSources] = useState(false);
   const [note, setNote] = useState(last?.note ?? "");
   const [sections, setSections] = useState<LandscapeSection[] | null>(last?.sections ?? null);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -35,35 +40,56 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
 
   const inWorkspace = new Set((arg.sources ?? []).filter((s) => s.status === "active").map((s) => s.url).filter(Boolean));
 
+  function toggleSource(id: string) {
+    const next = chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id];
+    if (!next.length) return;
+    apply([{ kind: "arg.set", patch: { sourceScope: cleanSelection(next) } }], `${chosen.includes(id) ? "Stopped searching" : "Searching"} ${sourceName(id)}`);
+  }
+
+  /**
+   * Discover: with no search yet, Claude plans it (the searches, and which
+   * sources fit the topic, with reasons), unless the author has already chosen
+   * the sources. "Run" uses the search as edited.
+   */
   async function discover(useQuery?: string) {
     if (topic.length < 2) return;
     setError("");
     setSections(null);
-    let q = useQuery ?? query;
-    let wide = broader;
+    // A changed topic needs a new plan, not the last topic's searches.
+    const stale = Boolean(last && last.topic !== topic);
+    let q = useQuery ?? (stale ? "" : query);
+    let wide = stale ? "" : broader;
+    let plain = stale ? "" : words;
     let plannedNote = note;
+    let scope = chosen;
     let by: SearchRecord["by"] = useQuery !== undefined ? "author" : query ? (last?.by ?? "claude") : "claude";
     try {
       if (!q && transport) {
-        setBusy("Claude is writing the searches from your topic…");
+        setBusy("Claude is choosing where to search and writing the searches…");
         try {
-          const req = { provider: "europepmc" as const, want: topic, purpose: arg.purpose, thesis: arg.thesis };
+          const req = { topic, purpose: arg.purpose, thesis: arg.thesis };
           const { value } = await askClaudeFor({
-            prompt: searchPlanPrompt(req),
+            prompt: discoverPlanPrompt(req),
             parse: (raw) => {
-              const r = SearchPlan.safeParse(raw);
+              const r = DiscoverPlan.safeParse(raw);
               return r.success ? r.data : null;
             },
-            route: "/api/sources/plan",
+            route: "/api/sources/discover-plan",
             payload: req,
             key: "value",
           });
           q = value.query;
-          setQuery(value.query);
-          setBroader(value.broader ?? "");
           wide = value.broader ?? "";
+          plain = value.words;
           plannedNote = value.note;
-          setNote(value.note);
+          setQuery(q);
+          setBroader(wide);
+          setWords(plain);
+          setNote(plannedNote);
+          const why = Object.fromEntries(value.sources.filter((x) => LIVE.some((l) => l.id === x.id)).map((x) => [x.id, { use: x.use, why: x.why }]));
+          // Claude's choice applies only while the author hasn't chosen.
+          if (!arg.sourceScope) scope = cleanSelection(value.sources.filter((x) => x.use).map((x) => x.id));
+          apply([{ kind: "arg.set", patch: { sourceReasons: why, ...(arg.sourceScope ? {} : { sourceScope: scope }) } }], "Claude proposed where to search");
         } catch {
           q = topic;
         }
@@ -72,8 +98,9 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
         q = topic;
         by = "author";
       }
-      setBusy("Searching PubMed, ClinicalTrials.gov and government reports…");
-      const { sections } = await post<{ sections: LandscapeSection[] }>("/api/sources/landscape", { query: q, words: topic, ...(wide ? { broader: wide } : {}) });
+      if (!plain) plain = topic;
+      setBusy(`Searching ${scope.map(sourceName).join(", ")}…`);
+      const { sections } = await post<{ sections: LandscapeSection[] }>("/api/sources/landscape", { query: q, words: topic, plain, sources: scope, ...(wide ? { broader: wide } : {}) });
       setSections(sections);
       const record: SearchRecord = {
         id: newId("srch"),
@@ -81,8 +108,10 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
         topic,
         query: q,
         ...(wide ? { broader: wide } : {}),
+        words: plain,
         ...(plannedNote ? { note: plannedNote } : {}),
         by,
+        sources: scope,
         counts: sections.map((s) => ({ key: s.key, title: s.title, n: s.results.length })),
         sections,
       };
@@ -136,9 +165,37 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
             <button className="primary" disabled={Boolean(busy)} onClick={() => discover()}>{sections ? "Discover again" : "Discover"}</button>
             {busy && <span className="small" role="status">{busy}</span>}
           </div>
+          <div className="source-scope">
+            <button className="small ghost" aria-expanded={showSources} onClick={() => setShowSources((v) => !v)}>
+              Where to search: {chosen.map(sourceName).join(", ")} {showSources ? "▴" : "▾"}
+            </button>
+            {showSources && (
+              <ul className="source-list">
+                {CATALOG.map((src) => {
+                  const live = src.status === "live";
+                  const r = reasons[src.id];
+                  return (
+                    <li key={src.id} className={live ? "" : "muted"}>
+                      <label className="row" style={{ alignItems: "flex-start", flexWrap: "nowrap", gap: 10 }}>
+                        <input type="checkbox" disabled={!live || Boolean(busy)} checked={live && chosen.includes(src.id)} onChange={() => toggleSource(src.id)} style={{ marginTop: 3 }} />
+                        <span className="stack" style={{ gap: 2 }}>
+                          <span>
+                            <strong>{src.name}</strong> <span className="small muted">· {src.owner}</span> {!live && <span className="pill">Coming</span>}
+                          </span>
+                          <span className="small muted">{src.covers}.</span>
+                          {r && live && <span className="small">Claude: {r.use ? "use" : "skip"}, {r.why}</span>}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+                <li className="small muted">Your choice is saved with this presentation. Click Discover again to search the new selection.</li>
+              </ul>
+            )}
+          </div>
           {(query || note) && (
             <label className="small">
-              Search used for PubMed (edit and run again if you like)
+              Search used for PubMed (edit and run again if you like){words && chosen.some((id) => id === "openalex" || id === "clinicaltrials") ? `; other databases searched for: ${words}` : ""}
               <span className="row" style={{ flexWrap: "nowrap" }}>
                 <input value={query} onChange={(e) => setQuery(e.target.value)} />
                 <button className="small" disabled={Boolean(busy) || query.trim().length < 2} onClick={() => discover(query)}>Run</button>
