@@ -63,3 +63,36 @@ describe("Bible lookup on the server", () => {
     delete process.env.API_BIBLE_KEY;
   });
 });
+
+describe("finding passages", () => {
+  it("reads a word search's verses", async () => {
+    const { readSearch } = await import("./bible");
+    const r = readSearch({ data: { total: 42, verses: [{ reference: "Mark 2:27", text: " Sample  verse. " }, { reference: "", text: "x" }] }, meta: { fumsToken: "t" } });
+    expect(r).toEqual({ verses: [{ reference: "Mark 2:27", text: "Sample verse." }], total: 42, fumsToken: "t" });
+  });
+
+  it("asks Claude for references only, never the wording, and accepts its answer shape", async () => {
+    const { passagePrompt, PassageIdeas } = await import("@/ai/passages");
+    const { outputSchema } = await import("@/ai/schema");
+    const p = passagePrompt({ theme: "Sabbath rest and health", topic: "", message: "", already: ["Mark 2:27"] });
+    expect(p).toContain("Never quote the text");
+    expect(p).toContain("Mark 2:27");
+    expect(JSON.stringify(outputSchema(PassageIdeas))).not.toMatch(/maxLength|maxItems/);
+    expect(PassageIdeas.safeParse({ passages: [{ reference: "Mark 2:27", why: "Rest serves people." }], note: "n" }).success).toBe(true);
+  });
+
+  it("searches the chosen version on the server", async () => {
+    process.env.API_BIBLE_KEY = "test-key";
+    const { searchWords } = await import("./bible-server");
+    const urls: string[] = [];
+    const fake = (async (url: string) => {
+      urls.push(url);
+      if (url.includes("/bibles?")) return new Response(JSON.stringify({ data: [{ id: "78a9f6124f344018-01", abbreviation: "NIV11", name: "New International Version 2011", language: { id: "eng" } }] }));
+      return new Response(JSON.stringify({ data: { total: 1, verses: [{ reference: "Mark 2:27", text: "Sample." }] } }));
+    }) as unknown as typeof fetch;
+    const r = await searchWords("sabbath rest", "NIV", fake);
+    expect(r.verses).toHaveLength(1);
+    expect(urls.at(-1)).toContain("/bibles/78a9f6124f344018-01/search?query=sabbath%20rest&limit=20&sort=relevance");
+    delete process.env.API_BIBLE_KEY;
+  });
+});

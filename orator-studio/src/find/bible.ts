@@ -211,3 +211,14 @@ export const needsRefresh = (fetchedAt: string | undefined, now = Date.now()) =>
 
 export const TPT_NOTICE =
   "Scripture quotations marked TPT are taken from The Passion Translation®. Copyright © 2017, 2018, 2020 by Passion & Fire Ministries, Inc. Used by permission. All rights reserved. ThePassionTranslation.com.";
+
+export type VerseHit = { reference: string; text: string };
+
+/** A word search's verses (API.Bible /search), as plain text. */
+export function readSearch(json: unknown): { verses: VerseHit[]; total: number; fumsToken?: string } {
+  const d = (json as { data?: { total?: number; verses?: { reference?: string; text?: string }[] }; meta?: { fumsToken?: string } }) ?? {};
+  const verses = (d.data?.verses ?? [])
+    .map((v) => ({ reference: (v.reference ?? "").trim(), text: (v.text ?? "").replace(/\s+/g, " ").trim() }))
+    .filter((v) => v.reference && v.text);
+  return { verses, total: d.data?.total ?? verses.length, ...(d.meta?.fumsToken ? { fumsToken: d.meta.fumsToken } : {}) };
+}

@@ -27,6 +27,7 @@ export const TASK_LABEL: Record<string, string> = {
   synthesize: "Compare papers",
   analyze_figures: "Analyze figures",
   outline: "Draft an outline",
+  bible_passages: "Find Bible passages",
 };
 
 function empty(): Totals {

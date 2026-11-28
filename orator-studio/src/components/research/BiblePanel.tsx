@@ -10,6 +10,8 @@
  * (useScriptureRefresh).
  */
 import { useEffect, useRef, useState } from "react";
+import { PassageIdeas, passagePrompt } from "@/ai/passages";
+import { askClaudeFor, claudeAvailable, ClaudeError } from "@/ai/analysis-client";
 import { nextId, type ArgOpBody, type Argument, type Fact, type WorkspaceSource } from "@/model/argument";
 import { formatReference, needsRefresh, parseReference, TPT_NOTICE, VERSIONS, type Passage, type Version } from "@/find/bible";
 import { post } from "./FindSources";
@@ -63,25 +65,53 @@ export function passageBodies(a: Argument, p: { reference: string; version: stri
   ];
 }
 
-export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: (b: ArgOpBody[], reason: string) => void; onDone: () => void }) {
-  const [status, setStatus] = useState<{ available: boolean; versions: Version[]; error?: string } | null>(null);
+type Status = { available: boolean; versions: Version[]; error?: string };
+type Apply = (b: ArgOpBody[], reason: string) => void;
+
+export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: Apply; onDone: () => void }) {
+  const [status, setStatus] = useState<Status | null>(null);
+  const [tab, setTab] = useState<"find" | "look">("find");
+  useEffect(() => {
+    fetch("/api/sources/bible", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setStatus)
+      .catch(() => setStatus({ available: false, versions: [] }));
+  }, []);
+  return (
+    <div className="add-box stack" style={{ gap: 10 }}>
+      <div className="row">
+        <strong style={{ flex: 1 }}>Bible passages</strong>
+        <span className="segmented" role="tablist" aria-label="How to add">
+          <button role="tab" aria-selected={tab === "find"} className={tab === "find" ? "small primary" : "small"} onClick={() => setTab("find")}>Find passages</button>
+          <button role="tab" aria-selected={tab === "look"} className={tab === "look" ? "small primary" : "small"} onClick={() => setTab("look")}>Look up a reference</button>
+        </span>
+      </div>
+      <p className="small muted" style={{ margin: 0 }}>Scripture is kept as its own kind of source: quoted word for word with its version, and never presented as a research finding.</p>
+      {status && !status.available && (
+        <p className="small notice" style={{ margin: 0 }}>{status.error ?? "Bible lookup isn't set up on this server yet (API_BIBLE_KEY)."} You can still enter The Passion Translation yourself under Look up a reference.</p>
+      )}
+      {tab === "find" ? <FindPassages arg={arg} apply={apply} status={status} /> : <LookUp arg={arg} apply={apply} status={status} onDone={onDone} />}
+      <div className="row">
+        <button className="small ghost" onClick={onDone}>Close</button>
+        <span className="spacer" />
+        <a className="small" href="https://api.bible" target="_blank" rel="noopener noreferrer">Scripture provided by API.Bible</a>
+      </div>
+    </div>
+  );
+}
+
+function LookUp({ arg, apply, status, onDone }: { arg: Argument; apply: Apply; status: Status | null; onDone: () => void }) {
   const [version, setVersion] = useState<Choice>("NIV");
+  useEffect(() => {
+    if (!status) return;
+    if (!status.available) setVersion("TPT");
+    else if (status.versions.length && !status.versions.includes("NIV")) setVersion(status.versions[0]);
+  }, [status]);
   const [ref, setRef] = useState("");
   const [typed, setTyped] = useState("");
   const [passage, setPassage] = useState<Passage | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/sources/bible", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((s) => {
-        setStatus(s);
-        if (s.available && s.versions.length && !s.versions.includes("NIV")) setVersion(s.versions[0]);
-        if (!s.available) setVersion("TPT");
-      })
-      .catch(() => setStatus({ available: false, versions: [] }));
-  }, []);
 
   const parsed = parseReference(ref);
 
@@ -113,16 +143,7 @@ export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: (b: A
   const offered: Choice[] = [...VERSIONS.filter((v) => status?.versions.includes(v.id)).map((v) => v.id), "TPT"];
 
   return (
-    <div className="add-box stack" style={{ gap: 10 }}>
-      <strong>Add a Bible passage</strong>
-      <p className="small muted" style={{ margin: 0 }}>
-        Scripture is kept as its own kind of source: quoted word for word with its version, and never presented as a research finding.
-      </p>
-      {status && !status.available && (
-        <p className="small notice" style={{ margin: 0 }}>
-          {status.error ?? "Bible lookup isn't set up on this server yet (API_BIBLE_KEY)."} You can still enter The Passion Translation yourself.
-        </p>
-      )}
+    <div className="stack" style={{ gap: 10 }}>
       <div className="row" style={{ alignItems: "flex-end" }}>
         <label className="small" style={{ flex: "1 1 200px" }}>
           Reference
@@ -164,10 +185,172 @@ export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: (b: A
 
       <div className="row">
         <button className="small primary" disabled={version === "TPT" ? !parsed || !typed.trim() : !passage} onClick={add}>Add to workspace</button>
-        <button className="small ghost" onClick={onDone}>Cancel</button>
-        <span className="spacer" />
-        <a className="small" href="https://api.bible" target="_blank" rel="noopener noreferrer">Scripture provided by API.Bible</a>
       </div>
+    </div>
+  );
+}
+
+type Found = { reference: string; why?: string; caution?: string; passage?: Passage; text?: string; failed?: string };
+
+/** Run `f` over `items`, a few at a time. */
+async function pool<T, R>(items: T[], n: number, f: (x: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await f(items[i]);
+    }
+  }));
+  return out;
+}
+
+/**
+ * Find passages (F-123): Claude proposes references on a theme, with reasons,
+ * and the app fetches each one's text in the chosen version (a reference that
+ * doesn't exist is left out and said so); or a word search of the version.
+ */
+function FindPassages({ arg, apply, status }: { arg: Argument; apply: Apply; status: Status | null }) {
+  const versions = status?.versions ?? [];
+  const [version, setVersion] = useState<Version>("NIV");
+  useEffect(() => {
+    if (versions.length && !versions.includes(version)) setVersion(versions[0]);
+  }, [versions.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [want, setWant] = useState("");
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const [found, setFound] = useState<Found[] | null>(null);
+  const [note, setNote] = useState("");
+  const [hasClaude, setHasClaude] = useState(false);
+  useEffect(() => {
+    claudeAvailable().then((t) => setHasClaude(Boolean(t)));
+  }, []);
+
+  const inWorkspace = new Set((arg.sources ?? []).filter((s) => s.kind === "scripture" && s.status === "active").map((s) => `${s.reference} (${s.version})`));
+
+  async function fetchText(reference: string): Promise<Passage | string> {
+    try {
+      return (await post<{ passage: Passage }>("/api/sources/bible", { reference, version })).passage;
+    } catch (e) {
+      return e instanceof Error ? e.message : "Not found.";
+    }
+  }
+
+  async function askClaude() {
+    setError("");
+    setFound(null);
+    setNote("");
+    setBusy("Claude is finding passages…");
+    try {
+      const req = { theme: want.trim(), topic: arg.topic ?? "", message: arg.thesis, already: (arg.sources ?? []).filter((s) => s.kind === "scripture" && s.status === "active").map((s) => s.reference ?? s.short) };
+      const { value } = await askClaudeFor({
+        prompt: passagePrompt(req),
+        parse: (raw) => {
+          const r = PassageIdeas.safeParse(raw);
+          return r.success ? r.data : null;
+        },
+        route: "/api/sources/bible/themes",
+        payload: req,
+        key: "value",
+      });
+      setNote(value.note);
+      setBusy(`Fetching ${value.passages.length} passages in the ${version}…`);
+      const rows = await pool(value.passages, 4, async (p): Promise<Found> => {
+        const parsed = parseReference(p.reference);
+        if (!parsed) return { ...p, failed: "Not a reference the app recognizes." };
+        const got = await fetchText(formatReference(parsed));
+        return typeof got === "string" ? { ...p, failed: got } : { ...p, reference: formatReference(parsed), passage: got };
+      });
+      setFound(rows);
+      rows.forEach((r) => reportView(r.passage?.fumsToken));
+    } catch (e) {
+      setError(e instanceof ClaudeError ? e.message : e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function searchWords() {
+    setError("");
+    setFound(null);
+    setNote("");
+    setBusy(`Searching the ${version}…`);
+    try {
+      const r = await post<{ verses: { reference: string; text: string }[]; total: number; fumsToken?: string }>("/api/sources/bible", { words: want.trim(), version });
+      reportView(r.fumsToken);
+      setFound(r.verses.map((v) => ({ reference: v.reference, text: v.text })));
+      setNote(r.total > r.verses.length ? `${r.total} verses contain these words; the best ${r.verses.length} are shown.` : `${r.total} verse${r.total === 1 ? "" : "s"} contain these words.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function addFound(f: Found) {
+    let p = f.passage;
+    if (!p) {
+      // A word-search hit: fetch the verse itself, for its exact text and copyright.
+      setBusy(`Adding ${f.reference}…`);
+      const got = await fetchText(f.reference);
+      setBusy("");
+      if (typeof got === "string") return setError(got);
+      p = got;
+    }
+    apply(passageBodies(arg, p), `Added ${p.reference} (${p.version})`);
+  }
+
+  if (!status?.available) return <p className="small muted" style={{ margin: 0 }}>Finding passages needs Bible lookup on this server.</p>;
+  const ok = (found ?? []).filter((f) => !f.failed);
+  const failed = (found ?? []).filter((f) => f.failed);
+
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      <div className="row" style={{ alignItems: "flex-end" }}>
+        <label className="small" style={{ flex: "1 1 260px" }}>
+          What are you looking for?
+          <input value={want} placeholder="Sabbath rest and health; God's care for the sick; forgiveness" onChange={(e) => setWant(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && want.trim().length > 1 && !busy) (hasClaude ? askClaude : searchWords)(); }} />
+        </label>
+        <label className="small">
+          Version
+          <select value={version} onChange={(e) => setVersion(e.target.value as Version)}>
+            {versions.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="row">
+        {hasClaude && <button className="small primary" disabled={Boolean(busy) || want.trim().length < 2} onClick={askClaude}>Ask Claude for passages</button>}
+        <button className={hasClaude ? "small" : "small primary"} disabled={Boolean(busy) || want.trim().length < 2} onClick={searchWords}>Search for these words</button>
+        {busy && <span className="small" role="status">{busy}</span>}
+      </div>
+      <p className="small muted" style={{ margin: 0 }}>Claude suggests references by theme and why each fits; the wording always comes from the {version} itself. Word search finds verses containing all your words.</p>
+      {error && <p className="small error" role="alert" style={{ margin: 0 }}>{error}</p>}
+      {note && <p className="small" style={{ margin: 0 }}>{note}</p>}
+      {ok.length > 0 && (
+        <ul className="candidates">
+          {ok.map((f) => {
+            const label = `${f.passage?.reference ?? f.reference} (${f.passage?.version ?? version})`;
+            const have = inWorkspace.has(label);
+            return (
+              <li key={label} className="candidate">
+                <strong className="cand-title">{label}</strong>
+                {f.why && <span className="small">{f.why}</span>}
+                {f.caution && <span className="small warn-text">Note: {f.caution}</span>}
+                <blockquote className="scripture">
+                  <p style={{ margin: 0 }}>{f.passage?.text ?? f.text}</p>
+                  {f.passage?.copyright && <footer className="small muted">{f.passage.copyright}</footer>}
+                </blockquote>
+                <span className="row">
+                  <span className="spacer" />
+                  {have ? <span className="pill ok">In the workspace</span> : <button className="small primary" disabled={Boolean(busy)} onClick={() => addFound(f)}>Add to workspace</button>}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {failed.length > 0 && <p className="small muted" style={{ margin: 0 }}>Left out, because the {version} text couldn&apos;t be fetched: {failed.map((f) => f.reference).join(", ")}.</p>}
+      {found && found.length === 0 && <p className="small muted" style={{ margin: 0 }}>Nothing found. Try other words, or ask Claude by theme.</p>}
     </div>
   );
 }

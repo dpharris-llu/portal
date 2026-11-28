@@ -1,6 +1,6 @@
 import "server-only";
 /** Server calls to API.Bible (F-123). The key (API_BIBLE_KEY) never leaves the server. */
-import { API_BIBLE_BASE, apiId, formatReference, parseReference, pickBible, readPassage, VERSIONS, type Passage, type Version } from "./bible";
+import { API_BIBLE_BASE, apiId, formatReference, parseReference, pickBible, readPassage, readSearch, VERSIONS, type Passage, type Version, type VerseHit } from "./bible";
 
 const TIMEOUT_MS = 15000;
 const base = () => process.env.API_BIBLE_BASE || API_BIBLE_BASE;
@@ -37,10 +37,12 @@ async function call(path: string, fetchImpl: typeof fetch = fetch): Promise<unkn
 type BibleRow = { id: string; abbreviation?: string; name?: string; language?: { id?: string } };
 let index: { at: number; rows: BibleRow[] } | null = null;
 async function bibles(fetchImpl?: typeof fetch): Promise<BibleRow[]> {
-  if (index && Date.now() - index.at < 3_600_000) return index.rows;
+  // A supplied fetch (tests) always asks afresh and leaves the cache alone.
+  if (!fetchImpl && index && Date.now() - index.at < 3_600_000) return index.rows;
   const json = (await call("/bibles?language=eng", fetchImpl)) as { data?: BibleRow[] };
-  index = { at: Date.now(), rows: json.data ?? [] };
-  return index.rows;
+  const rows = json.data ?? [];
+  if (!fetchImpl) index = { at: Date.now(), rows };
+  return rows;
 }
 
 /** Which versions this account can use. */
@@ -61,4 +63,14 @@ export async function lookUp(reference: string, version: Version, fetchImpl?: ty
   const passage = readPassage(await call(path, fetchImpl), version, bibleId, formatReference(ref));
   if (!passage.text) throw new BibleError("API.Bible returned no text for that passage.", 404);
   return passage;
+}
+
+/** Verses containing all the words (API.Bible's search), best matches first. */
+export async function searchWords(words: string, version: Version, fetchImpl?: typeof fetch): Promise<{ verses: VerseHit[]; total: number; fumsToken?: string; version: Version }> {
+  const q = words.trim();
+  if (q.length < 2) throw new BibleError("Give a word or two to search for.", 400);
+  const bibleId = pickBible(await bibles(fetchImpl), version);
+  if (!bibleId) throw new BibleError(`The ${version} isn't available on this API.Bible account. Add it in the API.Bible dashboard.`, 404);
+  const r = readSearch(await call(`/bibles/${bibleId}/search?query=${encodeURIComponent(q)}&limit=20&sort=relevance`, fetchImpl));
+  return { ...r, version };
 }

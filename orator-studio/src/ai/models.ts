@@ -24,6 +24,8 @@ export const TASK_MODELS: Record<string, TaskModel> = {
   propose: { model: SONNET, effort: "high" },
   messages: { model: SONNET, effort: "high" },
   outline: { model: SONNET, effort: "medium" },
+  // Proposes references only; the app fetches and checks every one.
+  bible_passages: { model: SONNET, effort: "medium" },
 };
 
 export function modelFor(task: string): TaskModel {
