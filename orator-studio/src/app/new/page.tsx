@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function NewDeck() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/curate");
+    router.replace("/build");
   }, [router]);
   return <main className="narrow muted">Opening Research…</main>;
 }

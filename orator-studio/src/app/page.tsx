@@ -1,19 +1,18 @@
 "use client";
-/** Home: the four modules (spec 3) and recent work, in the spec Appendix C design. */
+/** Home: the five modules (spec 3) and recent work: presentations, topics and slide decks. */
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { TopBar } from "@/components/TopBar";
 import { ModeBanner } from "@/components/ModeBanner";
 import { Icon } from "@/components/Icon";
 import { MODULES } from "@/components/ModuleNav";
-import { getArguments, type ArgumentSummary } from "@/lib/argumentRepo";
-import { getRepo, type DeckSummary } from "@/lib/repo";
-import { emptyArgument } from "@/model/argument";
+import { getRepo } from "@/lib/repo";
+import { knowledge } from "@/knowledge/client";
 
 const BLURB: Record<string, string> = {
-  research: "Discover what is known, curate the evidence and hone your message. Every fact traceable to its source.",
-  build: "Turn your outline into slides that fit your time, or import a PowerPoint deck.",
+  discover: "Explore an idea and find evidence in trusted databases, or add your own. What you keep becomes your Body of Knowledge.",
+  research: "Your Topic Library: on each topic, observe what the facts show and make your assertions.",
+  build: "Presentations for a purpose and an audience, from your topics and assertions; then the slides.",
   present: "A private presenter view, and search to any slide during questions.",
   engage: "Live polls and moderated questions from phones, linked to your slides.",
 };
@@ -32,28 +31,27 @@ function when(iso: string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-type Recent = { kind: "argument" | "deck"; id: string; title: string; updatedAt: string };
+type Recent = { kind: "presentation" | "topic" | "deck"; href: string; title: string; updatedAt: string };
+const LABEL: Record<Recent["kind"], string> = { presentation: "Presentation", topic: "Topic", deck: "Slides" };
 
 export default function Home() {
-  const router = useRouter();
   const [recent, setRecent] = useState<Recent[] | null>(null);
   const [hello, setHello] = useState("Welcome");
   useEffect(() => {
     setHello(greeting());
-    Promise.all([getArguments().list(), getRepo().list()]).then(([a, d]: [ArgumentSummary[], DeckSummary[]]) =>
+    const k = knowledge();
+    Promise.all([k.listPresentations().catch(() => []), k.listTopics().catch(() => []), getRepo().list().catch(() => [])]).then(([p, t, d]) =>
       setRecent(
-        [...a.map((x) => ({ kind: "argument" as const, ...x })), ...d.map((x) => ({ kind: "deck" as const, ...x }))]
+        [
+          ...p.map((x) => ({ kind: "presentation" as const, href: `/build/p/${x.id}`, title: x.title, updatedAt: x.updated_at })),
+          ...t.map((x) => ({ kind: "topic" as const, href: `/curate/topics/${x.id}`, title: x.name, updatedAt: x.updated_at })),
+          ...d.map((x) => ({ kind: "deck" as const, href: `/decks/${x.id}`, title: x.title, updatedAt: x.updatedAt })),
+        ]
           .sort((x, y) => y.updatedAt.localeCompare(x.updatedAt))
-          .slice(0, 6),
+          .slice(0, 8),
       ),
     );
   }, []);
-
-  async function newArgument() {
-    const arg = emptyArgument(await getRepo().tenantId());
-    await getArguments().save(arg, [], true);
-    router.push(`/curate/${arg.id}`);
-  }
 
   return (
     <>
@@ -64,11 +62,11 @@ export default function Home() {
           <div>
             <p className="eyebrow">Ideas first. Slides follow.</p>
             <h1>{hello}</h1>
-            <p className="lede">Pick up a presentation, or start a new one.</p>
+            <p className="lede">Discover the evidence, curate your topics and assertions, and build presentations from them.</p>
           </div>
-          <button className="primary" style={{ minHeight: 44, padding: "0 20px", fontSize: 15 }} onClick={newArgument}>
+          <Link href="/build" className="button primary" style={{ minHeight: 44, padding: "0 20px", fontSize: 15 }}>
             <Icon name="plus" size={18} /> New presentation
-          </button>
+          </Link>
         </header>
 
         <section className="module-grid" aria-label="Modules">
@@ -86,12 +84,12 @@ export default function Home() {
           {recent === null ? (
             <p className="muted">Loading…</p>
           ) : recent.length === 0 ? (
-            <p className="muted">Nothing yet. Start a presentation in Curate, or open the demo deck from Build.</p>
+            <p className="muted">Nothing yet. Start in Discover if you&apos;re exploring, or in Build if you know what you want to say.</p>
           ) : (
             <div className="list-card">
               {recent.map((r) => (
-                <Link key={r.kind + r.id} href={r.kind === "argument" ? `/curate/${r.id}` : `/decks/${r.id}`} className="list-row">
-                  <span className={r.kind === "argument" ? "pill navy" : "pill"}>{r.kind === "argument" ? "Presentation" : "Slides"}</span>
+                <Link key={r.kind + r.href} href={r.href} className="list-row">
+                  <span className={r.kind === "deck" ? "pill" : "pill navy"}>{LABEL[r.kind]}</span>
                   <span className="title">{r.title}</span>
                   <span className="meta">Edited {when(r.updatedAt)}</span>
                 </Link>

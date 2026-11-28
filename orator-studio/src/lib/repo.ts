@@ -103,7 +103,7 @@ function cloudRepo(): DeckRepo {
         tenant_id: deck.tenantId,
         title: deck.meta.title,
         snapshot: deck,
-        presentation_id: deck.meta.argumentId ?? null,
+        presentation_id: deck.meta.presentationId ?? null,
         version: deck.version,
         updated_at: new Date().toISOString(),
       };

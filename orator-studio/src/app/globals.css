@@ -572,3 +572,11 @@ a.button.primary:hover { background: #0a2f6b; color: #fff; }
 .role-chip.supports { background: var(--ok-bg); color: var(--ok-text); }
 .role-chip.qualifies { background: var(--warn-bg); color: var(--warn); }
 .role-chip.contradicts { background: #fde8ec; color: #a30234; }
+/* Build: presentations */
+.title-input-plain { font-family: var(--serif); font-size: clamp(24px, 2.6vw, 32px); font-weight: 600; color: var(--navy); border-color: transparent; background: transparent; padding: 4px 10px; margin-left: -10px; min-height: 52px; }
+.title-input-plain:hover { border-color: var(--line-strong); }
+.build-topic { border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px 18px; background: #fff; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 10px; }
+.build-topic h3 { font-family: var(--serif); font-size: 20px; font-weight: 600; }
+.build-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.build-assertion { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--panel); border-radius: 12px; }
+.assertion-line { font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--navy); }

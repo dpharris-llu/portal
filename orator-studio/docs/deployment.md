@@ -66,6 +66,18 @@ Which model does which task is set in one table, `src/ai/models.ts`: Claude Sonn
 
 The estimate is for watching spend; the bill is in the Claude Console → **Usage** and **Cost**. Compare the two each month: the request ids match the console's. Claude used inside claude.ai runs on the person's own Claude plan and isn't recorded here. Database searches are free.
 
+## Switching the live database to the knowledge model (once)
+
+The app now runs on the knowledge model (spec section 5): Discover, Curate and Build use new tables. The live database needs them before those screens work. **This deletes the earlier presentations and slide decks** (nothing was in real use). Usage records, administrators and invitations are kept.
+
+In Supabase → SQL Editor → New query, run each of these files from `supabase/migrations/`, one at a time, in this order:
+
+1. `0004_ai_usage.sql` and `0005_invites.sql`: safe to run again if you already did.
+2. `0006_knowledge.sql`: **once.** It removes the old presentation tables and creates the new ones.
+3. If you haven't yet: `supabase/make-admin.sql` with your address.
+
+Then reload the site. To check the database rules locally before a change like this: `sudo scripts/test-db.sh` runs every migration on a throwaway Postgres and tests the access rules.
+
 ## Inviting people
 
 OratorStudio is invite-only: open sign-ups are off in Supabase (Authentication → Sign In / Providers → "Allow new users to sign up" off), and administrators invite people on the **People** page (`/people`, in the top bar for administrators).

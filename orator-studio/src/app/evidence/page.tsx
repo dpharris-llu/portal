@@ -30,7 +30,7 @@ import { newId } from "@/model/ids";
 import type { Author, Paper } from "@/model/types";
 import { currentAuthorId, getRepo } from "@/lib/repo";
 import { putAsset } from "@/lib/assets";
-import { evidenceFor, saveNewArgument, workspaceFromPapers } from "@/research/link";
+import { knowledge } from "@/knowledge/client";
 
 interface PaperState {
   id: string; // "P1"
@@ -201,32 +201,14 @@ export default function EvidencePage() {
       const pointIds = keptPoints.map(() => newId("pt"));
       const rec = r.recommendation.verified && !dropped.has("rec") ? r.recommendation : undefined;
       const tenantId = await repo.tenantId();
-      const ws = workspaceFromPapers(used);
-      const linked = await saveNewArgument({
-        tenantId,
-        sources: ws.sources,
-        facts: ws.facts,
-        me,
-        ai: { kind: "ai", id: "claude", via: synth.via },
-        origin: "papers",
-        reason: "Created from research papers",
-        fields: {
-          title: r.thesis.verified ? r.thesis.text.replace(/[.]$/, "") : "What the research shows",
-          purpose: goal,
-          thesis: r.thesis.verified ? r.thesis.text : "",
-          openQuestions: r.openQuestions.filter((_, i) => !dropped.has(`q-${i}`)),
-          recommendation: rec ? `${rec.action}. Why: ${rec.rationale} Tradeoffs: ${rec.tradeoffs}` : "",
-          nextSteps: r.nextSteps.filter((s, i) => s.verified && !dropped.has(`step-${i}`)).map((s) => s.text),
-        },
-        points: keptPoints.map((pt, i) => ({
-          id: pointIds[i],
-          text: pt.conclusion,
-          intent: "persuade" as const,
-          detail: `Why it matters: ${pt.soWhat}\nEvidence: ${pt.agreement}; ${pt.strength} strength. ${pt.strengthReason}${pt.gaps ? `\nNot covered: ${pt.gaps}` : ""}`,
-          evidence: evidenceFor(ws.sources, ws.facts, pt.cites.flatMap((id) => (ws.factOf.get(id) ? [ws.factOf.get(id)!] : []))),
-          byAi: true,
-        })),
-      });
+      // The papers and their checked findings go into the Body of Knowledge (F-130).
+      const k = knowledge();
+      for (const paper of used) {
+        await k.keepSource(
+          { kind: "paper", origin: "yours", title: paper.citation.title, citation: formatCitation(paper.citation), short: shortCitation(paper.citation), year: paper.citation.year || null, design: paper.design || null, sample: paper.sample || null, ids: paper.citation.doi ? { doi: paper.citation.doi } : {} },
+          paper.claims.map((c) => ({ kind: c.kind, text: c.text, quote: c.quote, page: c.page, checked: true })),
+        );
+      }
       const draft = draftFromEvidence(used, {
         pointIds,
         thesis: r.thesis.verified ? r.thesis.text : undefined,
@@ -237,7 +219,7 @@ export default function EvidencePage() {
         via: synth.via,
       });
       const bodies: OpBody[] = [
-        { kind: "deck.setMeta", patch: { argumentId: linked.id, argumentVersion: linked.version, title: r.thesis.verified ? r.thesis.text.replace(/[.]$/, "") : "What the research shows", goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
+        { kind: "deck.setMeta", patch: { title: r.thesis.verified ? r.thesis.text.replace(/[.]$/, "") : "What the research shows", goal, timeLimitMin: Math.max(5, draft.narrative.length * 2) } },
         ...used.map((paper) => ({ kind: "paper.put" as const, paper })),
         ...draft.narrative.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "narrative" as const, index })),
         ...draft.backup.map((slide, index) => ({ kind: "slide.insert" as const, slide, section: "backup" as const, index })),

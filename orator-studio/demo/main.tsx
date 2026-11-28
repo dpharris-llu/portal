@@ -14,10 +14,12 @@ import ImportPage from "../src/app/import/page";
 import DocumentsPage from "../src/app/documents/page";
 import DataUrlPage from "../src/app/data/page";
 import EvidencePage from "../src/app/evidence/page";
-import ResearchHome from "../src/app/research/page";
-import ArgumentPage from "../src/app/research/[id]/page";
+import DiscoverPage from "../src/app/discover/page";
+import SourcePage from "../src/app/discover/sources/[id]/page";
+import TopicLibrary from "../src/app/curate/page";
+import TopicPage from "../src/app/curate/topics/[id]/page";
 import BuildHome from "../src/app/build/page";
-import DraftFromArgument from "../src/app/build/[argumentId]/page";
+import PresentationPage from "../src/app/build/p/[id]/page";
 import PresentHome from "../src/app/present/page";
 import EngageHome from "../src/app/engage/page";
 import EditorPage from "../src/app/decks/[id]/page";
@@ -64,10 +66,12 @@ const routes: { pattern: RegExp; keys: string[]; Page: () => React.ReactNode }[]
   { pattern: /^\/documents$/, keys: [], Page: DocumentsPage },
   { pattern: /^\/data$/, keys: [], Page: DataUrlPage },
   { pattern: /^\/evidence$/, keys: [], Page: EvidencePage },
-  { pattern: /^\/(research|curate)$/, keys: [], Page: ResearchHome },
-  { pattern: /^\/(?:research|curate)\/([^/]+)$/, keys: ["id"], Page: ArgumentPage },
+  { pattern: /^\/discover$/, keys: [], Page: DiscoverPage },
+  { pattern: /^\/discover\/sources\/([^/]+)$/, keys: ["id"], Page: SourcePage },
+  { pattern: /^\/(research|curate)$/, keys: [], Page: TopicLibrary },
+  { pattern: /^\/curate\/topics\/([^/]+)$/, keys: ["id"], Page: TopicPage },
   { pattern: /^\/build$/, keys: [], Page: BuildHome },
-  { pattern: /^\/build\/([^/]+)$/, keys: ["argumentId"], Page: DraftFromArgument },
+  { pattern: /^\/build\/p\/([^/]+)$/, keys: ["id"], Page: PresentationPage },
   { pattern: /^\/present$/, keys: [], Page: PresentHome },
   { pattern: /^\/engage$/, keys: [], Page: EngageHome },
   { pattern: /^\/decks\/([^/]+)$/, keys: ["id"], Page: EditorPage },

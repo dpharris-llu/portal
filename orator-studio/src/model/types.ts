@@ -146,7 +146,9 @@ export interface DeckMeta {
   timeLimitMin: number;
   takeaway: string;
   themeId: string;
-  /** The Research argument these slides were drafted from (F-016), and its version at the time. */
+  /** The presentation these slides were drafted from (F-136). */
+  presentationId?: string;
+  /** The Research argument these slides were drafted from (F-016), and its version at the time (the earlier model). */
   argumentId?: string;
   argumentVersion?: number;
 }

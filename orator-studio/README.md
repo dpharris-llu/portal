@@ -4,6 +4,8 @@
 
 An AI-native platform for evidence-based presentations: **Curate** the evidence, hone the message, **Build** the slides, **Present** and **Engage**. Each point is backed by evidence, every fact traceable to its source. This folder is version .3 (Stage 0) of the product spec, [`docs/product-spec.md`](docs/product-spec.md).
 
+**The knowledge model** (spec section 5): `src/knowledge/` (types, rules, the Supabase and local backends, the repository), `src/discover/` and `src/app/discover/` (the Body of Knowledge), `src/curate/` and `src/app/curate/` (the Topic Library), `src/app/build/p/` and `src/build/fromPresentation.ts` (presentations and their slides), `supabase/migrations/0006_knowledge.sql` and `scripts/test-db.sh`.
+
 **Where things stand, decisions made, and what's open: [`docs/status.md`](docs/status.md).** Setup and keys: [`docs/deployment.md`](docs/deployment.md).
 
 ## Run it

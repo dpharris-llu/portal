@@ -14,7 +14,8 @@ export function ArgumentLink({ deck, commit, onSelect }: { deck: Deck; commit: (
   const [stored, setStored] = useState<StoredArgument | null>(null);
   const id = deck.meta.argumentId;
   useEffect(() => {
-    if (id) getArguments().load(id).then(setStored);
+    // Decks drafted from the earlier outline model; the knowledge model's decks record presentationId instead.
+    if (id) getArguments().load(id).then(setStored).catch(() => setStored(null));
   }, [id]);
   if (!id || !stored) return null;
   const arg = stored.argument;

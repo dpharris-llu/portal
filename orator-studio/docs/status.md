@@ -55,7 +55,7 @@ Last updated: November 28, 2026. The product spec ([`product-spec.md`](product-s
 
 ## Next, in order
 
-0. **Rebuild on the knowledge model** (phase A, database and data layer: done; phase B, Discover: done; next C, Curate; D, Build; then E, ingestion). The new database setup (`0006_knowledge.sql`) is run once C and D are ready.
+0. **Rebuild on the knowledge model**: phases A (database and data layer), B (Discover), C (Curate) and D (Build) are done. **Waiting on the product owner: run the switch-over SQL** (`docs/deployment.md`, "Switching the live database"). Next: E, ingestion. Older flows not yet on the new model: documents and data URLs make decks without keeping sources; the old Curate components remain in the code until a cleanup.
    **Review the knowledge model in the spec** (sections 2, 3, 5 and F-130 to F-147), then rebuild onto it (F-141), including the ingestion engine.
 1. **The talk** (in a few days): use the live site; fix only what the dry run shows.
 2. **A slight redesign** (requested; scope to be agreed).
