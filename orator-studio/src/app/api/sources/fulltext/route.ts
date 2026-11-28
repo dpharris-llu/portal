@@ -3,6 +3,7 @@ import { fullText, SearchError } from "@/find/server";
 import { serverSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Open-access full text from PubMed Central for a paper the author chose to add (F-119). */
 export async function POST(request: Request) {

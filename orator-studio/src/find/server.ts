@@ -7,12 +7,16 @@ import "server-only";
 import type { Candidate, Provider, SearchOptions } from "./types";
 import { EUROPEPMC_BASE, europePmcFullTextUrl, europePmcSearchUrl, jatsPages, parseEuropePmc } from "./europepmc";
 import { CTGOV_BASE, ctGovSearchUrl, parseCtGov } from "./clinicaltrials";
+import { EUTILS_BASE, parsePubmed, pubmedAbstractUrl, pubmedAbstracts, pubmedIds, pubmedSearchUrl, pubmedSummaryUrl } from "./pubmed";
 
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 20000;
+/** Europe PMC gets a shorter wait when PubMed can stand in for it. */
+const EPMC_TIMEOUT_MS = 12000;
 const MAX_BYTES = 8 * 1024 * 1024;
 // Overridable for tests only (a local stand-in server).
 const epmc = () => process.env.EUROPEPMC_BASE || EUROPEPMC_BASE;
 const ctgov = () => process.env.CTGOV_BASE || CTGOV_BASE;
+const eutils = () => process.env.EUTILS_BASE || EUTILS_BASE;
 
 export class SearchError extends Error {
   constructor(message: string, readonly status = 502) {
@@ -20,9 +24,15 @@ export class SearchError extends Error {
   }
 }
 
-async function get(url: string, accept: string, fetchImpl: typeof fetch = fetch): Promise<string> {
+/** A short code for what went wrong underneath ("UND_ERR_CONNECT_TIMEOUT", "ENOTFOUND"), for the message and the logs. */
+export function causeOf(e: unknown): string {
+  const c = (e as { cause?: { code?: string; name?: string } })?.cause;
+  return c?.code ?? c?.name ?? (e as { name?: string })?.name ?? "unknown";
+}
+
+async function get(url: string, accept: string, fetchImpl: typeof fetch = fetch, timeoutMs = TIMEOUT_MS): Promise<string> {
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const res = await fetchImpl(url, { headers: { accept, "user-agent": "OratorStudio/0.3 (research workspace)" }, signal: ctl.signal, redirect: "follow" });
     if (res.status === 404) throw new SearchError("Not found at the source.", 404);
@@ -32,16 +42,66 @@ async function get(url: string, accept: string, fetchImpl: typeof fetch = fetch)
     return text;
   } catch (e) {
     if (e instanceof SearchError) throw e;
-    throw new SearchError(ctl.signal.aborted ? "The database took too long to answer." : "The database couldn't be reached.");
+    const host = new URL(url).host;
+    console.error(`Search request to ${host} failed:`, causeOf(e), e);
+    throw new SearchError(ctl.signal.aborted ? `${host} took too long to answer.` : `${host} couldn't be reached (${causeOf(e)}).`);
   } finally {
     clearTimeout(timer);
   }
 }
 
+export async function searchPubmed(query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<Candidate[]> {
+  const ids = pubmedIds(JSON.parse(await get(pubmedSearchUrl(eutils(), query, o), "application/json", fetchImpl)));
+  if (!ids.length) return [];
+  const [summary, abstracts] = await Promise.all([
+    get(pubmedSummaryUrl(eutils(), ids), "application/json", fetchImpl).then((t) => JSON.parse(t)),
+    get(pubmedAbstractUrl(eutils(), ids), "application/xml", fetchImpl).then(pubmedAbstracts).catch(() => new Map<string, string>()),
+  ]);
+  return parsePubmed(summary, abstracts);
+}
+
+/** Papers: Europe PMC first; if it doesn't answer, PubMed directly. Says which one answered. */
 export async function searchSources(provider: Provider, query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<Candidate[]> {
-  if (provider === "europepmc") return parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), query, o), "application/json", fetchImpl)));
+  return (await searchWithSource(provider, query, o, fetchImpl)).results;
+}
+
+export async function searchWithSource(provider: Provider, query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<{ results: Candidate[]; from: string; note?: string }> {
+  if (provider === "europepmc") {
+    try {
+      return { results: parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), query, o), "application/json", fetchImpl, EPMC_TIMEOUT_MS))), from: "Europe PMC" };
+    } catch (e) {
+      const why = e instanceof SearchError ? e.message : "Europe PMC failed.";
+      try {
+        return { results: await searchPubmed(query, o, fetchImpl), from: "PubMed", note: `Results from PubMed: ${why} NCBI Bookshelf reports and preprints aren't included this time.` };
+      } catch (e2) {
+        throw new SearchError(`${why} PubMed also failed: ${e2 instanceof SearchError ? e2.message : "unknown error"}`);
+      }
+    }
+  }
+  return { results: (await searchCtGov(query, o, fetchImpl)), from: "ClinicalTrials.gov" };
+}
+
+async function searchCtGov(query: string, o: SearchOptions, fetchImpl?: typeof fetch): Promise<Candidate[]> {
   const all = parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), query), "application/json", fetchImpl)));
   return o.fromYear ? all.filter((c) => !c.year || Number(c.year) >= o.fromYear!) : all;
+}
+
+/** How each database answers from this server: for the check page. */
+export async function checkConnections(fetchImpl?: typeof fetch) {
+  const probe = async (name: string, url: string) => {
+    const t0 = Date.now();
+    try {
+      await get(url, "application/json", fetchImpl, 20000);
+      return { name, ok: true, ms: Date.now() - t0 };
+    } catch (e) {
+      return { name, ok: false, ms: Date.now() - t0, error: e instanceof Error ? e.message : String(e) };
+    }
+  };
+  return Promise.all([
+    probe("Europe PMC", `${epmc()}/search?query=diabetes&format=json&resultType=lite&pageSize=1`),
+    probe("PubMed (NCBI)", `${eutils()}/esearch.fcgi?db=pubmed&retmode=json&retmax=1&tool=oratorstudio&term=diabetes`),
+    probe("ClinicalTrials.gov", `${ctgov()}/studies?query.term=diabetes&pageSize=1&format=json`),
+  ]);
 }
 
 /** Open-access full text from PubMed Central, as section pages. */

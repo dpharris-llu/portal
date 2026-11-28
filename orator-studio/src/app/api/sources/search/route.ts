@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { searchSources, SearchError } from "@/find/server";
+import { checkConnections, searchWithSource, SearchError } from "@/find/server";
 import { serverSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+/** Check page: open /api/sources/search in a browser to see how each database answers from this server. */
+export async function GET() {
+  return NextResponse.json({ checkedAt: new Date().toISOString(), databases: await checkConnections() });
+}
 
 const Body = z.object({
   provider: z.enum(["europepmc", "clinicaltrials"]),
@@ -27,7 +33,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Give a search of at least 2 characters." }, { status: 400 });
   const { provider, query, ...o } = parsed.data;
   try {
-    return NextResponse.json({ results: await searchSources(provider, query, o) });
+    return NextResponse.json(await searchWithSource(provider, query, o));
   } catch (e) {
     if (e instanceof SearchError) return NextResponse.json({ error: e.message }, { status: e.status });
     console.error("Search failed", e);

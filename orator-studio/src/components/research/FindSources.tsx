@@ -42,6 +42,7 @@ export function FindSources({ arg, apply, onDone, initial }: { arg: Argument; ap
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [results, setResults] = useState<Candidate[] | null>(null);
+  const [from, setFrom] = useState<{ from: string; note?: string } | null>(null);
   const [adding, setAdding] = useState<{ c: Candidate; doc: SourceDoc } | null>(null);
 
   useEffect(() => {
@@ -79,13 +80,14 @@ export function FindSources({ arg, apply, onDone, initial }: { arg: Argument; ap
     setBusy("Searching…");
     setResults(null);
     try {
-      const { results } = await post<{ results: Candidate[] }>("/api/sources/search", {
+      const { results, from, note } = await post<{ results: Candidate[]; from: string; note?: string }>("/api/sources/search", {
         provider,
         query: query || want,
         ...(openOnly && provider === "europepmc" ? { openAccessOnly: true } : {}),
         ...(Number(fromYear) > 1900 ? { fromYear: Number(fromYear) } : {}),
       });
       setResults(results);
+      setFrom({ from, note });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -173,7 +175,8 @@ export function FindSources({ arg, apply, onDone, initial }: { arg: Argument; ap
       {error && <p className="small error" role="alert">{error}</p>}
       {results && (
         <>
-          <p className="small muted" style={{ margin: 0 }}>{results.length ? `${results.length} results. Nothing is added until you choose.` : "No results. Try broader words, or the other database."}</p>
+          <p className="small muted" style={{ margin: 0 }}>{results.length ? `${results.length} results from ${from?.from ?? "the database"}. Nothing is added until you choose.` : "No results. Try broader words, or the other database."}</p>
+          {from?.note && <p className="small notice" style={{ margin: 0 }}>{from.note}</p>}
           <ul className="candidates">
             {results.map((c) => (
               <li key={c.id} className="candidate">

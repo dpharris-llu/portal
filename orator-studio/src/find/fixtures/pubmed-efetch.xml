@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<PubmedArticleSet>
+<PubmedArticle><MedlineCitation><PMID Version="1">39000001</PMID><Article><Abstract>
+<AbstractText Label="BACKGROUND">Walking is widely recommended.</AbstractText>
+<AbstractText Label="RESULTS">HbA1c fell by 0.6 percentage points in the walking group compared with 0.1 in usual care (difference 0.5; 95% CI 0.3&#x2013;0.7).</AbstractText>
+</Abstract></Article></MedlineCitation></PubmedArticle>
+<PubmedArticle><MedlineCitation><PMID Version="1">39000002</PMID><Article><Abstract><AbstractText>Each additional 1,000 daily steps was associated with an HbA1c 0.08 percentage points lower.</AbstractText></Abstract></Article></MedlineCitation></PubmedArticle>
+</PubmedArticleSet>

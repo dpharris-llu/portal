@@ -51,3 +51,36 @@ describe("ClinicalTrials.gov", () => {
     expect(t.recordText).toContain("No results posted to the registry.");
   });
 });
+
+describe("PubMed fallback", () => {
+  it("parses search, summaries and abstracts", async () => {
+    const { pubmedIds, pubmedAbstracts, parsePubmed, pubmedSearchUrl } = await import("./pubmed");
+    expect(pubmedSearchUrl("https://e/u", "walking", { openAccessOnly: true })).toContain("term=" + encodeURIComponent("(walking) AND free full text[sb]"));
+    expect(pubmedIds(JSON.parse(fx("pubmed-esearch.json")))).toEqual(["39000001", "39000002"]);
+    const abs = pubmedAbstracts(fx("pubmed-efetch.xml"));
+    expect(abs.get("39000001")).toBe("Background: Walking is widely recommended.\nResults: HbA1c fell by 0.6 percentage points in the walking group compared with 0.1 in usual care (difference 0.5; 95% CI 0.3–0.7).");
+    const c = parsePubmed(JSON.parse(fx("pubmed-esummary.json")), abs);
+    expect(c.map((x) => [x.id, x.access, x.pmcid, x.year, x.url])).toEqual([
+      ["MED:39000001", "full text", "PMC9900001", "2025", "https://pubmed.ncbi.nlm.nih.gov/39000001/"],
+      ["MED:39000002", "abstract", undefined, "2024", "https://pubmed.ncbi.nlm.nih.gov/39000002/"],
+    ]);
+    expect(c[0].badges).toEqual(["Randomized Controlled Trial"]);
+  });
+
+  it("falls back to PubMed when Europe PMC doesn't answer, and says so", async () => {
+    const { searchWithSource } = await import("./server");
+    const seen: string[] = [];
+    const fake = (async (url: string) => {
+      seen.push(new URL(url).host + new URL(url).pathname);
+      if (url.includes("europepmc")) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
+      const body = url.includes("esearch") ? fx("pubmed-esearch.json") : url.includes("esummary") ? fx("pubmed-esummary.json") : fx("pubmed-efetch.xml");
+      return new Response(body, { status: 200 });
+    }) as unknown as typeof fetch;
+    const r = await searchWithSource("europepmc", "walking HbA1c", {}, fake);
+    expect(r.from).toBe("PubMed");
+    expect(r.note).toContain("couldn't be reached (UND_ERR_CONNECT_TIMEOUT)");
+    expect(r.results).toHaveLength(2);
+    expect(seen[0]).toBe("www.ebi.ac.uk/europepmc/webservices/rest/search");
+    expect(seen.slice(1).sort()).toEqual(["eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi", "eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi", "eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"]);
+  });
+});
