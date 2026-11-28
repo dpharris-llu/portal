@@ -27,6 +27,8 @@ create table public.sources (
   short text not null default '',
   url text,
   year text,
+  design text,                                      -- study design, for example "randomized controlled trial"
+  sample text,                                      -- who and how many, as reported
   origin text not null default 'yours' check (origin in ('yours', 'discovered', 'ingested', 'copied')),
   access text check (access in ('full text', 'abstract', 'registry record', 'typed', 'record')),
   ids jsonb not null default '{}'::jsonb,           -- doi, pmid, pmcid, openalex, nct, scripture version/reference

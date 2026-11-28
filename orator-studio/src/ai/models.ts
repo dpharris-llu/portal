@@ -26,6 +26,10 @@ export const TASK_MODELS: Record<string, TaskModel> = {
   outline: { model: SONNET, effort: "medium" },
   // Proposes references only; the app fetches and checks every one.
   bible_passages: { model: SONNET, effort: "medium" },
+  // Shapes an idea into questions, topics and searches; labeled general knowledge, never evidence.
+  explore: { model: SONNET, effort: "medium" },
+  // A few sentences from facts already kept and checked: low stakes, edited by the author.
+  annotate: { model: HAIKU, effort: "medium" },
 };
 
 export function modelFor(task: string): TaskModel {

@@ -69,7 +69,31 @@ export function passageBodies(a: Argument, p: { reference: string; version: stri
 type Status = { available: boolean; versions: Version[]; error?: string };
 type Apply = (b: ArgOpBody[], reason: string) => void;
 
-export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: Apply; onDone: () => void }) {
+/** A passage to keep: fetched from API.Bible, or The Passion Translation typed by the author. */
+export type KeptPassage = { reference: string; version: string; text: string; copyright: string; enteredByAuthor?: boolean };
+
+/**
+ * Where kept passages go. The panel only finds and shows Scripture; the host
+ * decides how a passage is kept (the Body of Knowledge, or the earlier
+ * presentation workspace) and says which are kept already ("John 3:16 (NIV)").
+ */
+export type ScriptureHost = {
+  kept: Set<string>;
+  onKeep: (p: KeptPassage) => void;
+  context: { topic: string; message: string; already: string[] };
+};
+
+/** The earlier presentation workspace as a host, until that screen is retired. */
+export function workspaceHost(arg: Argument, apply: Apply): ScriptureHost {
+  const scripture = (arg.sources ?? []).filter((s) => s.kind === "scripture" && s.status === "active");
+  return {
+    kept: new Set(scripture.map((s) => `${s.reference} (${s.version})`)),
+    onKeep: (p) => apply(passageBodies(arg, p), `Added ${p.reference} (${p.version})`),
+    context: { topic: arg.topic ?? "", message: arg.thesis, already: scripture.map((s) => s.reference ?? s.short) },
+  };
+}
+
+export function BiblePanel({ host, onDone }: { host: ScriptureHost; onDone: () => void }) {
   const [status, setStatus] = useState<Status | null>(null);
   const [tab, setTab] = useState<"find" | "look" | "words">("find");
   useEffect(() => {
@@ -92,7 +116,7 @@ export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: Apply
       {status && !status.available && (
         <p className="small notice" style={{ margin: 0 }}>{status.error ?? "Bible lookup isn't set up on this server yet (API_BIBLE_KEY)."} You can still enter The Passion Translation yourself under Look up a reference.</p>
       )}
-      {tab === "find" ? <FindPassages arg={arg} apply={apply} status={status} /> : tab === "look" ? <LookUp arg={arg} apply={apply} status={status} onDone={onDone} /> : <WordStudy arg={arg} apply={apply} versions={status?.available ? status.versions : []} />}
+      {tab === "find" ? <FindPassages host={host} status={status} /> : tab === "look" ? <LookUp host={host} status={status} onDone={onDone} /> : <WordStudy host={host} versions={status?.available ? status.versions : []} />}
       <div className="row">
         <button className="small ghost" onClick={onDone}>Close</button>
         <span className="spacer" />
@@ -102,7 +126,7 @@ export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: Apply
   );
 }
 
-function LookUp({ arg, apply, status, onDone }: { arg: Argument; apply: Apply; status: Status | null; onDone: () => void }) {
+function LookUp({ host, status, onDone }: { host: ScriptureHost; status: Status | null; onDone: () => void }) {
   const [version, setVersion] = useState<Choice>("NIV");
   useEffect(() => {
     if (!status) return;
@@ -135,9 +159,9 @@ function LookUp({ arg, apply, status, onDone }: { arg: Argument; apply: Apply; s
   function add() {
     if (version === "TPT") {
       if (!parsed || !typed.trim()) return;
-      apply(passageBodies(arg, { reference: formatReference(parsed), version: "TPT", text: typed.trim(), copyright: TPT_NOTICE, enteredByAuthor: true }), `Added ${formatReference(parsed)} (TPT)`);
+      host.onKeep({ reference: formatReference(parsed), version: "TPT", text: typed.trim(), copyright: TPT_NOTICE, enteredByAuthor: true });
     } else if (passage) {
-      apply(passageBodies(arg, passage), `Added ${passage.reference} (${passage.version})`);
+      host.onKeep(passage);
     } else return;
     onDone();
   }
@@ -186,7 +210,7 @@ function LookUp({ arg, apply, status, onDone }: { arg: Argument; apply: Apply; s
       )}
 
       <div className="row">
-        <button className="small primary" disabled={version === "TPT" ? !parsed || !typed.trim() : !passage} onClick={add}>Add to workspace</button>
+        <button className="small primary" disabled={version === "TPT" ? !parsed || !typed.trim() : !passage} onClick={add}>Keep</button>
       </div>
     </div>
   );
@@ -212,7 +236,7 @@ async function pool<T, R>(items: T[], n: number, f: (x: T) => Promise<R>): Promi
  * and the app fetches each one's text in the chosen version (a reference that
  * doesn't exist is left out and said so); or a word search of the version.
  */
-function FindPassages({ arg, apply, status }: { arg: Argument; apply: Apply; status: Status | null }) {
+function FindPassages({ host, status }: { host: ScriptureHost; status: Status | null }) {
   const versions = status?.versions ?? [];
   const [version, setVersion] = useState<Version>("NIV");
   useEffect(() => {
@@ -228,7 +252,7 @@ function FindPassages({ arg, apply, status }: { arg: Argument; apply: Apply; sta
     claudeAvailable().then((t) => setHasClaude(Boolean(t)));
   }, []);
 
-  const inWorkspace = new Set((arg.sources ?? []).filter((s) => s.kind === "scripture" && s.status === "active").map((s) => `${s.reference} (${s.version})`));
+  const inWorkspace = host.kept;
 
   async function fetchText(reference: string): Promise<Passage | string> {
     try {
@@ -244,7 +268,7 @@ function FindPassages({ arg, apply, status }: { arg: Argument; apply: Apply; sta
     setNote("");
     setBusy("Claude is finding passages…");
     try {
-      const req = { theme: want.trim(), topic: arg.topic ?? "", message: arg.thesis, already: (arg.sources ?? []).filter((s) => s.kind === "scripture" && s.status === "active").map((s) => s.reference ?? s.short) };
+      const req = { theme: want.trim(), topic: host.context.topic, message: host.context.message, already: host.context.already };
       const { value } = await askClaudeFor({
         prompt: passagePrompt(req),
         parse: (raw) => {
@@ -299,7 +323,7 @@ function FindPassages({ arg, apply, status }: { arg: Argument; apply: Apply; sta
       if (typeof got === "string") return setError(got);
       p = got;
     }
-    apply(passageBodies(arg, p), `Added ${p.reference} (${p.version})`);
+    host.onKeep(p);
   }
 
   if (!status?.available) return <p className="small muted" style={{ margin: 0 }}>Finding passages needs Bible lookup on this server.</p>;
@@ -344,7 +368,7 @@ function FindPassages({ arg, apply, status }: { arg: Argument; apply: Apply; sta
                 </blockquote>
                 <span className="row">
                   <span className="spacer" />
-                  {have ? <span className="pill ok">In the workspace</span> : <button className="small primary" disabled={Boolean(busy)} onClick={() => addFound(f)}>Add to workspace</button>}
+                  {have ? <span className="pill ok">Kept</span> : <button className="small primary" disabled={Boolean(busy)} onClick={() => addFound(f)}>Keep</button>}
                 </span>
               </li>
             );

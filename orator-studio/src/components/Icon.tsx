@@ -21,6 +21,12 @@ const PATHS: Record<string, React.ReactNode> = {
       <path d="m20 20-3.5-3.5" />
     </>
   ),
+  discover: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   doc: (
     <>

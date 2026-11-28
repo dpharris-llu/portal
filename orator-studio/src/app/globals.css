@@ -552,3 +552,8 @@ a.button.primary:hover { background: #0a2f6b; color: #fff; }
 .occurrences { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow: auto; }
 .occurrences li { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: 1px solid #eef0f3; }
 .scripture-line { font-family: var(--serif); }
+/* Discover */
+.discover-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.discover-tabs button { min-height: 40px; }
+.fact-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fact-list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--panel); border-radius: 12px; font-size: 14px; }

@@ -28,6 +28,8 @@ export const TASK_LABEL: Record<string, string> = {
   analyze_figures: "Analyze figures",
   outline: "Draft an outline",
   bible_passages: "Find Bible passages",
+  explore: "Explore an idea",
+  annotate: "Draft an annotation",
 };
 
 function empty(): Totals {

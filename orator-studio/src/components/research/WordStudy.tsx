@@ -7,16 +7,15 @@
  * Claude's memory.
  */
 import { useState } from "react";
-import type { ArgOpBody, Argument } from "@/model/argument";
 import { bookName, formatReference, parseReference, type Passage, type Version } from "@/find/bible";
 import { byBook, CREDIT, isFunctionWord, lexicon, loadBook, occurrences, refToText, type BookData, type LexEntry, type Word } from "@/find/wordstudy";
 import { post } from "./FindSources";
-import { passageBodies } from "./BiblePanel";
+import type { ScriptureHost } from "./BiblePanel";
 
 type Study = { strong: string; lex: LexEntry | null; refs: string[] };
 const SHOW = 40;
 
-export function WordStudy({ arg, apply, versions }: { arg: Argument; apply: (b: ArgOpBody[], reason: string) => void; versions: Version[] }) {
+export function WordStudy({ host, versions }: { host: ScriptureHost; versions: Version[] }) {
   const [ref, setRef] = useState("");
   const [verse, setVerse] = useState<{ label: string; lang: BookData["lang"]; words: Word[] } | null>(null);
   const [study, setStudy] = useState<Study | null>(null);
@@ -70,7 +69,7 @@ export function WordStudy({ arg, apply, versions }: { arg: Argument; apply: (b: 
     }
   }
 
-  const inWorkspace = new Set((arg.sources ?? []).filter((s) => s.kind === "scripture" && s.status === "active").map((s) => `${s.reference} (${s.version})`));
+  const inWorkspace = host.kept;
   const shown = study ? (all ? study.refs : study.refs.slice(0, SHOW)) : [];
 
   return (
@@ -134,7 +133,7 @@ export function WordStudy({ arg, apply, versions }: { arg: Argument; apply: (b: 
                   <span className="row" style={{ gap: 8 }}>
                     <strong className="small">{label}</strong>
                     {!t && versions.length > 0 && <button className="small ghost" onClick={() => read(r)}>Read in {version}</button>}
-                    {passage && (have ? <span className="pill ok">In the workspace</span> : <button className="small" onClick={() => apply(passageBodies(arg, passage), `Added ${passage.reference} (${passage.version})`)}>Add to workspace</button>)}
+                    {passage && (have ? <span className="pill ok">Kept</span> : <button className="small" onClick={() => host.onKeep(passage)}>Keep</button>)}
                   </span>
                   {passage && <span className="small scripture-line">{passage.text}</span>}
                   {typeof t === "string" && <span className="small warn-text">{t}</span>}

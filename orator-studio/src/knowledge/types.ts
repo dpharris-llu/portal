@@ -25,6 +25,9 @@ export interface Source {
   short: string;
   url: string | null;
   year: string | null;
+  /** Study design and sample, as reported ("randomized controlled trial", "412 adults with type 2 diabetes"). */
+  design: string | null;
+  sample: string | null;
   origin: SourceOrigin;
   access: Access | null;
   /** doi, pmid, pmcid, openalex, nct; for Scripture: version and reference. */

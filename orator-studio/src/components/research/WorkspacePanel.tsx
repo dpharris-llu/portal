@@ -9,7 +9,7 @@ import type { Author } from "@/model/types";
 import { activeFacts, discardBodies, evidenceFromFact, locate, nextId, restoreBodies, type ArgOpBody, type Argument, type Fact, type WorkspaceSource } from "@/model/argument";
 import { AddPaper } from "./AddPaper";
 import { FindSources } from "./FindSources";
-import { BiblePanel, useScriptureRefresh } from "./BiblePanel";
+import { BiblePanel, useScriptureRefresh, workspaceHost } from "./BiblePanel";
 
 type Apply = (bodies: ArgOpBody[], reason: string, author?: Author) => void;
 
@@ -79,7 +79,7 @@ export function WorkspacePanel({ arg, apply, highlight, find }: { arg: Argument;
         <button className="small" onClick={() => setAdding(adding === "bible" ? null : "bible")} aria-expanded={adding === "bible"}>Add a Bible passage</button>
       </div>
       {adding === "find" && <FindSources key={findWant} arg={arg} apply={apply} initial={findWant} onDone={() => { setAdding(null); setFindWant(undefined); }} />}
-      {adding === "bible" && <BiblePanel arg={arg} apply={apply} onDone={() => setAdding(null)} />}
+      {adding === "bible" && <BiblePanel host={workspaceHost(arg, apply)} onDone={() => setAdding(null)} />}
       {adding === "paper" && <AddPaper arg={arg} apply={apply} onDone={() => setAdding(null)} />}
       {adding === "note" && (
         <div className="add-box stack" style={{ gap: 8 }}>

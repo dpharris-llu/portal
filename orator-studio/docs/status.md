@@ -55,7 +55,8 @@ Last updated: November 28, 2026. The product spec ([`product-spec.md`](product-s
 
 ## Next, in order
 
-0. **Review the knowledge model in the spec** (sections 2, 3, 5 and F-130 to F-147), then rebuild onto it (F-141), including the ingestion engine.
+0. **Rebuild on the knowledge model** (phase A, database and data layer: done; phase B, Discover: done; next C, Curate; D, Build; then E, ingestion). The new database setup (`0006_knowledge.sql`) is run once C and D are ready.
+   **Review the knowledge model in the spec** (sections 2, 3, 5 and F-130 to F-147), then rebuild onto it (F-141), including the ingestion engine.
 1. **The talk** (in a few days): use the live site; fix only what the dry run shows.
 2. **A slight redesign** (requested; scope to be agreed).
 3. **Word study:** follow a concept across related words (Claude suggests, data confirms); spell out grammar codes.

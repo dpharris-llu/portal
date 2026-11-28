@@ -102,7 +102,7 @@ const uuid = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID
 function defaults(table: TableName, user: string): Row {
   const t = now();
   const base: Record<TableName, Row> = {
-    sources: { id: uuid(), owner_id: user, citation: "", short: "", url: null, year: null, origin: "yours", access: null, ids: {}, page_labels: {}, annotation: "", annotation_by: null, is_public: false, copied_from: null, fetched_at: null, status: "active", discard_reason: null, created_at: t, updated_at: t },
+    sources: { id: uuid(), owner_id: user, citation: "", short: "", url: null, year: null, design: null, sample: null, origin: "yours", access: null, ids: {}, page_labels: {}, annotation: "", annotation_by: null, is_public: false, copied_from: null, fetched_at: null, status: "active", discard_reason: null, created_at: t, updated_at: t },
     facts: { id: uuid(), owner_id: user, kind: "finding", quote: null, page: null, checked: false, status: "active", discard_reason: null, created_at: t, updated_at: t },
     topics: { id: uuid(), owner_id: user, description: "", keywords: [], created_at: t, updated_at: t },
     topic_relations: {},

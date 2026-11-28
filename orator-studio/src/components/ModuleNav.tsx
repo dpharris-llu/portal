@@ -9,16 +9,18 @@ import { usePathname } from "next/navigation";
 import { Icon } from "./Icon";
 import { Wordmark } from "./Wordmark";
 
-export type ModuleKey = "research" | "build" | "present" | "engage";
+export type ModuleKey = "discover" | "research" | "build" | "present" | "engage";
 
 export const MODULES: { key: ModuleKey; name: string; href: string; job: string }[] = [
-  { key: "research", name: "Curate", href: "/curate", job: "Discover what is known and hone your message" },
+  { key: "discover", name: "Discover", href: "/discover", job: "Explore an idea, find evidence, and keep it in your Body of Knowledge" },
+  { key: "research", name: "Curate", href: "/curate", job: "Make sense of the evidence: topics, observations and your assertions" },
   { key: "build", name: "Build", href: "/build", job: "Turn the outline into slides" },
   { key: "present", name: "Present", href: "/present", job: "Deliver it" },
   { key: "engage", name: "Engage", href: "/engage", job: "Involve the audience" },
 ];
 
 export function moduleFor(path: string): ModuleKey | null {
+  if (/^\/discover(\/|$)/.test(path)) return "discover";
   if (/^\/(research|curate|documents|data|evidence)(\/|$)/.test(path)) return "research";
   if (/^\/decks\/[^/]+\/present/.test(path) || /^\/present(\/|$)/.test(path)) return "present";
   if (/^\/(engage|join|j)(\/|$)/.test(path) || /^\/decks\/[^/]+\/audience/.test(path)) return "engage";
