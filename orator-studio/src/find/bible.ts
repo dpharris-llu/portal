@@ -98,6 +98,9 @@ const norm = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/** "MRK" -> "Mark". */
+export const bookName = (code: string) => BOOKS.find(([c]) => c === code)?.[1] ?? code;
+
 const BOOK_INDEX = new Map<string, { code: string; name: string }>();
 for (const [code, name, abbr] of BOOKS) for (const k of [name, ...abbr]) BOOK_INDEX.set(norm(k), { code, name });
 

@@ -81,6 +81,10 @@ OratorStudio is invite-only: open sign-ups are off in Supabase (Authentication �
 
 "Add a Bible passage" fetches NIV, NKJV, NLT (licensed through API.Bible's free non-commercial Starter plan) and KJV (public domain). To confirm the setup: open `https://<your-vercel-address>/api/sources/bible`; it should say `"available": true` and list the versions on the account. API.Bible's terms are built in: the copyright line with every passage, a visible "Scripture provided by API.Bible" link, the text never altered, each displayed passage reported through API.Bible's usage tracker (FUMS), and stored text fetched again before 30 days pass (when the presentation is opened). The Starter plan allows 5,000 requests a month; the NKJV only while the app has 5,000 or fewer monthly users. Keep the app non-commercial on this plan.
 
+## Word study data (STEPBible)
+
+Word study (Curate → Add a Bible passage → Word study, F-128) reads static files in `public/wordstudy/`: each verse's Greek or Hebrew words, every place each word occurs, and brief definitions, built from STEPBible's open data (Tyndale House, Cambridge; CC BY 4.0, credited on screen as "STEP Bible"). They need no key and cost nothing to serve. To rebuild after STEPBible updates its data: `node scripts/build-wordstudy.mjs` (downloads the source files from raw.githubusercontent.com into `.wordstudy-src/`, which isn't committed), then commit `public/wordstudy/`.
+
 ## Checks
 
 - **Database connections:** open `https://<your-vercel-address>/api/sources/search`. It reports whether Europe PMC, PubMed, ClinicalTrials.gov and OpenAlex answer from Vercel, and how fast. On Nov 28, 2026: PubMed 136 ms, ClinicalTrials.gov 75 ms, Europe PMC 8.4 s (which is why paper searches go to PubMed first).

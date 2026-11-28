@@ -15,6 +15,7 @@ import { askClaudeFor, claudeAvailable, ClaudeError } from "@/ai/analysis-client
 import { nextId, type ArgOpBody, type Argument, type Fact, type WorkspaceSource } from "@/model/argument";
 import { formatReference, needsRefresh, parseReference, TPT_NOTICE, VERSIONS, type Passage, type Version } from "@/find/bible";
 import { post } from "./FindSources";
+import { WordStudy } from "./WordStudy";
 
 type Choice = Version | "TPT";
 
@@ -70,7 +71,7 @@ type Apply = (b: ArgOpBody[], reason: string) => void;
 
 export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: Apply; onDone: () => void }) {
   const [status, setStatus] = useState<Status | null>(null);
-  const [tab, setTab] = useState<"find" | "look">("find");
+  const [tab, setTab] = useState<"find" | "look" | "words">("find");
   useEffect(() => {
     fetch("/api/sources/bible", { cache: "no-store" })
       .then((r) => r.json())
@@ -84,13 +85,14 @@ export function BiblePanel({ arg, apply, onDone }: { arg: Argument; apply: Apply
         <span className="segmented" role="tablist" aria-label="How to add">
           <button role="tab" aria-selected={tab === "find"} className={tab === "find" ? "small primary" : "small"} onClick={() => setTab("find")}>Find passages</button>
           <button role="tab" aria-selected={tab === "look"} className={tab === "look" ? "small primary" : "small"} onClick={() => setTab("look")}>Look up a reference</button>
+          <button role="tab" aria-selected={tab === "words"} className={tab === "words" ? "small primary" : "small"} onClick={() => setTab("words")}>Word study</button>
         </span>
       </div>
       <p className="small muted" style={{ margin: 0 }}>Scripture is kept as its own kind of source: quoted word for word with its version, and never presented as a research finding.</p>
       {status && !status.available && (
         <p className="small notice" style={{ margin: 0 }}>{status.error ?? "Bible lookup isn't set up on this server yet (API_BIBLE_KEY)."} You can still enter The Passion Translation yourself under Look up a reference.</p>
       )}
-      {tab === "find" ? <FindPassages arg={arg} apply={apply} status={status} /> : <LookUp arg={arg} apply={apply} status={status} onDone={onDone} />}
+      {tab === "find" ? <FindPassages arg={arg} apply={apply} status={status} /> : tab === "look" ? <LookUp arg={arg} apply={apply} status={status} onDone={onDone} /> : <WordStudy arg={arg} apply={apply} versions={status?.available ? status.versions : []} />}
       <div className="row">
         <button className="small ghost" onClick={onDone}>Close</button>
         <span className="spacer" />

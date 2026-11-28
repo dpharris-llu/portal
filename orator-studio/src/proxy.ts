@@ -36,6 +36,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // The audience window and static assets stay reachable without a session.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|decks/[^/]+/audience).*)"],
+  // The audience window and static assets stay reachable without a session,
+  // as does the open word-study data (STEPBible, CC BY), served as static files.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|wordstudy/|decks/[^/]+/audience).*)"],
 };
