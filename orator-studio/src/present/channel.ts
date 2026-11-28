@@ -1,6 +1,6 @@
 /**
  * Presenter-to-audience-window sync. BroadcastChannel works between windows of
- * the same browser with no network, so presenting never depends on a server (spec 8).
+ * the same browser with no network, so presenting never depends on a server (spec 11).
  */
 import type { AudienceView } from "./state";
 import type { LiveInfo } from "@/components/LiveContext";

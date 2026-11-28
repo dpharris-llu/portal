@@ -1,7 +1,7 @@
 "use client";
 /**
  * Push-to-talk voice jump (L-03) using the browser's speech recognition where it
- * exists. Failures never touch the audience screen (spec 5, failure behavior).
+ * exists. Failures never touch the audience screen (spec 7, failure behavior).
  */
 type Recognition = {
   lang: string;

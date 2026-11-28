@@ -1,6 +1,6 @@
 "use client";
 /**
- * Presenter controls for audience response (spec 5A): session, polls, and the
+ * Presenter controls for audience response (spec 8): session, polls, and the
  * moderation queues. Each question shows the best-matching slide (A-05), which
  * opens as a private preview, never straight on the audience screen.
  */

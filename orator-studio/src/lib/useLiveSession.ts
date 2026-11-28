@@ -1,7 +1,7 @@
 "use client";
 /**
  * The presenter's connection to an audience session. Failures here never affect
- * slides or notes (spec 5A, rule 4); the panel shows a status instead.
+ * slides or notes (spec 8, rule 4); the panel shows a status instead.
  *
  * Two transports:
  * - "sse" (local mode): the server streams the host view.

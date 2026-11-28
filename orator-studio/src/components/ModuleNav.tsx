@@ -1,6 +1,6 @@
 "use client";
 /**
- * The modules (spec 1A) as the app's main navigation (spec 3C): a sidebar on
+ * The modules (spec 3) as the app's main navigation (spec Appendix C): a sidebar on
  * desktop, an icon rail on iPad, a bottom tab bar on phones. The current one is
  * marked for screen readers (aria-current) and by more than color.
  */

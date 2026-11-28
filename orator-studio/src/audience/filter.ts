@@ -1,7 +1,7 @@
 /**
  * A first-pass profanity and abuse filter. It only flags: flagged text is never
  * auto-approved, and every free-text item still goes through the presenter's
- * queue (spec 5A, rule 2). The list is deliberately short; extend it per site.
+ * queue (spec 8, rule 2). The list is deliberately short; extend it per site.
  */
 const WORDS = [
   "fuck", "shit", "bitch", "bastard", "asshole", "dick", "cunt", "slut", "whore", "fag", "faggot",

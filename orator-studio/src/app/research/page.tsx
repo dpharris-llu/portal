@@ -1,5 +1,5 @@
 "use client";
-/** Orator Research: arguments, and the ways to start one (spec 1A). */
+/** Orator Research: arguments, and the ways to start one (spec 3). */
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

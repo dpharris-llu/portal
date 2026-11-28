@@ -1,11 +1,51 @@
--- OratorStudio: all migrations in order (0001 to 0004), for pasting once into the Supabase SQL Editor.
--- Generated from supabase/migrations/. Run it once, on a new project.
+-- OratorStudio: the whole database, for pasting once into the Supabase SQL Editor.
+-- Part 1 removes anything from an earlier setup (DELETES ALL APP DATA; signed-in users are kept).
+-- Part 2 creates everything (migrations 0001 to 0003). Generated from supabase/reset.sql and supabase/migrations/.
 
--- ===== migrations/0001_init.sql =====
--- OratorStudio version .3 schema.
--- Multi-tenant from day one (spec 8): every row carries tenant_id, and Row Level
+-- ===== Part 1: reset.sql =====
+-- OratorStudio: remove every table, function, policy and trigger the app
+-- created, so setup-all.sql can rebuild from scratch. DELETES ALL APP DATA
+-- (presentations, decks, live sessions). Signed-in users (auth.users) are kept.
+
+drop trigger if exists on_auth_user_created on auth.users;
+drop policy if exists "presenter listens to own host channel" on realtime.messages;
+drop policy if exists "anyone listens to a room" on realtime.messages;
+drop policy if exists "presenter publishes to own room" on realtime.messages;
+
+drop table if exists
+  public.argument_ops, public.arguments,
+  public.presentation_ops, public.presentations,
+  public.deck_ops, public.decks,
+  public.live_votes, public.live_questions, public.live_responses, public.live_devices, public.live_polls, public.live_sessions,
+  public.memberships, public.tenants
+  cascade;
+
+do $$
+declare f record;
+begin
+  for f in
+    select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and (p.proname like 'live\_%' or p.proname in ('is_member', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
+  loop
+    execute format('drop function if exists %s cascade', f.sig);
+  end loop;
+end;
+$$;
+
+drop type if exists public.member_role cascade;
+
+-- ===== Part 2: migrations/0001_init.sql =====
+-- OratorStudio schema, core (spec section 9, data model).
+-- Multi-tenant from day one: every row carries tenant_id, and Row Level
 -- Security limits access to members of that tenant. Standard Postgres only, to
--- keep a later move to Azure a migration rather than a rewrite (spec 9).
+-- keep a later move to Azure a migration rather than a rewrite.
+--
+-- The model (spec 1B, F-025): a presentation is what the author makes. It
+-- owns its curation (topic, occasion, sources, facts, probes, message, points:
+-- the outline) and its slides (decks). Both are changed only through
+-- operations, kept in append-only logs, so history and undo are complete and
+-- the current state can always be rebuilt from the log.
 
 create table public.tenants (
   id uuid primary key default gen_random_uuid(),
@@ -23,11 +63,41 @@ create table public.memberships (
   primary key (tenant_id, user_id)
 );
 
--- Current state of each deck, kept for fast loading. The operation log below is
--- the source of truth; the snapshot can always be rebuilt from it.
+-- A presentation and its curation. `curation` is the current state (the app's
+-- Argument object: topic, occasion, sources, facts, probes, outline); the log
+-- in presentation_ops is the source of truth.
+create table public.presentations (
+  id text primary key,
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  title text not null default 'Untitled presentation',
+  topic text not null default '',
+  curation jsonb not null,
+  version integer not null default 0,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index presentations_tenant_idx on public.presentations (tenant_id, updated_at desc);
+
+create table public.presentation_ops (
+  id text primary key,
+  presentation_id text not null references public.presentations(id) on delete cascade,
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  seq bigint generated always as identity,
+  author_kind text not null check (author_kind in ('human', 'ai')),
+  author_id text not null,
+  reason text,
+  op jsonb not null,
+  created_at timestamptz not null default now()
+);
+create index presentation_ops_idx on public.presentation_ops (presentation_id, seq);
+
+-- Slides. A deck belongs to a presentation (drafted from its outline); an
+-- imported or sample deck may have none yet.
 create table public.decks (
   id text primary key,
   tenant_id uuid not null references public.tenants(id) on delete cascade,
+  presentation_id text references public.presentations(id) on delete cascade,
   title text not null default 'Untitled deck',
   snapshot jsonb not null,
   version integer not null default 0,
@@ -36,8 +106,8 @@ create table public.decks (
   updated_at timestamptz not null default now()
 );
 create index decks_tenant_idx on public.decks (tenant_id, updated_at desc);
+create index decks_presentation_idx on public.decks (presentation_id);
 
--- Append-only log of edits by people and AI (spec 3, "Rules of the model").
 create table public.deck_ops (
   id text primary key,
   deck_id text not null references public.decks(id) on delete cascade,
@@ -68,36 +138,60 @@ $$;
 
 alter table public.tenants enable row level security;
 alter table public.memberships enable row level security;
+alter table public.presentations enable row level security;
+alter table public.presentation_ops enable row level security;
 alter table public.decks enable row level security;
 alter table public.deck_ops enable row level security;
 
 create policy "members read their tenant" on public.tenants
   for select using (public.is_member(id));
-
 create policy "members see memberships in their tenant" on public.memberships
   for select using (public.is_member(tenant_id));
+
+create policy "members read presentations" on public.presentations
+  for select using (public.is_member(tenant_id));
+create policy "members create presentations" on public.presentations
+  for insert with check (public.is_member(tenant_id) and created_by = (select auth.uid()));
+create policy "members update presentations" on public.presentations
+  for update using (public.is_member(tenant_id)) with check (public.is_member(tenant_id));
+create policy "members delete presentations" on public.presentations
+  for delete using (public.is_member(tenant_id));
 
 create policy "members read decks" on public.decks
   for select using (public.is_member(tenant_id));
 create policy "members create decks" on public.decks
-  for insert with check (public.is_member(tenant_id) and created_by = (select auth.uid()));
+  for insert with check (
+    public.is_member(tenant_id) and created_by = (select auth.uid())
+    and (presentation_id is null or exists (select 1 from public.presentations p where p.id = presentation_id and p.tenant_id = decks.tenant_id))
+  );
 create policy "members update decks" on public.decks
-  for update using (public.is_member(tenant_id)) with check (public.is_member(tenant_id));
+  for update using (public.is_member(tenant_id)) with check (
+    public.is_member(tenant_id)
+    and (presentation_id is null or exists (select 1 from public.presentations p where p.id = presentation_id and p.tenant_id = decks.tenant_id))
+  );
 create policy "members delete decks" on public.decks
   for delete using (public.is_member(tenant_id));
 
--- Ops are insert-only: no update or delete policy, so history cannot be rewritten.
-create policy "members read ops" on public.deck_ops
+-- Logs are insert-only: no update or delete policy, so history cannot be rewritten.
+create policy "members read presentation ops" on public.presentation_ops
   for select using (public.is_member(tenant_id));
-create policy "members append ops" on public.deck_ops
+create policy "members append presentation ops" on public.presentation_ops
+  for insert with check (
+    public.is_member(tenant_id)
+    and exists (select 1 from public.presentations p where p.id = presentation_id and p.tenant_id = presentation_ops.tenant_id)
+    and (author_kind = 'ai' or author_id = (select auth.uid())::text)
+  );
+create policy "members read deck ops" on public.deck_ops
+  for select using (public.is_member(tenant_id));
+create policy "members append deck ops" on public.deck_ops
   for insert with check (
     public.is_member(tenant_id)
     and exists (select 1 from public.decks d where d.id = deck_id and d.tenant_id = deck_ops.tenant_id)
     and (author_kind = 'ai' or author_id = (select auth.uid())::text)
   );
 
--- Version .3 has one tenant. New users who sign in by Magic Link get a personal
--- tenant so the app works before LLU roles exist (Stage 1 replaces this).
+-- Version .3: each new user who signs in gets a personal tenant, so the app
+-- works before LLU roles exist (Stage 1 replaces this).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -117,7 +211,20 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ===== migrations/0002_live.sql =====
+-- Users who already exist (for example after a reset) get their tenant now.
+do $$
+declare
+  u record;
+  t uuid;
+begin
+  for u in select id, email from auth.users where id not in (select user_id from public.memberships) loop
+    insert into public.tenants (name) values (coalesce(u.email, 'Personal')) returning id into t;
+    insert into public.memberships (tenant_id, user_id, role) values (t, u.id, 'admin');
+  end loop;
+end;
+$$;
+
+-- ===== Part 2: migrations/0002_live.sql =====
 -- Audience response sessions (spec 5A) stored in Postgres, so they work on
 -- serverless hosting. Rows are written only through the functions below, which
 -- the app's server calls with the service role; phones never touch these tables
@@ -396,7 +503,7 @@ begin
   end loop;
 end $$;
 
--- ===== migrations/0003_live_realtime.sql =====
+-- ===== Part 2: migrations/0003_live_realtime.sql =====
 -- Realtime Authorization for audience sessions (private broadcast channels).
 --
 --   live-host:<session id>  The server pings the presenter here when anything changes.
@@ -442,54 +549,3 @@ create policy "anyone listens to a room" on realtime.messages
 create policy "presenter publishes to own room" on realtime.messages
   for insert to authenticated
   with check (realtime.messages.extension = 'broadcast' and public.realtime_can_publish_room((select realtime.topic())));
-
--- ===== migrations/0004_arguments.sql =====
--- Orator Research arguments (spec 1A, F-016): stored like decks, with a current
--- snapshot for fast loading and an append-only log of operations.
-
-create table public.arguments (
-  id text primary key,
-  tenant_id uuid not null references public.tenants(id) on delete cascade,
-  title text not null default 'Untitled argument',
-  snapshot jsonb not null,
-  version integer not null default 0,
-  created_by uuid references auth.users(id),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index arguments_tenant_idx on public.arguments (tenant_id, updated_at desc);
-
-create table public.argument_ops (
-  id text primary key,
-  argument_id text not null references public.arguments(id) on delete cascade,
-  tenant_id uuid not null references public.tenants(id) on delete cascade,
-  seq bigint generated always as identity,
-  author_kind text not null check (author_kind in ('human', 'ai')),
-  author_id text not null,
-  reason text,
-  op jsonb not null,
-  created_at timestamptz not null default now()
-);
-create index argument_ops_arg_idx on public.argument_ops (argument_id, seq);
-
-alter table public.arguments enable row level security;
-alter table public.argument_ops enable row level security;
-
-create policy "members read arguments" on public.arguments
-  for select using (public.is_member(tenant_id));
-create policy "members create arguments" on public.arguments
-  for insert with check (public.is_member(tenant_id) and created_by = (select auth.uid()));
-create policy "members update arguments" on public.arguments
-  for update using (public.is_member(tenant_id)) with check (public.is_member(tenant_id));
-create policy "members delete arguments" on public.arguments
-  for delete using (public.is_member(tenant_id));
-
--- Insert-only, as for deck_ops: history cannot be rewritten.
-create policy "members read argument ops" on public.argument_ops
-  for select using (public.is_member(tenant_id));
-create policy "members append argument ops" on public.argument_ops
-  for insert with check (
-    public.is_member(tenant_id)
-    and exists (select 1 from public.arguments a where a.id = argument_id and a.tenant_id = argument_ops.tenant_id)
-    and (author_kind = 'ai' or author_id = (select auth.uid())::text)
-  );

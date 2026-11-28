@@ -1,5 +1,5 @@
 "use client";
-/** The old "New deck" page: purpose and outline now live in Research (spec 1A), so this forwards there. */
+/** The old "New deck" page: purpose and outline now live in Research (spec 3), so this forwards there. */
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 

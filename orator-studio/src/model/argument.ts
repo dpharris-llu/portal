@@ -1,5 +1,5 @@
 /**
- * The argument (spec 1A, F-002, F-016): what Orator Research produces and Orator
+ * The argument (spec 3, F-002, F-016): what Orator Research produces and Orator
  * Build drafts slides from. Purpose and audience, a thesis, points in order with
  * the evidence behind each, open questions, a recommendation and next steps.
  *
@@ -18,7 +18,7 @@ export interface EvidenceItem {
   /** Where it came from: "Delgado et al., 2025, p. 4", "Statements, Feb 2026", a URL. */
   source?: string;
   quote?: string;
-  /** The workspace fact this evidence is, when it came from one (spec 1A, F-118). */
+  /** The workspace fact this evidence is, when it came from one (spec 3, F-118). */
   factId?: Id;
 }
 
@@ -267,7 +267,7 @@ export function invertArgOp(before: Argument, body: ArgOpBody): ArgOpBody {
   }
 }
 
-/** A point with no evidence is shown as unsupported, never blocked (spec 1A). */
+/** A point with no evidence is shown as unsupported, never blocked (spec 3). */
 export const isSupported = (p: ArgPoint) => p.evidence.length > 0;
 
 /** What changed in the argument after `version`: the points touched, and whether the framing (thesis, recommendation...) changed. */

@@ -7,7 +7,7 @@ import { currentAuthorId, getRepo } from "./repo";
 
 export type SaveStatus = "saved" | "saving" | "error";
 
-/** Load a deck, apply edits as operations, and autosave (spec 8: no work lost). */
+/** Load a deck, apply edits as operations, and autosave (spec 11: no work lost). */
 export function useDeck(id: string) {
   const [state, setState] = useState<EditorState | null>(null);
   const [missing, setMissing] = useState(false);
@@ -53,7 +53,7 @@ export function useDeck(id: string) {
     }
   }, []);
 
-  // Debounced autosave (spec 8: no work lost on crash or disconnect).
+  // Debounced autosave (spec 11: no work lost on crash or disconnect).
   useEffect(() => {
     if (!state || state.log.length === savedCount.current) return;
     setStatus("saving");

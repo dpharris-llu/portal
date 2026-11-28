@@ -1,5 +1,5 @@
 "use client";
-/** Orator Present (spec 1A, section 5). */
+/** Orator Present (spec 3, section 5). */
 import { TopBar } from "@/components/TopBar";
 import { ModeBanner } from "@/components/ModeBanner";
 import { DeckList } from "@/components/DeckList";

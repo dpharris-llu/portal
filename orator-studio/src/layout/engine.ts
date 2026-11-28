@@ -1,5 +1,5 @@
 /**
- * Rule-based layout (spec 3, "Layout"). Picks an arrangement from the slide's
+ * Rule-based layout (spec 5, "Layout"). Picks an arrangement from the slide's
  * blocks and the theme; never stores positions. All rects are slide-relative (0..1).
  * Pure and synchronous so it can run on every keystroke and be reused by export.
  */

@@ -2,7 +2,7 @@
 /**
  * Deck storage. Local mode keeps decks in this browser. Cloud mode writes to
  * Supabase and also keeps a local copy, so a deck that was opened once can
- * still be presented with no network (spec 8, reliability).
+ * still be presented with no network (spec 11, reliability).
  */
 import type { Deck } from "@/model/types";
 import type { Operation } from "@/model/ops";
@@ -103,6 +103,7 @@ function cloudRepo(): DeckRepo {
         tenant_id: deck.tenantId,
         title: deck.meta.title,
         snapshot: deck,
+        presentation_id: deck.meta.argumentId ?? null,
         version: deck.version,
         updated_at: new Date().toISOString(),
       };

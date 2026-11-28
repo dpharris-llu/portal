@@ -1,5 +1,5 @@
 /**
- * Audience response sessions (spec 5A). Pure state and rules, shared by the
+ * Audience response sessions (spec 8). Pure state and rules, shared by the
  * server store and the tests. The presenter controls everything the room sees:
  * free text is queued for approval, and polls open and close on command.
  */

@@ -1,5 +1,5 @@
 /**
- * Live presenting state (spec 5). The audience screen changes only through
+ * Live presenting state (spec 7). The audience screen changes only through
  * explicit presenter actions: a match is previewed privately first (L-04), slides
  * flagged never-show-on-voice cannot be previewed by voice, flagged slides need a
  * second confirmation (L-06), and one action returns to the main narrative (L-05).

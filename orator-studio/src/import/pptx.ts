@@ -1,5 +1,5 @@
 /**
- * Basic PPTX import (F-006, spec 7). Converts text, bullets, tables, images,
+ * Basic PPTX import (F-006, spec 10). Converts text, bullets, tables, images,
  * bar and line charts, and speaker notes into the deck model. Anything else is
  * listed in the import report and on the slide, so nothing is lost silently.
  * Hidden slides become backup slides. Runs in the browser or in Node.

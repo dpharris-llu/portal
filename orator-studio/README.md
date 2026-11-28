@@ -32,7 +32,7 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 
 ### Setting up a Supabase project
 
-1. Create a project, then apply the migrations in `supabase/migrations/` in order (`npx supabase link` then `npx supabase db push`), or paste `supabase/setup-all.sql`, which holds all of them in order, into the SQL Editor once. Regenerate that file when a migration is added.
+1. Create a project, then apply the migrations in `supabase/migrations/` in order (`npx supabase link` then `npx supabase db push`), or paste `supabase/setup-all.sql` into the SQL Editor: it resets the database (deleting app data) and creates everything. Regenerate it from `supabase/reset.sql` and the migrations when either changes. Step by step: [`docs/deployment.md`](docs/deployment.md).
 2. **Authentication → URL configuration:** add `https://<your-domain>/auth/callback` as a redirect URL.
 3. **Realtime → Settings:** turn off "Allow public access", so only the private, access-checked channels work.
 4. Set the three Supabase variables above in Vercel (or `.env.local`).
@@ -47,10 +47,10 @@ Step by step, with the current live setup, the environment variables and their V
 
 | Path | What it is | Spec |
 | --- | --- | --- |
-| `src/model/` | Deck, slide and block types. Every edit is an operation with author, time and reason. Undo appends inverse operations, so the log is a full audit trail and replays to the current deck. | 3, 6 (guardrail 5) |
-| `src/theme/` | LLU palette as tokens with PMS and CMYK values. WCAG contrast math. Rules 1 to 4: body-text blocking with the nearest compliant color, safe uses computed against the background, chart series ordering with outlines, and white or black text on fills. | 3A |
-| `src/layout/engine.ts` | Rule-based layout (statement, quote, visual, split, stack, grid), shrink-to-fit with overflow warnings, flow around freeform regions, and a per-slide override. Pure, so export can reuse it. | 3, F-003 to F-005 |
-| `src/model/argument.ts` | The Research argument and its workspace: purpose, thesis, points with evidence, sources and facts with short ids (S2, F7), probes, discard and restore. Operations with inverses, like decks. | 1A, F-016, F-118 |
+| `src/model/` | Deck, slide and block types. Every edit is an operation with author, time and reason. Undo appends inverse operations, so the log is a full audit trail and replays to the current deck. | 5, 9 (guardrail 5) |
+| `src/theme/` | LLU palette as tokens with PMS and CMYK values. WCAG contrast math. Rules 1 to 4: body-text blocking with the nearest compliant color, safe uses computed against the background, chart series ordering with outlines, and white or black text on fills. | Appendix A |
+| `src/layout/engine.ts` | Rule-based layout (statement, quote, visual, split, stack, grid), shrink-to-fit with overflow warnings, flow around freeform regions, and a per-slide override. Pure, so export can reuse it. | 5, F-003 to F-005 |
+| `src/model/argument.ts` | The Research argument and its workspace: purpose, thesis, points with evidence, sources and facts with short ids (S2, F7), probes, discard and restore. Operations with inverses, like decks. | 3, F-016, F-118 |
 | `src/research/`, `src/components/research/` | Research workspace: the probe panel, sources and facts with discard, Find sources, upload a PDF, read-or-pick facts, the brief, and links from the documents, data and papers flows. | F-002, F-016, F-118, F-119 |
 | `src/find/` | Find sources: PubMed (NIH E-utilities), Europe PMC (reports and preprints) and ClinicalTrials.gov. Fixed endpoints only; full texts from PubMed Central become checkable sections. Test fixtures are made up. | F-119 |
 | `src/evidence/` | Research papers: two-column PDF text, quote and number checks against the page, the cross-paper deck. | F-015 |
@@ -59,12 +59,12 @@ Step by step, with the current live setup, the environment variables and their V
 | `src/search/` | Local BM25 search over claims, content, notes, table cells and chart labels, with prefix matching. Has a hook for blending in embeddings. | L-01, L-02 (partial), L-10 |
 | `src/present/` | Presenter state machine: private preview, send, return-to-place, blank, never-show-on-voice, and confirm-before-showing. The audience window syncs over `BroadcastChannel` with no server. | L-04 to L-06, L-09 |
 | `src/checks/` | Missing alt text, unsourced charts, `[figure: …]` placeholders, AI content awaiting review, and layout overflow. | F-010, guardrail 2 |
-| `src/import/` | PPTX import: text, bullets with indent levels, tables, images with alt text, bar and line charts with their data, and notes. Hidden slides go to backup. Unconverted items are listed in a report and flagged on their slides. `scripts/make-fixture.py` rebuilds the test deck. | F-006, 7 |
-| `src/audience/` | Audience sessions: polls (multiple choice, rating, ranking, short text, word cloud), Q&A with upvotes, moderation, a profanity filter, one response per device, rate limits, room lock. Two stores behind one interface: in memory with Server-Sent Events (local mode), and Postgres with Supabase Realtime. A parity test runs the same scenario through both. | 5A |
-| `src/ai/` | Prompts, schemas and checks for every Claude task: outlines, figure analysis, reading papers, cross-paper synthesis, probes, search planning. Claude is reached through the viewer's claude.ai account when the page runs there, otherwise through the server's API key (`claude-opus-5-5`, structured JSON output). | 6, F-013, F-015, F-118, F-119 |
-| `src/app/` | Pages: home, the four module pages (`/research`, `/build`, `/present`, `/engage`), the argument workspace (`/research/<id>`), drafting from an argument (`/build/<id>`), documents, data URL and papers flows, import, editor, presenter, audience window, phone join pages (`/join`, `/j/<code>`), login and the auth callback. API routes under `/api`. | 1A |
-| `src/lib/serverAccess.ts` | Who may use routes that spend money or fetch URLs: signed-in users with Supabase; on Vercel without sign-in, nobody. | 8 |
-| `supabase/migrations/` | `0001`: tenants, memberships with roles, decks, and an append-only `deck_ops` table, with Row Level Security on every table; each new user gets a personal tenant. `0002`: audience session tables and the functions that enforce the rules. `0003`: who may use which Realtime channel. `0004`: arguments and their append-only operation log. `setup-all.sql` holds all four for one paste into the SQL Editor. | 8, 9 |
+| `src/import/` | PPTX import: text, bullets with indent levels, tables, images with alt text, bar and line charts with their data, and notes. Hidden slides go to backup. Unconverted items are listed in a report and flagged on their slides. `scripts/make-fixture.py` rebuilds the test deck. | F-006, 10 |
+| `src/audience/` | Audience sessions: polls (multiple choice, rating, ranking, short text, word cloud), Q&A with upvotes, moderation, a profanity filter, one response per device, rate limits, room lock. Two stores behind one interface: in memory with Server-Sent Events (local mode), and Postgres with Supabase Realtime. A parity test runs the same scenario through both. | 8 |
+| `src/ai/` | Prompts, schemas and checks for every Claude task: outlines, figure analysis, reading papers, cross-paper synthesis, probes, search planning. Claude is reached through the viewer's claude.ai account when the page runs there, otherwise through the server's API key (`claude-opus-5-5`, structured JSON output). | 9, F-013, F-015, F-118, F-119 |
+| `src/app/` | Pages: home, the four module pages (`/research`, `/build`, `/present`, `/engage`), the argument workspace (`/research/<id>`), drafting from an argument (`/build/<id>`), documents, data URL and papers flows, import, editor, presenter, audience window, phone join pages (`/join`, `/j/<code>`), login and the auth callback. API routes under `/api`. | 3 |
+| `src/lib/serverAccess.ts` | Who may use routes that spend money or fetch URLs: signed-in users with Supabase; on Vercel without sign-in, nobody. | 11 |
+| `supabase/migrations/` | `0001`: tenants and memberships with roles; `presentations` (topic, curation) with the append-only `presentation_ops`; `decks`, each belonging to a presentation, with `deck_ops`; Row Level Security on every table; each new user gets a personal tenant. `0002`: audience session tables and the functions that enforce the rules. `0003`: who may use which Realtime channel. `reset.sql` removes it all; `setup-all.sql` is reset plus all migrations, for one paste into the SQL Editor. | 11, 12 |
 
 ## Status against version .3 (Stage 0)
 
@@ -98,4 +98,4 @@ Images from imported decks are stored in the browser (IndexedDB). They don't syn
 - The LLU fonts and clearance rules are still placeholders, as the spec says.
 - **Wordmark:** "Orator" in navy (15.4:1 on white) and "Studio" in Regent Red (8.0:1). The brand card shows the name on black, but Regent Red on black is only 2.6:1, below the 3:1 minimum even for large text. A dark version needs a lighter red: `#cc0044` is 3.65:1 (large text only), `#e0335f` is 4.8:1. That choice is for LLU brand staff, so the app only uses the light version for now.
 - Browser storage keys and channel names still start with `lectern`, the earlier working name, so decks already saved in a browser stay readable. Users never see them.
-- Version .3 is for non-sensitive content only (spec 9). Nothing here is set up for patient or student data.
+- Version .3 is for non-sensitive content only (spec 12). Nothing here is set up for patient or student data.

@@ -3,7 +3,7 @@ import { contrastRatio, safeUses, textOn } from "./contrast";
 import { lluTheme } from "./llu";
 import { chartSeriesColors, checkTextColor, color } from "./rules";
 
-// Contrast on white as published in spec section 3A.
+// Contrast on white as published in spec Appendix A.
 const SPEC: Record<string, number> = {
   "green-dark": 6.3, green: 4.3, "green-light": 1.4, orange: 2.8, amber: 1.7, yellow: 1.3,
   red: 8.0, "red-bright": 5.8, "red-tint": 1.4, plum: 12.0, purple: 8.1, periwinkle: 2.6,
@@ -18,7 +18,7 @@ describe("LLU palette", () => {
     }
   });
 
-  it("matches the logo colorway ratios in spec 3B", () => {
+  it("matches the logo colorway ratios in spec Appendix B", () => {
     expect(contrastRatio("#ffbb44", "#002255")).toBeCloseTo(9.2, 0);
     expect(contrastRatio("#ffffff", "#a30234")).toBeCloseTo(8.0, 0);
   });

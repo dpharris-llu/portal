@@ -1,4 +1,4 @@
-/** WCAG 2.1 contrast math (spec 3A). */
+/** WCAG 2.1 contrast math (spec Appendix A). */
 
 export type RGB = [number, number, number];
 

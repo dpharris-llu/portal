@@ -1,5 +1,5 @@
 /**
- * The deck model (spec section 3). A deck is a model of an argument:
+ * The deck model (spec section 5). A deck is a model of an argument:
  * slides hold a claim, evidence blocks and a presenter intent. Layout is
  * derived from this, never stored as positioned boxes (except freeform regions).
  */
@@ -10,7 +10,7 @@ export type Id = string;
 
 export type Intent = "inform" | "persuade" | "decide";
 
-/** Who made a change. Every AI change is labeled (spec 6, guardrail 1). */
+/** Who made a change. Every AI change is labeled (spec 9, guardrail 1). */
 export interface Author {
   kind: "human" | "ai";
   id: string;

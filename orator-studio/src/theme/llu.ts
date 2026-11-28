@@ -1,5 +1,5 @@
 /**
- * LLU palette (spec 3A). Values transcribed from the spec, which took them from a
+ * LLU palette (spec Appendix A). Values transcribed from the spec, which took them from a
  * screenshot of the LLU style guide; confirm against the live guide.
  * Safe uses are not stored: they are computed from contrast (see contrast.ts).
  */
@@ -10,7 +10,7 @@ export const lluTheme: Theme = {
   name: "LLU",
   background: "#ffffff",
   text: "#000000",
-  // Placeholder fonts until LLU brand fonts are captured (spec 3A).
+  // Placeholder fonts until LLU brand fonts are captured (spec Appendix A).
   fonts: { heading: "'Space Grotesk', system-ui, sans-serif", body: "system-ui, -apple-system, 'Segoe UI', sans-serif" },
   sizes: { title: 60, body: 34, small: 22 },
   spacing: { margin: 0.06, gap: 0.03 },

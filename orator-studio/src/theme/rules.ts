@@ -1,4 +1,4 @@
-/** Theme rules 1-4 from spec 3A, enforced in code rather than checked by hand. */
+/** Theme rules 1-4 from spec Appendix A, enforced in code rather than checked by hand. */
 import type { Theme, ThemeColor } from "./types";
 import { BODY_TEXT_MIN, GRAPHIC_MIN, colorDistance, contrastRatio } from "./contrast";
 

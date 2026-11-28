@@ -1,6 +1,6 @@
 /**
  * Append-only editing history. Undo does not delete operations: it appends
- * the inverse, so the log stays a complete audit trail (spec 6, guardrail 5).
+ * the inverse, so the log stays a complete audit trail (spec 9, guardrail 5).
  */
 import type { Author, Deck } from "./types";
 import { applyOp, invertOp, makeOp, type OpBody, type Operation } from "./ops";

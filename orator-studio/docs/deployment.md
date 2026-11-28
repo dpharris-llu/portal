@@ -8,7 +8,7 @@ How the live site is set up, how to set it up again from scratch, and what to wa
 | --- | --- | --- |
 | Code | GitHub `dpharris-llu/portal`, folder `orator-studio/` | Default branch: `claude/wonderful-lamport-y0ycay`. Every push to it redeploys the site. |
 | Website | Vercel project `orator-studio`, team `dpharris-llu` (Hobby plan) | Live at https://orator-studio-dusky.vercel.app. Dashboard: https://vercel.com/dpharris-llu/orator-studio |
-| Database and sign-in | Supabase project `orators-studio` (ref `nhssgqvpnibinejxebrz`), organization "dpharris-llu's Org" (Free plan), region East US (Ohio), `us-east-2` | Project URL: `https://nhssgqvpnibinejxebrz.supabase.co`. All four migrations applied with `supabase/setup-all.sql`. |
+| Database and sign-in | Supabase project `orators-studio` (ref `nhssgqvpnibinejxebrz`), organization "dpharris-llu's Org" (Free plan), region East US (Ohio), `us-east-2` | Project URL: `https://nhssgqvpnibinejxebrz.supabase.co`. Database set up with `supabase/setup-all.sql` (the presentation model: `presentations`, `decks`, their logs, and the live-session tables). |
 | Claude on the server | Not set up yet | Needs `ANTHROPIC_API_KEY` in Vercel. Decide first whose account it bills to (personal or LLU). |
 
 The accounts are personal for now. The spec says LLU will own the product (section 9), so move the Vercel project and Supabase project to LLU-owned teams before others depend on them; both services support transferring a project.
@@ -40,7 +40,7 @@ Supabase's legacy `anon` and `service_role` keys also work in the same variables
 
 ### 2. Supabase
 1. supabase.com → sign in with GitHub → **New project** (Free plan; a U.S. region). Save the generated database password somewhere safe.
-2. **SQL Editor → New query:** paste all of `orator-studio/supabase/setup-all.sql` (GitHub → the file → "Copy raw file") and **Run**. **Table Editor** should then list 12 tables: `argument_ops`, `arguments`, `deck_ops`, `decks`, `live_devices`, `live_polls`, `live_questions`, `live_responses`, `live_sessions`, `live_votes`, `memberships`, `tenants`.
+2. **SQL Editor → New query:** paste all of `orator-studio/supabase/setup-all.sql` (GitHub → the file → "Copy raw file") and **Run**. The file first removes anything from an earlier setup (**all app data is deleted**; signed-in users are kept and get their workspace back), then creates everything. Supabase may warn that the query is destructive; confirm. **Table Editor** should then list 12 tables: `deck_ops`, `decks`, `live_devices`, `live_polls`, `live_questions`, `live_responses`, `live_sessions`, `live_votes`, `memberships`, `presentation_ops`, `presentations`, `tenants`.
 3. **Authentication → URL Configuration:** Site URL `https://<your-vercel-address>`, and add the redirect URL `https://<your-vercel-address>/auth/callback`. Magic Link sign-in fails without these.
 4. **Realtime → Settings:** turn off **Allow public access**, so only the private, access-checked channels work.
 5. **Project Settings → API Keys:** copy the Project URL, the publishable key and the secret key (with the copy icon; the secret key is shown masked).
@@ -51,6 +51,10 @@ Supabase's legacy `anon` and `service_role` keys also work in the same variables
 3. Open the site: the yellow "Local mode" banner is gone and the sign-in page appears. Sign in with the Magic Link.
 
 Work created in local mode stays in that browser; it doesn't move into the cloud account.
+
+## Changing the database
+
+The database is defined by `supabase/migrations/` (0001 core: tenants, presentations, decks and their logs; 0002 and 0003: live sessions). `supabase/reset.sql` removes everything the app created. `supabase/setup-all.sql` is reset.sql followed by the migrations, regenerated whenever either changes; pasting it rebuilds the database from scratch.
 
 ## Checks
 
@@ -69,4 +73,4 @@ The same applies to an Anthropic key: create a new one in the Claude Console, re
 
 ## Data rules for version .3
 
-Non-sensitive content only (spec sections 8 and 9). Nothing here is set up for patient or student data. A HIPAA agreement with the hosts, or a move to Azure, comes first.
+Non-sensitive content only (spec sections 11 and 12). Nothing here is set up for patient or student data. A HIPAA agreement with the hosts, or a move to Azure, comes first.

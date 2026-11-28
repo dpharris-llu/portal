@@ -1,5 +1,5 @@
 "use client";
-/** Home: the four modules (spec 1A) and recent work, in the spec 3C design. */
+/** Home: the four modules (spec 3) and recent work, in the spec Appendix C design. */
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

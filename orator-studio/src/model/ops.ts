@@ -1,6 +1,6 @@
 /**
  * Every edit, by a person or by AI, is an operation with author, time and
- * reason (spec 3, "Rules of the model"). The deck is the fold of its operations,
+ * reason (spec 5, "Rules of the model"). The deck is the fold of its operations,
  * which gives history, undo, and later claim-level diffs and co-editing.
  */
 import type { Author, Block, DataSource, Deck, DeckMeta, Id, Paper, Section, Slide } from "./types";

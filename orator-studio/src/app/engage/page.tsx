@@ -1,5 +1,5 @@
 "use client";
-/** Orator Engage (spec 1A, section 5A). */
+/** Orator Engage (spec 3, section 5A). */
 import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
 import { ModeBanner } from "@/components/ModeBanner";

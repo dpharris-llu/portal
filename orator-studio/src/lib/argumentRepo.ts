@@ -1,7 +1,8 @@
 "use client";
 /**
- * Argument storage (F-016), the same way as decks: this browser in local mode;
- * Supabase plus a local copy in cloud mode.
+ * Presentation storage (F-016, F-025): the presentation and its curation (the
+ * app's Argument object), in the `presentations` table with its operation log in
+ * `presentation_ops`. This browser in local mode; Supabase plus a local copy in cloud mode.
  */
 import type { Argument, ArgOp } from "@/model/argument";
 import { argumentTitle } from "@/model/argument";
@@ -62,34 +63,34 @@ function cloudArguments(): ArgumentRepo {
   const sb = browserSupabase()!;
   return {
     async list() {
-      const { data, error } = await sb.from("arguments").select("id,title,updated_at").order("updated_at", { ascending: false });
+      const { data, error } = await sb.from("presentations").select("id,title,updated_at").order("updated_at", { ascending: false });
       if (error) return localArguments.list();
       return data.map((d) => ({ id: d.id as string, title: d.title as string, updatedAt: d.updated_at as string }));
     },
     async load(id) {
-      const { data, error } = await sb.from("arguments").select("snapshot").eq("id", id).maybeSingle();
+      const { data, error } = await sb.from("presentations").select("curation").eq("id", id).maybeSingle();
       if (error || !data) return localArguments.load(id);
-      const ops = await sb.from("argument_ops").select("op").eq("argument_id", id).order("seq");
-      const stored: StoredArgument = { argument: data.snapshot as Argument, log: (ops.data ?? []).map((r) => r.op as ArgOp) };
+      const ops = await sb.from("presentation_ops").select("op").eq("presentation_id", id).order("seq");
+      const stored: StoredArgument = { argument: data.curation as Argument, log: (ops.data ?? []).map((r) => r.op as ArgOp) };
       localStorage.setItem(argKey(id), JSON.stringify(stored));
       return stored;
     },
     async save(argument, newOps, isNew = false) {
       await localArguments.save(argument, newOps);
       const { data: auth } = await sb.auth.getUser();
-      const row = { id: argument.id, tenant_id: argument.tenantId, title: argumentTitle(argument), snapshot: argument, version: argument.version, updated_at: new Date().toISOString() };
-      const res = isNew ? await sb.from("arguments").insert({ ...row, created_by: auth.user?.id }) : await sb.from("arguments").update(row).eq("id", argument.id);
+      const row = { id: argument.id, tenant_id: argument.tenantId, title: argumentTitle(argument), topic: argument.topic ?? "", curation: argument, version: argument.version, updated_at: new Date().toISOString() };
+      const res = isNew ? await sb.from("presentations").insert({ ...row, created_by: auth.user?.id }) : await sb.from("presentations").update(row).eq("id", argument.id);
       if (res.error) throw res.error;
       if (newOps.length) {
-        const ins = await sb.from("argument_ops").insert(
-          newOps.map((op) => ({ id: op.id, argument_id: argument.id, tenant_id: argument.tenantId, author_kind: op.author.kind, author_id: op.author.id, reason: op.reason ?? null, op })),
+        const ins = await sb.from("presentation_ops").insert(
+          newOps.map((op) => ({ id: op.id, presentation_id: argument.id, tenant_id: argument.tenantId, author_kind: op.author.kind, author_id: op.author.id, reason: op.reason ?? null, op })),
         );
         if (ins.error) throw ins.error;
       }
     },
     async remove(id) {
       await localArguments.remove(id);
-      const { error } = await sb.from("arguments").delete().eq("id", id);
+      const { error } = await sb.from("presentations").delete().eq("id", id);
       if (error) throw error;
     },
   };

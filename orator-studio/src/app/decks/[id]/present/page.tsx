@@ -1,6 +1,6 @@
 "use client";
 /**
- * Presenter view (spec 5). The audience window only changes on explicit actions;
+ * Presenter view (spec 7). The audience window only changes on explicit actions;
  * search and voice matches open as a private preview first.
  */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
