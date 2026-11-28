@@ -7,7 +7,7 @@ import "server-only";
 import type { Candidate, Provider, SearchOptions } from "./types";
 import { EUROPEPMC_BASE, europePmcFullTextUrl, europePmcSearchUrl, jatsPages, parseEuropePmc } from "./europepmc";
 import { CTGOV_BASE, ctGovSearchUrl, parseCtGov } from "./clinicaltrials";
-import { EUTILS_BASE, parsePubmed, pubmedAbstractUrl, pubmedAbstracts, pubmedIds, pubmedSearchUrl, pubmedSummaryUrl } from "./pubmed";
+import { EUTILS_BASE, parsePubmed, pmcFullTextUrl, pubmedAbstractUrl, pubmedAbstracts, pubmedIds, pubmedSearchUrl, pubmedSummaryUrl } from "./pubmed";
 
 const TIMEOUT_MS = 20000;
 /** Europe PMC gets a shorter wait when PubMed can stand in for it. */
@@ -60,25 +60,35 @@ export async function searchPubmed(query: string, o: SearchOptions = {}, fetchIm
   return parsePubmed(summary, abstracts);
 }
 
-/** Papers: Europe PMC first; if it doesn't answer, PubMed directly. Says which one answered. */
+/** Papers: PubMed (fast, NIH) for journal articles; Europe PMC alongside for government reports and preprints only. */
 export async function searchSources(provider: Provider, query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<Candidate[]> {
   return (await searchWithSource(provider, query, o, fetchImpl)).results;
 }
 
 export async function searchWithSource(provider: Provider, query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<{ results: Candidate[]; from: string; note?: string }> {
-  if (provider === "europepmc") {
+  if (provider !== "europepmc") return { results: await searchCtGov(query, o, fetchImpl), from: "ClinicalTrials.gov" };
+  // Reports (NCBI Bookshelf) and preprints aren't in PubMed; ask Europe PMC for just those, with a short wait.
+  const extras = o.openAccessOnly
+    ? Promise.resolve({ list: [] as Candidate[], failed: false })
+    : get(europePmcSearchUrl(epmc(), `(${query}) AND (SRC:NBK OR SRC:PPR)`, { ...o, pageSize: 5 }), "application/json", fetchImpl, EPMC_TIMEOUT_MS)
+        .then((t) => ({ list: parseEuropePmc(JSON.parse(t)), failed: false }))
+        .catch(() => ({ list: [] as Candidate[], failed: true }));
+  try {
+    const [papers, more] = await Promise.all([searchPubmed(query, o, fetchImpl), extras]);
+    const seen = new Set(papers.map((p) => p.pmid).filter(Boolean));
+    return {
+      results: [...papers, ...more.list.filter((c) => !c.pmid || !seen.has(c.pmid))],
+      from: more.list.length ? "PubMed and Europe PMC" : "PubMed",
+      ...(more.failed ? { note: "Government reports and preprints from Europe PMC didn't arrive in time; journal articles are complete." } : {}),
+    };
+  } catch (e) {
+    const why = e instanceof SearchError ? e.message : "PubMed failed.";
     try {
-      return { results: parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), query, o), "application/json", fetchImpl, EPMC_TIMEOUT_MS))), from: "Europe PMC" };
-    } catch (e) {
-      const why = e instanceof SearchError ? e.message : "Europe PMC failed.";
-      try {
-        return { results: await searchPubmed(query, o, fetchImpl), from: "PubMed", note: `Results from PubMed: ${why} NCBI Bookshelf reports and preprints aren't included this time.` };
-      } catch (e2) {
-        throw new SearchError(`${why} PubMed also failed: ${e2 instanceof SearchError ? e2.message : "unknown error"}`);
-      }
+      return { results: parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), query, o), "application/json", fetchImpl))), from: "Europe PMC", note: `Results from Europe PMC: ${why}` };
+    } catch (e2) {
+      throw new SearchError(`${why} Europe PMC also failed: ${e2 instanceof SearchError ? e2.message : "unknown error"}`);
     }
   }
-  return { results: (await searchCtGov(query, o, fetchImpl)), from: "ClinicalTrials.gov" };
 }
 
 async function searchCtGov(query: string, o: SearchOptions, fetchImpl?: typeof fetch): Promise<Candidate[]> {
@@ -104,10 +114,20 @@ export async function checkConnections(fetchImpl?: typeof fetch) {
   ]);
 }
 
-/** Open-access full text from PubMed Central, as section pages. */
+/**
+ * Open-access full text, as section pages: from PubMed Central at NCBI first
+ * (fast), then Europe PMC. A record with no body (not open access) doesn't count.
+ */
 export async function fullText(pmcid: string, fetchImpl?: typeof fetch) {
   if (!/^PMC\d{1,10}$/.test(pmcid)) throw new SearchError("Not a PubMed Central id.", 400);
+  const hasBody = (r: ReturnType<typeof jatsPages>) => r.pages.some((p) => p.text && !p.text.startsWith("Abstract\n"));
+  try {
+    const r = jatsPages(await get(pmcFullTextUrl(eutils(), pmcid), "application/xml", fetchImpl));
+    if (hasBody(r)) return r;
+  } catch {
+    // fall through to Europe PMC
+  }
   const r = jatsPages(await get(europePmcFullTextUrl(epmc(), pmcid), "application/xml", fetchImpl));
-  if (!r.pages.length) throw new SearchError("The full text came back empty.");
+  if (!hasBody(r)) throw new SearchError("No free full text is available for this paper.", 404);
   return r;
 }

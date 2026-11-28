@@ -8,7 +8,7 @@ export function europePmcSearchUrl(base: string, query: string, o: SearchOptions
   let q = query.trim();
   if (o.openAccessOnly) q = `(${q}) AND OPEN_ACCESS:y`;
   if (o.fromYear) q = `(${q}) AND PUB_YEAR:[${o.fromYear} TO 3000]`;
-  return `${base}/search?query=${encodeURIComponent(q)}&format=json&resultType=core&pageSize=15`;
+  return `${base}/search?query=${encodeURIComponent(q)}&format=json&resultType=core&pageSize=${o.pageSize ?? 15}`;
 }
 
 export const europePmcFullTextUrl = (base: string, pmcid: string) => `${base}/${encodeURIComponent(pmcid)}/fullTextXML`;

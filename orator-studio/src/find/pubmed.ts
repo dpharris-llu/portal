@@ -18,6 +18,8 @@ export function pubmedSearchUrl(base: string, query: string, o: SearchOptions = 
 export const pubmedSummaryUrl = (base: string, ids: string[]) => `${base}/esummary.fcgi?db=pubmed&retmode=json&${TOOL}&id=${ids.join(",")}`;
 export const pubmedAbstractUrl = (base: string, ids: string[]) => `${base}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&${TOOL}&id=${ids.join(",")}`;
 
+export const pmcFullTextUrl = (base: string, pmcid: string) => `${base}/efetch.fcgi?db=pmc&retmode=xml&${TOOL}&id=${encodeURIComponent(pmcid.replace(/^PMC/, ""))}`;
+
 export function pubmedIds(json: unknown): string[] {
   return ((json as { esearchresult?: { idlist?: string[] } })?.esearchresult?.idlist ?? []).filter((x) => /^\d+$/.test(x));
 }

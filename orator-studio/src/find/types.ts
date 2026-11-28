@@ -31,9 +31,10 @@ export interface Candidate {
 export interface SearchOptions {
   openAccessOnly?: boolean;
   fromYear?: number;
+  pageSize?: number;
 }
 
 export const PROVIDERS: Record<Provider, { name: string; covers: string }> = {
-  europepmc: { name: "Papers and reports", covers: "Europe PMC: all of PubMed (including CDC's MMWR), open-access full texts from PubMed Central, preprints, and NCBI Bookshelf government reports such as AHRQ evidence reviews" },
+  europepmc: { name: "Papers and reports", covers: "PubMed, the NIH's database of journal articles (including CDC's MMWR), with free full texts from PubMed Central; plus government reports from NCBI Bookshelf (such as AHRQ evidence reviews) and preprints, through Europe PMC" },
   clinicaltrials: { name: "Registered trials", covers: "ClinicalTrials.gov, the U.S. National Library of Medicine's registry of clinical studies" },
 };

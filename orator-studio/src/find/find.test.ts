@@ -67,20 +67,39 @@ describe("PubMed fallback", () => {
     expect(c[0].badges).toEqual(["Randomized Controlled Trial"]);
   });
 
-  it("falls back to PubMed when Europe PMC doesn't answer, and says so", async () => {
+  it("searches PubMed for articles and Europe PMC alongside for reports, without waiting on it", async () => {
     const { searchWithSource } = await import("./server");
     const seen: string[] = [];
-    const fake = (async (url: string) => {
-      seen.push(new URL(url).host + new URL(url).pathname);
-      if (url.includes("europepmc")) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
-      const body = url.includes("esearch") ? fx("pubmed-esearch.json") : url.includes("esummary") ? fx("pubmed-esummary.json") : fx("pubmed-efetch.xml");
-      return new Response(body, { status: 200 });
+    const fake = (slowEpmc: boolean) =>
+      (async (url: string) => {
+        seen.push(new URL(url).host + new URL(url).pathname + (url.includes("europepmc") ? "?" + decodeURIComponent(new URL(url).searchParams.get("query") ?? "") : ""));
+        if (url.includes("europepmc")) {
+          if (slowEpmc) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
+          return new Response(fx("europepmc-search.json"));
+        }
+        const body = url.includes("esearch") ? fx("pubmed-esearch.json") : url.includes("esummary") ? fx("pubmed-esummary.json") : fx("pubmed-efetch.xml");
+        return new Response(body, { status: 200 });
+      }) as unknown as typeof fetch;
+    const r = await searchWithSource("europepmc", "walking HbA1c", {}, fake(false));
+    expect(r.from).toBe("PubMed and Europe PMC");
+    // PubMed's two articles, then only the Bookshelf report from Europe PMC (its PubMed records are not repeated)
+    expect(r.results.map((c) => c.id)).toEqual(["MED:39000001", "MED:39000002", "NBK:NBK900001"]);
+    expect(seen.find((x) => x.includes("europepmc"))).toContain("(walking HbA1c) AND (SRC:NBK OR SRC:PPR)");
+    const slow = await searchWithSource("europepmc", "walking HbA1c", {}, fake(true));
+    expect(slow.from).toBe("PubMed");
+    expect(slow.results).toHaveLength(2);
+    expect(slow.note).toContain("didn't arrive in time");
+  });
+
+  it("gets free full text from PubMed Central at NCBI, falling back to Europe PMC", async () => {
+    const { fullText } = await import("./server");
+    const hosts: string[] = [];
+    const ncbiNoBody = (async (url: string) => {
+      hosts.push(new URL(url).host);
+      return new Response(url.includes("eutils") ? "<article><front><abstract><p>Only an abstract.</p></abstract></front></article>" : fx("pmc-fulltext.xml"));
     }) as unknown as typeof fetch;
-    const r = await searchWithSource("europepmc", "walking HbA1c", {}, fake);
-    expect(r.from).toBe("PubMed");
-    expect(r.note).toContain("couldn't be reached (UND_ERR_CONNECT_TIMEOUT)");
-    expect(r.results).toHaveLength(2);
-    expect(seen[0]).toBe("www.ebi.ac.uk/europepmc/webservices/rest/search");
-    expect(seen.slice(1).sort()).toEqual(["eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi", "eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi", "eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"]);
+    const r = await fullText("PMC9900001", ncbiNoBody);
+    expect(hosts).toEqual(["eutils.ncbi.nlm.nih.gov", "www.ebi.ac.uk"]);
+    expect(Object.values(r.labels)).toEqual(["Abstract", "Methods", "Results", "Limitations"]);
   });
 });
