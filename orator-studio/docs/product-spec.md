@@ -6,13 +6,13 @@ Nov 28, 2026 · @DP Harris
 
 *Curate the evidence. Hone your message. Each point backed by evidence, every fact traceable to its source.*
 
-This spec defines OratorStudio, a platform for creating presentations you can stand behind: clear about their message, and right in every fact. An author starts from a topic, curates the evidence (what they already know, and what discovery finds that they didn't), hones a message and the points that carry it, then builds, presents and engages. It has four modules: **Orator Curate**, **Orator Build**, **Orator Present** and **Orator Engage**. It is built first for one presenter, then LLU admins, then faculty, then sold to other institutions.
+This spec defines OratorStudio, a platform for creating evidence-based presentations: clear about their message, current with what is known, and traceable in every fact. An author starts from a topic, curates the evidence (what they already know, and what discovery finds that they didn't), hones a message and the points that carry it, then builds, presents and engages. It has four modules: **Orator Curate**, **Orator Build**, **Orator Present** and **Orator Engage**. It is built first for one presenter, then LLU admins, then faculty, then sold to other institutions.
 
 ## 1. Overview
 
 **Problem.** PowerPoint stores positioned boxes. That makes decks hard to restyle, check for accuracy, make accessible, reuse for different audiences, or navigate live. AI bolted onto that model can only decorate it.
 
-**Why authors come.** Something is on the calendar: a board meeting, a lecture, grand rounds, a conference talk. The author knows the topic, but may not know what has been published lately, whether guidance has changed, what is underway, or what evidence cuts against their view. Their biggest fear is being wrong in front of the room.
+**Why authors come.** Something is on the calendar: a board meeting, a lecture, grand rounds, a conference talk. The author wants that presentation to be evidence-based. They know the topic, but may not know what has been published lately, whether guidance has changed, what is underway, or what evidence cuts against their view. OratorStudio helps them find that out, keep what matters, and show where every fact comes from.
 
 **Vision.** A presentation is curated before it is designed. The author gathers evidence from their own sources and from discovery, decides what to keep, and hones a message with points that each rest on checked facts. Slides are then drafted from that outline: design is applied by rules, data stays live and sourced, and the presenter can go anywhere in the material in seconds.
 
@@ -105,13 +105,13 @@ In the code and database, the outline is still stored as `argument` and `argumen
 
 Each stage adds a user type with different needs. Admin features are not assumed to carry over to faculty.
 
-| User | Typical deck | Top needs | Biggest fear |
+| User | Typical presentation | Top needs | What evidence-based means to them |
 | --- | --- | --- | --- |
-| You (founder-presenter) | Talks, leadership briefings, internal updates | Fast authoring, live Q&A navigation, import of existing decks | Losing years of content |
-| LLU admin | Board, budget, enrollment, accreditation reporting | Correct numbers, consistent brand, quick review and approval | A wrong number in front of the board |
-| Faculty | Lectures, grand rounds, conference talks | Legacy import, handouts, accessibility, image attribution | Rebuilding hundreds of slides |
-| Student / audience | Viewing a deck or handout | Readable, accessible, searchable material | Inaccessible content |
-| Institutional buyer (IT, compliance, procurement) | N/A | SSO, audit trail, privacy, accessibility compliance | Data leaving the institution |
+| You (founder-presenter) | Talks, leadership briefings, internal updates | Fast authoring, live Q&A navigation, import of existing decks | Talks grounded in the current evidence, without losing years of existing content |
+| LLU admin | Board, budget, enrollment, accreditation reporting | Correct numbers, consistent brand, quick review and approval | Every number in a board deck traceable to its source |
+| Faculty | Lectures, grand rounds, conference talks | Legacy import, handouts, accessibility, image attribution | Lectures that reflect the latest research, without rebuilding hundreds of slides |
+| Student / audience | Viewing a deck or handout | Readable, accessible, searchable material | Material they can check, with sources they can follow |
+| Institutional buyer (IT, compliance, procurement) | N/A | SSO, audit trail, privacy, accessibility compliance | An audit trail for every fact and AI suggestion, with data kept within the institution |
 
 **Primary use cases**
 
