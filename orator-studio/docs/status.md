@@ -48,14 +48,14 @@ Last updated: November 28, 2026. The product spec ([`product-spec.md`](product-s
 
 ## Waiting on the product owner
 
-- **Run in Supabase** (if not done): `supabase/migrations/0004_ai_usage.sql`, `0005_invites.sql`, then `supabase/make-admin.sql` with your address.
+- **Run in Supabase** (if not done): `supabase/make-admin.sql` with your address.
 - **Custom SMTP in Supabase** before inviting colleagues: Authentication → Emails → SMTP Settings (LLU mail or a transactional provider). The built-in sender is for testing.
 - **Optional:** `AI_MONTHLY_BUDGET_USD` in Vercel; a spending limit in the Claude Console; `NCBI_API_KEY`; a Data Commons API key (`DATACOMMONS_API_KEY`) when statistics are built.
 - **Decisions open in the spec** (section 13): co-authors' Claude limits (F-127), learning-mode defaults (F-209), the evaluation topics, EGW API terms (F-124), LLU licenses for commentaries and lexicons.
 
 ## Next, in order
 
-0. **Rebuild on the knowledge model**: phases A (database and data layer), B (Discover), C (Curate) and D (Build) are done. **Waiting on the product owner: run the switch-over SQL** (`docs/deployment.md`, "Switching the live database"). Next: E, ingestion. Older flows not yet on the new model: documents and data URLs make decks without keeping sources; the old Curate components remain in the code until a cleanup.
+0. **Rebuild on the knowledge model**: phases A (database and data layer), B (Discover), C (Curate) and D (Build) are done. The live database was switched to the knowledge model on November 28, 2026 (0004, 0005 and 0006 run). Next: E, ingestion. Older flows not yet on the new model: documents and data URLs make decks without keeping sources; the old Curate components remain in the code until a cleanup.
    **Review the knowledge model in the spec** (sections 2, 3, 5 and F-130 to F-147), then rebuild onto it (F-141), including the ingestion engine.
 1. **The talk** (in a few days): use the live site; fix only what the dry run shows.
 2. **A slight redesign** (requested; scope to be agreed).
