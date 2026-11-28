@@ -458,7 +458,8 @@ a.list-row:hover, .list-row:has(> a:hover) { background: var(--panel); color: in
 .research-side { position: sticky; top: 76px; max-height: calc(100vh - 92px); overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 8px; }
 @media (max-width: 1099px) {
   .research-grid { grid-template-columns: 1fr; }
-  .research-side { position: static; max-height: none; overflow: visible; order: -1; }
+  /* The step's own content sits right under the tabs; the shared panels follow it. */
+  .research-side { position: static; max-height: none; overflow: visible; }
 }
 .probe-panel, .workspace-panel { border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px; background: #fff; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-1); }
 .probe-panel { border-color: #c9d3e3; }
