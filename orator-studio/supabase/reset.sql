@@ -8,6 +8,10 @@ drop policy if exists "anyone listens to a room" on realtime.messages;
 drop policy if exists "presenter publishes to own room" on realtime.messages;
 
 drop table if exists
+  public.assertion_facts, public.presentation_assertions, public.presentation_topics,
+  public.observations, public.assertions, public.topic_sources, public.topic_relations,
+  public.facts, public.sources, public.topics, public.members, public.comments,
+  public.review_flags, public.search_runs,
   public.argument_ops, public.arguments,
   public.presentation_ops, public.presentations,
   public.deck_ops, public.decks,
@@ -22,7 +26,7 @@ begin
   for f in
     select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
-      and (p.proname like 'live\_%' or p.proname in ('is_member', 'is_app_admin', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
+      and (p.proname like 'live\_%' or p.proname in ('is_member', 'is_app_admin', 'topic_role', 'presentation_role', 'can_read_source', 'flag_dependents', 'on_fact_change', 'on_source_change', 'on_assertion_change', 'on_assertion_fact', 'handle_new_user', 'realtime_is_live_host', 'realtime_can_publish_room'))
   loop
     execute format('drop function if exists %s cascade', f.sig);
   end loop;
