@@ -8,7 +8,7 @@
  * a landscape section in server.ts. The search plan picks it up from here.
  */
 
-export type EvidenceKind = "research" | "statistics" | "guidance" | "underway" | "news";
+export type EvidenceKind = "research" | "statistics" | "guidance" | "underway" | "news" | "faith";
 
 export type CatalogSource = {
   id: string;
@@ -93,6 +93,36 @@ export const CATALOG: CatalogSource[] = [
     kind: "news",
     covers: "Official announcements and research press releases; labeled not peer-reviewed, each traced to its primary source",
     access: "The announcement, as a dated snapshot",
+    status: "planned",
+    standard: false,
+  },
+  {
+    id: "bible",
+    name: "The Bible (NIV, NKJV, NLT)",
+    owner: "API.Bible (American Bible Society), under each publisher's license",
+    kind: "faith",
+    covers: "Scripture passages by reference, in the author's chosen version; labeled as Scripture, not research. The Passion Translation is entered by the author",
+    access: "The passage text, with the version's copyright notice",
+    status: "planned",
+    standard: false,
+  },
+  {
+    id: "egw",
+    name: "Ellen G. White's writings",
+    owner: "Ellen G. White Estate (EGW Writings API)",
+    kind: "faith",
+    covers: "Her published writings and the Adventist pioneer library, searchable, with standard references (book, page, paragraph)",
+    access: "Brief quotations under the Estate's fair-use terms",
+    status: "planned",
+    standard: false,
+  },
+  {
+    id: "adventist",
+    name: "Adventist news and records",
+    owner: "Adventist News Network, Adventist Review, Office of Archives, Statistics and Research, Encyclopedia of Seventh-day Adventists",
+    kind: "news",
+    covers: "Official church news, statistics (Annual Statistical Reports, Yearbook) and history; news labeled not peer-reviewed",
+    access: "The article or record, as a dated snapshot",
     status: "planned",
     standard: false,
   },
