@@ -53,18 +53,37 @@ describe("ClinicalTrials.gov", () => {
 });
 
 describe("PubMed fallback", () => {
-  it("parses search, summaries and abstracts", async () => {
-    const { pubmedIds, pubmedAbstracts, parsePubmed, pubmedSearchUrl } = await import("./pubmed");
+  it("parses one efetch response into articles: details, ids and abstracts, in search order", async () => {
+    const { pubmedIds, pubmedAbstracts, parsePubmedArticles, pubmedSearchUrl } = await import("./pubmed");
     expect(pubmedSearchUrl("https://e/u", "walking", { openAccessOnly: true })).toContain("term=" + encodeURIComponent("(walking) AND free full text[sb]"));
     expect(pubmedIds(JSON.parse(fx("pubmed-esearch.json")))).toEqual(["39000001", "39000002"]);
-    const abs = pubmedAbstracts(fx("pubmed-efetch.xml"));
-    expect(abs.get("39000001")).toBe("Background: Walking is widely recommended.\nResults: HbA1c fell by 0.6 percentage points in the walking group compared with 0.1 in usual care (difference 0.5; 95% CI 0.3–0.7).");
-    const c = parsePubmed(JSON.parse(fx("pubmed-esummary.json")), abs);
-    expect(c.map((x) => [x.id, x.access, x.pmcid, x.year, x.url])).toEqual([
-      ["MED:39000001", "full text", "PMC9900001", "2025", "https://pubmed.ncbi.nlm.nih.gov/39000001/"],
-      ["MED:39000002", "abstract", undefined, "2024", "https://pubmed.ncbi.nlm.nih.gov/39000002/"],
+    expect(pubmedAbstracts(fx("pubmed-efetch.xml")).get("39000001")).toBe("Background: Walking is widely recommended.\nResults: HbA1c fell by 0.6 percentage points in the walking group compared with 0.1 in usual care (difference 0.5; 95% CI 0.3–0.7).");
+    const c = parsePubmedArticles(fx("pubmed-efetch.xml"), ["39000002", "39000001"]);
+    expect(c.map((x) => [x.id, x.access, x.pmcid, x.year, x.venue])).toEqual([
+      ["MED:39000002", "abstract", undefined, "2024", "Fictional Diabetes Research"],
+      ["MED:39000001", "full text", "PMC9900001", "2025", "Journal of Fictional Clinical Studies"],
     ]);
-    expect(c[0].badges).toEqual(["Randomized Controlled Trial"]);
+    expect(c[1]).toMatchObject({ title: "A Daily Walking Program and Glycemic Control in Adults With Type 2 Diabetes: A Randomized Trial", authors: ["Delgado M", "Osei K"], doi: "10.5555/jfcs.2025.0101", badges: ["Randomized Controlled Trial"] });
+    expect(c[0].authors).toEqual(["Fictional Diabetes Study Group"]);
+  });
+
+  it("paces NCBI calls and retries a 429", async () => {
+    const { searchPubmed } = await import("./server");
+    const times: number[] = [];
+    let busyOnce = true;
+    const fake = (async (url: string) => {
+      times.push(Date.now());
+      if (url.includes("esearch") && busyOnce) {
+        busyOnce = false;
+        return new Response("", { status: 429, headers: { "retry-after": "1" } });
+      }
+      return new Response(url.includes("esearch") ? fx("pubmed-esearch.json") : fx("pubmed-efetch.xml"));
+    }) as unknown as typeof fetch;
+    const r = await searchPubmed("walking", {}, fake);
+    expect(r).toHaveLength(2);
+    expect(times).toHaveLength(3); // the 429, the retry, then one efetch for details and abstracts
+    expect(times[1] - times[0]).toBeGreaterThanOrEqual(950);
+    expect(times[2] - times[1]).toBeGreaterThanOrEqual(380);
   });
 
   it("searches PubMed for articles and Europe PMC alongside for reports, without waiting on it", async () => {
@@ -77,8 +96,7 @@ describe("PubMed fallback", () => {
           if (slowEpmc) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
           return new Response(fx("europepmc-search.json"));
         }
-        const body = url.includes("esearch") ? fx("pubmed-esearch.json") : url.includes("esummary") ? fx("pubmed-esummary.json") : fx("pubmed-efetch.xml");
-        return new Response(body, { status: 200 });
+        return new Response(url.includes("esearch") ? fx("pubmed-esearch.json") : fx("pubmed-efetch.xml"), { status: 200 });
       }) as unknown as typeof fetch;
     const r = await searchWithSource("europepmc", "walking HbA1c", {}, fake(false));
     expect(r.from).toBe("PubMed and Europe PMC");
@@ -113,8 +131,7 @@ describe("Discover landscape", () => {
       seen.push(u.host + u.pathname + " " + decodeURIComponent(u.searchParams.get("term") ?? u.searchParams.get("query") ?? u.searchParams.get("query.term") ?? "") + (u.searchParams.get("filter.overallStatus") ? " | " + u.searchParams.get("filter.overallStatus") : "") + (u.searchParams.get("sort") ? " | sort=" + u.searchParams.get("sort") : ""));
       if (url.includes("europepmc")) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } });
       if (url.includes("clinicaltrials")) return new Response(fx("ctgov-search.json"));
-      const body = url.includes("esearch") ? fx("pubmed-esearch.json") : url.includes("esummary") ? fx("pubmed-esummary.json") : fx("pubmed-efetch.xml");
-      return new Response(body);
+      return new Response(url.includes("esearch") ? fx("pubmed-esearch.json") : fx("pubmed-efetch.xml"));
     }) as unknown as typeof fetch;
     const secs = await landscape('("walking"[tiab]) AND ("type 2 diabetes"[MeSH Terms])', "walking type 2 diabetes", fake);
     expect(secs.map((s) => [s.key, s.results.length, Boolean(s.error)])).toEqual([
@@ -126,7 +143,16 @@ describe("Discover landscape", () => {
     const esearch = seen.filter((x) => x.includes("esearch"));
     expect(esearch.some((x) => x.includes("AND (systematic[sb] OR meta-analysis[pt] OR guideline[pt] OR practice guideline[pt])") && x.endsWith("sort=pub_date"))).toBe(true);
     expect(esearch.some((x) => x.includes("NOT (review[pt] OR systematic[sb]") && x.endsWith("sort=pub_date"))).toBe(true);
-    expect(seen.find((x) => x.includes("clinicaltrials"))).toBe("clinicaltrials.gov/api/v2/studies walking type 2 diabetes | RECRUITING|NOT_YET_RECRUITING|ACTIVE_NOT_RECRUITING|ENROLLING_BY_INVITATION");
+    expect(seen.find((x) => x.includes("clinicaltrials"))).toBe("clinicaltrials.gov/api/v2/studies walking AND type AND diabetes | RECRUITING|NOT_YET_RECRUITING|ACTIVE_NOT_RECRUITING|ENROLLING_BY_INVITATION");
     expect(seen.find((x) => x.includes("europepmc"))).toContain("(walking type 2 diabetes) AND SRC:NBK");
+  });
+});
+
+describe("registry search words", () => {
+  it("requires the topic's meaningful words", async () => {
+    const { ctGovTerms } = await import("./clinicaltrials");
+    expect(ctGovTerms("Walking program for people with diabetes")).toBe("walking AND diabetes");
+    expect(ctGovTerms("Telehealth follow-up after heart failure discharge")).toBe("telehealth AND follow-up AND heart AND failure AND discharge");
+    expect(ctGovTerms("of the")).toBe("of the");
   });
 });

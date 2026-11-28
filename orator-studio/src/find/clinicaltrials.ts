@@ -64,3 +64,20 @@ export function parseCtGov(json: unknown): Candidate[] {
     ];
   });
 }
+
+const STOP = new Set("a an and the of for in on to with without among about at by from into over under people person persons patients patient adults adult individuals those who that which their our program programs programme study studies effect effects impact use using after before during between versus than".split(" "));
+
+/**
+ * A stricter registry search from the topic's words: every meaningful word must
+ * match ("walking AND diabetes"), so "Walking program for people with diabetes"
+ * doesn't bring back unrelated rehabilitation trials. Words like "program" and
+ * "people" are left out because registry records rarely use them.
+ */
+export function ctGovTerms(words: string): string {
+  const keep = words
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP.has(w));
+  return keep.length ? keep.join(" AND ") : words.trim();
+}

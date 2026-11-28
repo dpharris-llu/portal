@@ -27,6 +27,7 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Magic Link login, cloud storage of decks, and audience sessions over Realtime. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only, and required with the two above. Audience sessions are written with it. |
 | `ANTHROPIC_API_KEY` | Claude on the server: outlines, analysis, reading papers. Without it, Claude works only inside claude.ai, and outlines use a template. |
+| `NCBI_API_KEY` | Optional, server only. A free key from NCBI raises PubMed's limit from about 3 to 10 requests a second and makes it yours rather than shared with the host's address. Discovery works without it, a little slower. |
 | `SOURCE_ALLOWED_HOSTS` | Comma-separated hosts that data URL sources may be fetched from, such as `api.open-meteo.com`. Empty means any public host. |
 | `REQUIRE_SIGN_IN` | Set to `1` on a public server other than Vercel. Without sign-in, the Claude and URL-fetch routes then switch off (on Vercel this is automatic). |
 

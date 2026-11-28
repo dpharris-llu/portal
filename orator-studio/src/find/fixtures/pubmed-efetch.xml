@@ -1,8 +1,27 @@
 <?xml version="1.0" ?>
+<!-- Made-up records for tests, shaped like PubMed efetch XML. -->
 <PubmedArticleSet>
-<PubmedArticle><MedlineCitation><PMID Version="1">39000001</PMID><Article><Abstract>
+<PubmedArticle><MedlineCitation Status="MEDLINE" Owner="NLM"><PMID Version="1">39000001</PMID><Article PubModel="Print">
+<Journal><JournalIssue><PubDate><Year>2025</Year><Month>Mar</Month></PubDate></JournalIssue><Title>Journal of Fictional Clinical Studies</Title></Journal>
+<ArticleTitle>A Daily Walking Program and Glycemic Control in Adults With Type 2 Diabetes: A <i>Randomized</i> Trial.</ArticleTitle>
+<Abstract>
 <AbstractText Label="BACKGROUND">Walking is widely recommended.</AbstractText>
 <AbstractText Label="RESULTS">HbA1c fell by 0.6 percentage points in the walking group compared with 0.1 in usual care (difference 0.5; 95% CI 0.3&#x2013;0.7).</AbstractText>
-</Abstract></Article></MedlineCitation></PubmedArticle>
-<PubmedArticle><MedlineCitation><PMID Version="1">39000002</PMID><Article><Abstract><AbstractText>Each additional 1,000 daily steps was associated with an HbA1c 0.08 percentage points lower.</AbstractText></Abstract></Article></MedlineCitation></PubmedArticle>
+</Abstract>
+<AuthorList><Author><LastName>Delgado</LastName><ForeName>Maria</ForeName><Initials>M</Initials></Author><Author><LastName>Osei</LastName><Initials>K</Initials></Author></AuthorList>
+<PublicationTypeList><PublicationType UI="D016428">Journal Article</PublicationType><PublicationType UI="D016449">Randomized Controlled Trial</PublicationType></PublicationTypeList>
+</Article></MedlineCitation>
+<PubmedData><ArticleIdList><ArticleId IdType="pubmed">39000001</ArticleId><ArticleId IdType="doi">10.5555/jfcs.2025.0101</ArticleId><ArticleId IdType="pmc">PMC9900001</ArticleId></ArticleIdList>
+<ReferenceList><Reference><Citation>An earlier study.</Citation><ArticleIdList><ArticleId IdType="pmc">PMC1111111</ArticleId></ArticleIdList></Reference></ReferenceList></PubmedData>
+</PubmedArticle>
+<PubmedArticle><MedlineCitation><PMID Version="1">39000002</PMID><Article>
+<Journal><JournalIssue><PubDate><MedlineDate>2024 Jan-Feb</MedlineDate></PubDate></JournalIssue><Title>Fictional Diabetes Research</Title></Journal>
+<ArticleTitle>Steps per Day and Long-Term HbA1c in a Primary Care Cohort.</ArticleTitle>
+<Abstract><AbstractText>Each additional 1,000 daily steps was associated with an HbA1c 0.08 percentage points lower.</AbstractText></Abstract>
+<AuthorList><Author><CollectiveName>Fictional Diabetes Study Group</CollectiveName></Author></AuthorList>
+<PublicationTypeList><PublicationType UI="D016428">Journal Article</PublicationType></PublicationTypeList>
+</Article></MedlineCitation>
+<PubmedData><ArticleIdList><ArticleId IdType="pubmed">39000002</ArticleId></ArticleIdList>
+<ReferenceList><Reference><Citation>Another.</Citation><ArticleIdList><ArticleId IdType="pmc">PMC2222222</ArticleId></ArticleIdList></Reference></ReferenceList></PubmedData>
+</PubmedArticle>
 </PubmedArticleSet>

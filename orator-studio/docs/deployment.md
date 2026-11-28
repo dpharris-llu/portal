@@ -25,6 +25,7 @@ Vercel marks each variable as **Config** (readable after saving) or **Secret** (
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Config | Supabase → Project Settings → API Keys → **Publishable key** (`sb_publishable_…`) | Same. Public by design: row-level security protects the data. The variable keeps its old name; the new publishable key goes in it. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Supabase → Project Settings → API Keys → **Secret key** (`sb_secret_…`) | Server only. Writes audience sessions. Never in the browser, a chat or a screenshot. The new secret key goes in the old variable name. |
 | `ANTHROPIC_API_KEY` | **Secret** | Claude Console (console.anthropic.com) → API keys | Claude on the server. Takes effect only when the Supabase variables are set, so only signed-in people can use it. Set a monthly spending limit in the console. |
+| `NCBI_API_KEY` | **Secret** | NCBI: sign in at ncbi.nlm.nih.gov → Account settings → **API Key Management** → Create | Optional. Raises PubMed's limit from about 3 to 10 requests a second, so discovery doesn't hit "too many requests" (429) on Vercel's shared addresses. The app already paces and retries without it. |
 | `SOURCE_ALLOWED_HOSTS` | Config | Your choice, for example `api.open-meteo.com` | Hosts that data URL sources may be fetched from. Empty means any public host. Database searches (PubMed, Europe PMC, ClinicalTrials.gov) don't use this list. |
 | `REQUIRE_SIGN_IN` | Config | `1` | Only for hosts other than Vercel: turns off Claude and URL fetching when sign-in isn't configured. Automatic on Vercel. |
 

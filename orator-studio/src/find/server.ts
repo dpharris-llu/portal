@@ -6,8 +6,8 @@ import "server-only";
  */
 import type { Candidate, LandscapeSection, Provider, SearchOptions } from "./types";
 import { EUROPEPMC_BASE, europePmcFullTextUrl, europePmcSearchUrl, jatsPages, parseEuropePmc } from "./europepmc";
-import { CTGOV_BASE, ctGovSearchUrl, parseCtGov } from "./clinicaltrials";
-import { EUTILS_BASE, parsePubmed, pmcFullTextUrl, pubmedAbstractUrl, pubmedAbstracts, pubmedIds, pubmedSearchUrl, pubmedSummaryUrl } from "./pubmed";
+import { CTGOV_BASE, ctGovSearchUrl, ctGovTerms, parseCtGov } from "./clinicaltrials";
+import { EUTILS_BASE, parsePubmedArticles, pmcFullTextUrl, pubmedAbstractUrl, pubmedIds, pubmedSearchUrl } from "./pubmed";
 
 const TIMEOUT_MS = 20000;
 /** Europe PMC gets a shorter wait when PubMed can stand in for it. */
@@ -30,12 +30,57 @@ export function causeOf(e: unknown): string {
   return c?.code ?? c?.name ?? (e as { name?: string })?.name ?? "unknown";
 }
 
+/**
+ * NCBI allows about 3 requests a second per address (10 with an API key), and
+ * Vercel's addresses are shared with other sites. So E-utilities calls go one
+ * at a time, spaced out, with the key added when one is set, and a 429 or 503
+ * is retried after the wait the server asks for (or 1, 2, 4 seconds).
+ */
+let ncbiNext = 0;
+let ncbiQueue: Promise<unknown> = Promise.resolve();
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+function ncbiTurn(): Promise<void> {
+  const gap = process.env.NCBI_API_KEY ? 120 : 400;
+  const turn = ncbiQueue.then(async () => {
+    const wait = ncbiNext - Date.now();
+    if (wait > 0) await sleep(wait);
+    ncbiNext = Date.now() + gap;
+  });
+  ncbiQueue = turn.catch(() => undefined);
+  return turn;
+}
+const isNcbi = (url: string) => /eutils\.ncbi\.nlm\.nih\.gov|\/eutils\//.test(url);
+function withKey(url: string): string {
+  const key = process.env.NCBI_API_KEY;
+  return key && isNcbi(url) ? `${url}${url.includes("?") ? "&" : "?"}api_key=${encodeURIComponent(key)}` : url;
+}
+
 async function get(url: string, accept: string, fetchImpl: typeof fetch = fetch, timeoutMs = TIMEOUT_MS): Promise<string> {
+  if (!isNcbi(url)) return getOnce(url, accept, fetchImpl, timeoutMs);
+  for (let attempt = 0; ; attempt++) {
+    await ncbiTurn();
+    try {
+      return await getOnce(withKey(url), accept, fetchImpl, timeoutMs);
+    } catch (e) {
+      const busy = e instanceof SearchError && (e.status === 429 || e.status === 503);
+      if (!busy || attempt >= 3) throw e;
+      await sleep((e as SearchError & { retryAfter?: number }).retryAfter ?? 1000 * 2 ** attempt);
+    }
+  }
+}
+
+async function getOnce(url: string, accept: string, fetchImpl: typeof fetch = fetch, timeoutMs = TIMEOUT_MS): Promise<string> {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const res = await fetchImpl(url, { headers: { accept, "user-agent": "OratorStudio/0.3 (research workspace)" }, signal: ctl.signal, redirect: "follow" });
     if (res.status === 404) throw new SearchError("Not found at the source.", 404);
+    if (res.status === 429 || res.status === 503) {
+      const err = new SearchError(res.status === 429 ? `${new URL(url).host} is busy (too many requests). Try again in a moment.` : `${new URL(url).host} is temporarily unavailable. Try again in a moment.`, res.status);
+      const ra = Number(res.headers.get("retry-after"));
+      if (ra > 0 && ra <= 10) (err as SearchError & { retryAfter?: number }).retryAfter = ra * 1000;
+      throw err;
+    }
     if (!res.ok) throw new SearchError(`The database answered ${res.status}. Try again in a moment.`);
     const text = await res.text();
     if (text.length > MAX_BYTES) throw new SearchError("The record is too large to read here.");
@@ -43,7 +88,7 @@ async function get(url: string, accept: string, fetchImpl: typeof fetch = fetch,
   } catch (e) {
     if (e instanceof SearchError) throw e;
     const host = new URL(url).host;
-    console.error(`Search request to ${host} failed:`, causeOf(e), e);
+    console.error(`Search request to ${host} failed:`, causeOf(e));
     throw new SearchError(ctl.signal.aborted ? `${host} took too long to answer.` : `${host} couldn't be reached (${causeOf(e)}).`);
   } finally {
     clearTimeout(timer);
@@ -53,11 +98,7 @@ async function get(url: string, accept: string, fetchImpl: typeof fetch = fetch,
 export async function searchPubmed(query: string, o: SearchOptions = {}, fetchImpl?: typeof fetch): Promise<Candidate[]> {
   const ids = pubmedIds(JSON.parse(await get(pubmedSearchUrl(eutils(), query, o), "application/json", fetchImpl)));
   if (!ids.length) return [];
-  const [summary, abstracts] = await Promise.all([
-    get(pubmedSummaryUrl(eutils(), ids), "application/json", fetchImpl).then((t) => JSON.parse(t)),
-    get(pubmedAbstractUrl(eutils(), ids), "application/xml", fetchImpl).then(pubmedAbstracts).catch(() => new Map<string, string>()),
-  ]);
-  return parsePubmed(summary, abstracts);
+  return parsePubmedArticles(await get(pubmedAbstractUrl(eutils(), ids), "application/xml", fetchImpl), ids);
 }
 
 /** Papers: PubMed (fast, NIH) for journal articles; Europe PMC alongside for government reports and preprints only. */
@@ -154,9 +195,11 @@ export async function landscape(query: string, plainWords: string, fetchImpl?: t
     run("newest", "Newest studies", "Primary research, newest first (PubMed)", () =>
       searchPubmed(`${q} NOT (review[pt] OR systematic[sb] OR meta-analysis[pt] OR editorial[pt] OR comment[pt] OR letter[pt])`, { newest: true, pageSize: 10 }, fetchImpl),
     ),
-    run("ongoing", "Ongoing trials", "Recruiting or active studies that may change the picture (ClinicalTrials.gov)", async () =>
-      parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), plainWords, { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl))),
-    ),
+    run("ongoing", "Ongoing trials", "Recruiting or active studies that may change the picture (ClinicalTrials.gov)", async () => {
+      const strict = parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), ctGovTerms(plainWords), { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl)));
+      // Too strict for this topic? Fall back to matching any of the words.
+      return strict.length ? strict : parseCtGov(JSON.parse(await get(ctGovSearchUrl(ctgov(), plainWords, { ongoingOnly: true, pageSize: 8 }), "application/json", fetchImpl)));
+    }),
     run("reports", "Government reports", "NCBI Bookshelf, such as AHRQ evidence reviews (Europe PMC)", async () =>
       parseEuropePmc(JSON.parse(await get(europePmcSearchUrl(epmc(), `(${plainWords}) AND SRC:NBK`, { pageSize: 5 }), "application/json", fetchImpl, EPMC_TIMEOUT_MS))).filter((c) => c.kind === "report"),
     ),
