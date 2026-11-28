@@ -80,7 +80,15 @@ export async function askClaudeFor<T>(opts: {
     throw new ClaudeError(opts.signal?.aborted ? "Stopped." : MESSAGES.upstream_error, opts.signal?.aborted ? "cancelled" : "upstream_error");
   }
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ClaudeError(json.error ?? MESSAGES.upstream_error, json.code ?? "upstream_error");
+  if (!res.ok) {
+    // A host timeout or crash returns a page, not JSON: say which, by status.
+    const byStatus: Record<number, string> = {
+      504: "The server stopped waiting for Claude (it hit its time limit). Try a shorter source, or try again.",
+      413: "That was too much text to send at once. Try a shorter source.",
+      500: "The server had an error before Claude answered. Try again.",
+    };
+    throw new ClaudeError(json.error ?? byStatus[res.status] ?? `${MESSAGES.upstream_error} (server answered ${res.status})`, json.code ?? "upstream_error");
+  }
   const value = opts.parse(json[opts.key]);
   if (value === null) throw new ClaudeError(MESSAGES.invalid_json, "invalid_json");
   return { value, via: "api" };

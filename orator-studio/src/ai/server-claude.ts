@@ -34,6 +34,38 @@ export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T,
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) return NextResponse.json({ error: "Claude is busy. Try again shortly.", code: "rate_limited" }, { status: 429 });
     console.error("Claude request failed", e);
-    return NextResponse.json({ error: "Claude couldn't be reached. Try again.", code: "upstream_error" }, { status: 502 });
+    return NextResponse.json({ error: explain(e), code: "upstream_error" }, { status: 502 });
   }
+}
+
+/**
+ * A plain reason for the author, from Anthropic's answer. Never includes the
+ * key: Anthropic's error messages don't echo it, and only the type, status and
+ * message are used.
+ */
+export function explain(e: unknown): string {
+  if (e instanceof Anthropic.APIError) {
+    const body = (e as { error?: { error?: { type?: string; message?: string } } }).error?.error;
+    const detail = body?.message ? ` (${body.message.slice(0, 200)})` : "";
+    switch (e.status) {
+      case 401:
+        return "Anthropic didn't accept the API key. Check ANTHROPIC_API_KEY in Vercel (the whole key, no spaces), then redeploy.";
+      case 403:
+        return `This API key isn't allowed to make this request${detail}. Check the key's workspace and permissions in the Claude Console.`;
+      case 404:
+        return `Anthropic couldn't find what was asked for${detail}. The model may not be available to this key's account.`;
+      case 400:
+        return `Anthropic didn't accept the request${detail}.`;
+      case 402:
+        return "The Anthropic account has no credit or has reached its spending limit. Check Billing and Limits in the Claude Console.";
+      case 529:
+      case 503:
+        return "Claude is overloaded right now. Try again in a minute.";
+      default:
+        if (e.status) return `Anthropic answered ${e.status}${detail}. Try again.`;
+    }
+  }
+  const name = (e as { name?: string })?.name ?? "";
+  if (/Timeout|Abort/i.test(name)) return "Claude took too long to answer. Try again.";
+  return `Claude couldn't be reached (${name || "unknown error"}). Try again.`;
 }
