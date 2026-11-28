@@ -659,7 +659,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 - [ ] Should institution-assigned AI keys be one per person, or one institutional key with usage tracked per person (F-114)?
 - [ ] Should a written brief from Curate (F-016) follow an LLU template?
 - [ ] Which databases after the planned ones (Data Commons, Federal Register, the news tier): CDC and CMS data directly, IPEDS for institutional comparisons, NIH RePORTER for funded work? Decide from the evaluation set.
-- [ ] Word study (F-128): confirm the STEPBible and Open Scriptures licenses and credit lines; does LLU's library license BDAG, HALOT or Louw–Nida for the institution layer?
+- [ ] Word study (F-128): STEPBible's license is confirmed (CC BY 4.0: free to include in software, credit "STEP Bible" linked to www.STEPBible.org; its data files load from raw.githubusercontent.com). Still to confirm: Open Scriptures' license and credit line; does LLU's library license BDAG, HALOT or Louw–Nida for the institution layer?
 - [ ] Scripture and faith tradition (F-123, F-124): confirm the EGW Writings API's developer terms with the White Estate (including sending passages to Claude); register the LLU application with API.Bible (non-commercial, NIV, NKJV, NLT); should the SDA Bible Commentary be licensed for the institution layer?
 - [ ] Sign-in email: which email service sends sign-in links (LLU's mail service or a transactional provider) before colleagues are invited (F-126)?
 - [ ] Collaboration (F-127): co-authors only, or reviewers and approvers too from the start? Does a co-author's Claude use count against the owner's limit or their own?
