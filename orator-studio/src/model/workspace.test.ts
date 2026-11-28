@@ -174,7 +174,7 @@ describe("Bible passages in the workspace", () => {
     const { passageBodies } = await import("@/components/research/BiblePanel");
     const { emptyArgument } = await import("./argument");
     const a = emptyArgument("t1");
-    const [src, fact] = passageBodies(a, { reference: "John 3:16", version: "NIV", text: "Sample verse text.", copyright: "Sample notice." }) as [{ kind: "source.put"; source: { kind: string; fetchedAt?: string; citation: string } }, { kind: "fact.put"; fact: { checked: boolean; quote?: string; text: string } }];
+    const [src, fact] = passageBodies(a, { reference: "John 3:16", version: "NIV", text: "Sample verse text.", copyright: "Sample notice." }) as unknown as [{ kind: "source.put"; source: { kind: string; fetchedAt?: string; citation: string } }, { kind: "fact.put"; fact: { checked: boolean; quote?: string; text: string } }];
     expect(src.source.kind).toBe("scripture");
     expect(src.source.fetchedAt).toBeTruthy();
     expect(src.source.citation).toBe("John 3:16 (NIV). Sample notice.");
