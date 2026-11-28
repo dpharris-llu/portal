@@ -7,14 +7,14 @@ create or replace function pg_temp.as_user(u text) returns void language plpgsql
 -- AUTHOR builds knowledge
 set role authenticated;
 select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
-insert into sources (id, kind, title) values ('aaaaaaaa-0000-0000-0000-000000000001', 'paper', 'A made-up walking study');
-insert into facts (id, source_id, text, quote, page, checked) values ('bbbbbbbb-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'Walking lowered HbA1c', 'HbA1c fell', 3, true);
+insert into sources (id, kind, title) values ('aaaaaaaa-0000-0000-0000-000000000001', 'paper', 'A made-up walking study') returning 'source saved and returned: ' || title;
+insert into facts (id, source_id, text, quote, page, checked) values ('bbbbbbbb-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'Walking lowered HbA1c', 'HbA1c fell', 3, true) returning 'fact saved and returned';
 insert into facts (id, source_id, text) values ('bbbbbbbb-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', 'Older adults saw less effect');
-insert into topics (id, name, keywords) values ('cccccccc-0000-0000-0000-000000000001', 'Walking and diabetes', '{walking,diabetes}');
-insert into assertions (id, topic_id, text) values ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Coached walking is worth funding');
+insert into topics (id, name, keywords) values ('cccccccc-0000-0000-0000-000000000001', 'Walking and diabetes', '{walking,diabetes}') returning 'topic saved and returned: ' || name;
+insert into assertions (id, topic_id, text) values ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Coached walking is worth funding') returning 'assertion saved and returned';
 insert into assertion_facts (assertion_id, fact_id, role) values ('dddddddd-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001', 'supports'), ('dddddddd-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002', 'qualifies');
 select 'auto-linked source to topic: ' || count(*) from topic_sources;
-insert into presentations (id, title, purpose, audience) values ('eeeeeeee-0000-0000-0000-000000000001', 'Board talk', 'Decide on funding', 'Board');
+insert into presentations (id, title, purpose, audience) values ('eeeeeeee-0000-0000-0000-000000000001', 'Board talk', 'Decide on funding', 'Board') returning 'presentation saved and returned: ' || title;
 insert into presentation_topics values ('eeeeeeee-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 1);
 insert into presentation_assertions values ('eeeeeeee-0000-0000-0000-000000000001', 'dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 1);
 -- STRANGER sees nothing private
