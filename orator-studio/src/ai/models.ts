@@ -30,6 +30,8 @@ export const TASK_MODELS: Record<string, TaskModel> = {
   explore: { model: SONNET, effort: "medium" },
   // A few sentences from facts already kept and checked: low stakes, edited by the author.
   annotate: { model: HAIKU, effort: "medium" },
+  // Observations on a topic's facts: careful reading, checked citations.
+  observe: { model: SONNET, effort: "high" },
 };
 
 export function modelFor(task: string): TaskModel {

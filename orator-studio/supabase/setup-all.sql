@@ -773,6 +773,7 @@ create table public.observations (
   general_knowledge text,                            -- Claude's view from general knowledge, kept apart
   fact_ids uuid[] not null default '{}',
   question text,                                     -- the probe it answers, if any
+  problems text[] not null default '{}',             -- what the app's checks found (citations, numbers)
   created_at timestamptz not null default now()
 );
 create index observations_topic_idx on public.observations (topic_id, created_at desc);

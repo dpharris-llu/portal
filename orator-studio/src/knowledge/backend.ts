@@ -107,7 +107,7 @@ function defaults(table: TableName, user: string): Row {
     topics: { id: uuid(), owner_id: user, description: "", keywords: [], created_at: t, updated_at: t },
     topic_relations: {},
     topic_sources: { note: "", linked_by: "author", created_at: t },
-    observations: { id: uuid(), author_id: user, general_knowledge: null, fact_ids: [], question: null, created_at: t },
+    observations: { id: uuid(), author_id: user, general_knowledge: null, fact_ids: [], question: null, problems: [], created_at: t },
     assertions: { id: uuid(), author_id: user, origin: "typed", observation_id: null, own_fact_id: null, builds_on: null, still_held: true, created_at: t, updated_at: t },
     assertion_facts: { role: "supports", note: "", created_at: t },
     presentations: { id: uuid(), owner_id: user, title: "Untitled presentation", purpose: "", audience: "", minutes: null, created_at: t, updated_at: t },

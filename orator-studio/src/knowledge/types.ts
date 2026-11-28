@@ -92,6 +92,8 @@ export interface Observation {
   general_knowledge: string | null;
   fact_ids: Id[];
   question: string | null;
+  /** What the app's checks found: citations that aren't facts of the topic, numbers not in the facts cited. */
+  problems: string[];
   created_at: string;
 }
 

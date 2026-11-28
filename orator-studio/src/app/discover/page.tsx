@@ -42,6 +42,12 @@ export default function DiscoverPage() {
     }
   }, [k]);
 
+  // "Find evidence for this topic" arrives as ?q=…
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setStart(q);
+  }, []);
+
   useEffect(() => {
     load().then((s) =>
       refreshScripture(k, s).then((n) => {

@@ -93,6 +93,8 @@ describe("does this topic exist already?", () => {
     expect(similarTopics("Clinician burnout", [], lib)[0].topic.name).toBe("Burnout in clinicians");
     expect(similarTopics("Bone cancer in Filipinos", [], lib)).toEqual([]);
     expect(words("The programs, for diabetes")).toEqual(["program", "diabete"]);
+    expect(similarTopics("Appointments that patients miss", [], [t("Missed appointments", ["appointments", "reminders"])])).toHaveLength(1);
+    expect(words("resting rested rests")).toEqual(["rest", "rest", "rest"]);
     expect(parseKeywords("walking, diabetes; HbA1c, walking")).toEqual(["walking", "diabetes", "HbA1c"]);
   });
 });

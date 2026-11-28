@@ -72,7 +72,14 @@ export const words = (s: string) =>
     .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .split(/[\s-]+/)
     .filter((w) => w.length > 1 && !STOP.has(w))
-    .map((w) => w.replace(/(ies)$/, "y").replace(/(?<!s)s$/, ""));
+    .map(stem);
+
+/** A light stem, so "missed", "misses" and "miss", or "resting" and "rest", match. */
+function stem(w: string): string {
+  let x = w.replace(/ies$/, "y").replace(/(?<!s)s$/, "");
+  if (x.length > 5) x = x.replace(/(ing|ed)$/, "");
+  return x.replace(/(.)\1$/, "$1");
+}
 
 /**
  * Existing topics that look like the one about to be created, best first:

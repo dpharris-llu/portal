@@ -30,6 +30,7 @@ export const TASK_LABEL: Record<string, string> = {
   bible_passages: "Find Bible passages",
   explore: "Explore an idea",
   annotate: "Draft an annotation",
+  observe: "Observe a topic",
 };
 
 function empty(): Totals {

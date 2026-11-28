@@ -105,7 +105,7 @@ export function repo(db: Backend) {
     setSourceNote: (topicId: Id, sourceId: Id, note: string) => one(db.update("topic_sources", { topic_id: topicId, source_id: sourceId }, { note })),
     unlinkSource: (topicId: Id, sourceId: Id) => db.remove("topic_sources", { topic_id: topicId, source_id: sourceId }),
 
-    addObservation: (o: Pick<Observation, "topic_id" | "made_by" | "text"> & Partial<Pick<Observation, "general_knowledge" | "fact_ids" | "question">>) => one(db.insert("observations", [o])),
+    addObservation: (o: Pick<Observation, "topic_id" | "made_by" | "text"> & Partial<Pick<Observation, "general_knowledge" | "fact_ids" | "question" | "problems">>) => one(db.insert("observations", [o])),
     deleteObservation: (id: Id) => db.remove("observations", { id }),
 
     /** A person's assertion, in their own words, with the facts it rests on (F-133). */

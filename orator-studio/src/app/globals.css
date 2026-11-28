@@ -557,3 +557,18 @@ a.button.primary:hover { background: #0a2f6b; color: #fff; }
 .discover-tabs button { min-height: 40px; }
 .fact-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .fact-list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--panel); border-radius: 12px; font-size: 14px; }
+/* Curate: topics, observations, assertions */
+.source-card { border: 1px solid var(--line); border-radius: var(--r-card); padding: 12px 16px; background: #fff; }
+.source-card summary { cursor: pointer; }
+.observation { border: 1px solid var(--line); border-left: 4px solid var(--ok-text, #1d6b38); border-radius: 12px; padding: 12px 16px; background: #fff; }
+.observation.claude { border-left-color: var(--navy); }
+.general-knowledge { background: var(--warn-bg); border-radius: 8px; padding: 8px 10px; }
+.assertion-card { border: 1px solid var(--line); border-radius: var(--r-card); padding: 14px 18px; background: #fff; box-shadow: var(--shadow-1); }
+.assertion-card.flagged { border-color: #e3c79a; }
+.assertion-card.withdrawn .assertion-text { color: var(--muted); text-decoration: line-through; }
+.assertion-text { margin: 6px 0; font-family: var(--serif); font-size: 19px; font-weight: 600; line-height: 1.35; color: var(--navy); }
+.fact-list li.chosen { outline: 2px solid var(--navy-soft); }
+.role-chip { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 8px; background: #f1f3f6; white-space: nowrap; }
+.role-chip.supports { background: var(--ok-bg); color: var(--ok-text); }
+.role-chip.qualifies { background: var(--warn-bg); color: var(--warn); }
+.role-chip.contradicts { background: #fde8ec; color: #a30234; }
