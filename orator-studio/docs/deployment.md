@@ -28,6 +28,7 @@ Vercel marks each variable as **Config** (readable after saving) or **Secret** (
 | `AI_MONTHLY_BUDGET_USD` | Config | Your choice, for example `25` | Optional. A monthly limit on the estimated Claude cost, per tenant. When this month's estimate reaches it, Claude requests are refused until the 1st; the usage page warns at 80%. A safety net on top of the console's own spending limit. |
 | `NCBI_API_KEY` | **Secret** | NCBI: sign in at ncbi.nlm.nih.gov → Account settings → **API Key Management** → Create | Optional. Raises PubMed's limit from about 3 to 10 requests a second, so discovery doesn't hit "too many requests" (429) on Vercel's shared addresses. The app already paces and retries without it. |
 | `OPENALEX_API_KEY` | **Secret** | openalex.org: create a free account and API key | Optional. Raises OpenAlex's daily limit for the "Research in all fields" part of Discover. Without it, OpenAlex is searched with the free anonymous allowance. |
+| `API_BIBLE_KEY` | **Secret** | api.bible → sign in → Dashboard (the key is at the top right). Starter plan, **non-commercial**, with NIV, NKJV and NLT chosen | Bible passages in Curate ("Add a Bible passage", F-123). Without it, only The Passion Translation (typed by the author) can be added. |
 | `SOURCE_ALLOWED_HOSTS` | Config | Your choice, for example `api.open-meteo.com` | Hosts that data URL sources may be fetched from. Empty means any public host. Database searches (PubMed, Europe PMC, ClinicalTrials.gov) don't use this list. |
 | `REQUIRE_SIGN_IN` | Config | `1` | Only for hosts other than Vercel: turns off Claude and URL fetching when sign-in isn't configured. Automatic on Vercel. |
 
@@ -64,6 +65,10 @@ The database is defined by `supabase/migrations/` (0001 core: tenants, presentat
 Which model does which task is set in one table, `src/ai/models.ts`: Claude Sonnet 5.5 is the standard, and Claude Haiku 5.5 (about 20 times cheaper) does low-stakes work whose result the author sees at once, such as search plans. Every Claude request the server makes is recorded in the `ai_usage` table: who asked, for which presentation, which task, which model answered (a refused request can fall back to another model, billed at that model's price), the tokens in, out and thinking, the time it took, Anthropic's request id, and an estimated cost at list prices (`src/ai/pricing.ts`). The **Claude usage** page (`/usage`, linked in the top bar) shows this month, each month, and the totals by presentation, task and model. Each request is also one `[ai-usage]` line in Vercel → Logs.
 
 The estimate is for watching spend; the bill is in the Claude Console → **Usage** and **Cost**. Compare the two each month: the request ids match the console's. Claude used inside claude.ai runs on the person's own Claude plan and isn't recorded here. Database searches are free.
+
+## Bible passages (API.Bible)
+
+"Add a Bible passage" fetches NIV, NKJV, NLT (licensed through API.Bible's free non-commercial Starter plan) and KJV (public domain). To confirm the setup: open `https://<your-vercel-address>/api/sources/bible`; it should say `"available": true` and list the versions on the account. API.Bible's terms are built in: the copyright line with every passage, a visible "Scripture provided by API.Bible" link, the text never altered, each displayed passage reported through API.Bible's usage tracker (FUMS), and stored text fetched again before 30 days pass (when the presentation is opened). The Starter plan allows 5,000 requests a month; the NKJV only while the app has 5,000 or fewer monthly users. Keep the app non-commercial on this plan.
 
 ## Checks
 

@@ -21,6 +21,8 @@ export type CatalogSource = {
   /** What the author gets from a result. */
   access: string;
   status: "live" | "planned";
+  /** False for sources added from the workspace (a Bible passage), not searched by Discover. */
+  discover?: boolean;
   /** Searched unless the author or Claude's plan turns it off. */
   standard: boolean;
 };
@@ -101,9 +103,10 @@ export const CATALOG: CatalogSource[] = [
     name: "The Bible (NIV, NKJV, NLT)",
     owner: "API.Bible (American Bible Society), under each publisher's license",
     kind: "faith",
-    covers: "Scripture passages by reference, in the author's chosen version; labeled as Scripture, not research. The Passion Translation is entered by the author",
+    covers: "Scripture passages by reference, in the author's chosen version, labeled as Scripture, not research; added from the workspace with “Add a Bible passage”. The Passion Translation is entered by the author",
     access: "The passage text, with the version's copyright notice",
-    status: "planned",
+    status: "live",
+    discover: false,
     standard: false,
   },
   {
@@ -128,7 +131,8 @@ export const CATALOG: CatalogSource[] = [
   },
 ];
 
-export const LIVE = CATALOG.filter((s) => s.status === "live");
+/** Live sources Discover can search. */
+export const LIVE = CATALOG.filter((s) => s.status === "live" && s.discover !== false);
 export const LIVE_IDS = LIVE.map((s) => s.id);
 export const STANDARD_IDS = LIVE.filter((s) => s.standard).map((s) => s.id);
 

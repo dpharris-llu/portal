@@ -9,6 +9,7 @@ import type { Author } from "@/model/types";
 import { activeFacts, discardBodies, evidenceFromFact, locate, nextId, restoreBodies, type ArgOpBody, type Argument, type Fact, type WorkspaceSource } from "@/model/argument";
 import { AddPaper } from "./AddPaper";
 import { FindSources } from "./FindSources";
+import { BiblePanel, useScriptureRefresh } from "./BiblePanel";
 
 type Apply = (bodies: ArgOpBody[], reason: string, author?: Author) => void;
 
@@ -40,10 +41,11 @@ function DiscardButton({ label, onDiscard }: { label: string; onDiscard: (reason
   );
 }
 
-const KIND: Record<WorkspaceSource["kind"], string> = { paper: "Paper", report: "Report", trial: "Trial registry", document: "Document", data: "Data", note: "Notes", web: "Web page" };
+const KIND: Record<WorkspaceSource["kind"], string> = { paper: "Paper", report: "Report", trial: "Trial registry", document: "Document", data: "Data", note: "Notes", web: "Web page", scripture: "Scripture" };
 
 export function WorkspacePanel({ arg, apply, highlight, find }: { arg: Argument; apply: Apply; highlight?: string | null; find?: { want: string; n: number } | null }) {
-  const [adding, setAdding] = useState<"find" | "paper" | "note" | null>(null);
+  const [adding, setAdding] = useState<"find" | "paper" | "note" | "bible" | null>(null);
+  useScriptureRefresh(arg, apply);
   const [findWant, setFindWant] = useState<string | undefined>(undefined);
   useEffect(() => {
     if (!find) return;
@@ -74,8 +76,10 @@ export function WorkspacePanel({ arg, apply, highlight, find }: { arg: Argument;
         <button className="small primary" onClick={() => setAdding(adding === "find" ? null : "find")} aria-expanded={adding === "find"}>Find sources</button>
         <button className="small" onClick={() => setAdding(adding === "paper" ? null : "paper")} aria-expanded={adding === "paper"}>Upload a PDF</button>
         <button className="small" onClick={() => setAdding(adding === "note" ? null : "note")} aria-expanded={adding === "note"}>Add a fact</button>
+        <button className="small" onClick={() => setAdding(adding === "bible" ? null : "bible")} aria-expanded={adding === "bible"}>Add a Bible passage</button>
       </div>
       {adding === "find" && <FindSources key={findWant} arg={arg} apply={apply} initial={findWant} onDone={() => { setAdding(null); setFindWant(undefined); }} />}
+      {adding === "bible" && <BiblePanel arg={arg} apply={apply} onDone={() => setAdding(null)} />}
       {adding === "paper" && <AddPaper arg={arg} apply={apply} onDone={() => setAdding(null)} />}
       {adding === "note" && (
         <div className="add-box stack" style={{ gap: 8 }}>

@@ -29,7 +29,7 @@ export interface EvidenceItem {
  * Claude can refer to them. Discarded items stay on record, with a reason,
  * but are never used again: not in points, not sent to Claude.
  */
-export type SourceKind = "paper" | "report" | "trial" | "document" | "data" | "note" | "web";
+export type SourceKind = "paper" | "report" | "trial" | "document" | "data" | "note" | "web" | "scripture";
 export interface WorkspaceSource {
   id: Id;
   kind: SourceKind;
@@ -48,6 +48,12 @@ export interface WorkspaceSource {
   origin?: "yours" | "discovered";
   /** What was read: the full text, only the abstract, or a registry record. */
   access?: "full text" | "abstract" | "registry record";
+  /** Scripture (F-123): the version, and when the text was fetched (API.Bible text is fetched again within 30 days). */
+  version?: string;
+  reference?: string;
+  fetchedAt?: string;
+  /** True when the author typed the text (The Passion Translation): it can't be checked. */
+  enteredByAuthor?: boolean;
   /** Names for "pages" that are really sections (full texts from PubMed Central). */
   pageLabels?: Record<number, string>;
   status: "active" | "discarded";

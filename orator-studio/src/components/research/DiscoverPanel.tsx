@@ -172,7 +172,7 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
             {showSources && (
               <ul className="source-list">
                 {CATALOG.map((src) => {
-                  const live = src.status === "live";
+                  const live = src.status === "live" && src.discover !== false;
                   const r = reasons[src.id];
                   return (
                     <li key={src.id} className={live ? "" : "muted"}>
@@ -180,7 +180,7 @@ export function DiscoverPanel({ arg, apply }: { arg: Argument; apply: (b: ArgOpB
                         <input type="checkbox" disabled={!live || Boolean(busy)} checked={live && chosen.includes(src.id)} onChange={() => toggleSource(src.id)} style={{ marginTop: 3 }} />
                         <span className="stack" style={{ gap: 2 }}>
                           <span>
-                            <strong>{src.name}</strong> <span className="small muted">· {src.owner}</span> {!live && <span className="pill">Coming</span>}
+                            <strong>{src.name}</strong> <span className="small muted">· {src.owner}</span> {!live && <span className="pill">{src.status === "live" ? "Add from the workspace" : "Coming"}</span>}
                           </span>
                           <span className="small muted">{src.covers}.</span>
                           {r && live && <span className="small">Claude: {r.use ? "use" : "skip"}, {r.why}</span>}

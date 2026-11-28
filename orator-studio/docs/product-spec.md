@@ -412,7 +412,7 @@ OratorStudio serves presenters on any topic, so the question is not which databa
 | Work underway | "Three trials are recruiting now" | ClinicalTrials.gov; NIH RePORTER later | Live (clinical) |
 | News and announcements | "The FDA approved this last month" | Government newsrooms (NIH, CDC, FDA, CMS, WHO), EurekAlert!, KFF Health News | Planned |
 | The institution's own | "Our readmissions rose 12%" | Uploads and data URLs; institutional connectors later (F-113) | Live |
-| Scripture and faith tradition | "Jesus healed on the Sabbath (Mark 3:1–5)"; "Ellen White wrote that…" | The Bible through API.Bible (NIV, NKJV, NLT); Ellen G. White's writings through the White Estate's EGW Writings API; Adventist news and records | Planned (F-123, F-124, F-125) |
+| Scripture and faith tradition | "Jesus healed on the Sabbath (Mark 3:1–5)"; "Ellen White wrote that…" | The Bible through API.Bible (NIV, NKJV, NLT); Ellen G. White's writings through the White Estate's EGW Writings API; Adventist news and records | Bible live (F-123); Ellen White and Adventist news planned (F-124, F-125) |
 
 *The admission rule.* A database enters the catalog only if it passes all six:
 

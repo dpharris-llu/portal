@@ -168,3 +168,19 @@ describe("search record", () => {
     expect(undone.searches!.map((s) => s.id)).toEqual(a.searches!.map((s) => s.id));
   });
 });
+
+describe("Bible passages in the workspace", () => {
+  it("adds a passage as a Scripture source with the passage as a checked quote; TPT is unchecked", async () => {
+    const { passageBodies } = await import("@/components/research/BiblePanel");
+    const { emptyArgument } = await import("./argument");
+    const a = emptyArgument("t1");
+    const [src, fact] = passageBodies(a, { reference: "John 3:16", version: "NIV", text: "Sample verse text.", copyright: "Sample notice." }) as [{ kind: "source.put"; source: { kind: string; fetchedAt?: string; citation: string } }, { kind: "fact.put"; fact: { checked: boolean; quote?: string; text: string } }];
+    expect(src.source.kind).toBe("scripture");
+    expect(src.source.fetchedAt).toBeTruthy();
+    expect(src.source.citation).toBe("John 3:16 (NIV). Sample notice.");
+    expect(fact.fact).toMatchObject({ checked: true, quote: "Sample verse text." });
+    const [, tpt] = passageBodies(a, { reference: "John 3:16", version: "TPT", text: "Typed text.", copyright: "N", enteredByAuthor: true }) as [unknown, { fact: { checked: boolean; text: string } }];
+    expect(tpt.fact.checked).toBe(false);
+    expect(tpt.fact.text).toContain("paraphrase entered by the author");
+  });
+});

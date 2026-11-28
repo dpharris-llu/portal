@@ -114,6 +114,7 @@ export function probePrompt(r: ProbeRequest): string {
     "Rules:",
     "- Use only the facts above. Cite each fact you rely on inline as [F3]. If the facts don't answer the question, say so plainly and say what kind of source would.",
     "- Every number you write must appear in a fact you cite. Never add numbers from outside the facts.",
+    "- Sources of kind 'scripture' are Bible passages (version named): authoritative for faith, not research evidence. Never present them as research findings or as proof of a scientific claim; say they are Scripture when you use them. A TPT passage is a paraphrase entered by the author.",
     "- Be direct: answer first, then reasoning. Point out weak evidence (unchecked facts, single small studies, limitations) where it matters.",
     "- When asked for objections or weaknesses, give the strongest ones, say whether the facts answer each, and propose an open question for each one they don't answer.",
     "- Propose changes only where they help the argument: add_point (with the facts that support it), link_evidence (facts to an existing point, by its number), set_thesis, add_open_question.",
