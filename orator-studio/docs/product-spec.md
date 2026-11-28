@@ -28,7 +28,7 @@ This spec defines OratorStudio, a platform for creating evidence-based presentat
 2. **Content first.** Authors edit meaning; layout follows.
 3. **AI proposes, people decide.** Every AI change is visible, reversible, and labeled.
 4. **Every fact is traceable.** Any fact or figure can show where it came from and when it was last checked.
-5. **Never fail in front of an audience.** Presenting works offline and degrades gracefully.
+5. **The presenter stays in control.** Presenting works offline and degrades gracefully; nothing reaches the screen without the presenter's say.
 6. **Escape hatch always.** Freeform placement exists for the one arrow that must go exactly there.
 7. **No lock-in.** Open file format, strong PPTX import and export.
 
@@ -43,7 +43,7 @@ This spec defines OratorStudio, a platform for creating evidence-based presentat
 
 | Stage | Audience | Goal | Exit criterion |
 | --- | --- | --- | --- |
-| 0 | You | Create your own presentations evidence-first, in place of PowerPoint | You give a presentation from it weekly for 8 weeks without reopening PowerPoint |
+| 0 | The founder | Create the founder's own presentations evidence-first, in place of PowerPoint | The founder gives a presentation from it weekly for 8 weeks without reopening PowerPoint |
 | 1 | LLU admins | Evidence-based leadership and board presentations, every number traceable | 5 admins each give 3 real presentations from it and prefer it to PowerPoint |
 | 2 | Faculty | Lectures that reflect current evidence; handouts and accessible course material | 20 faculty, 80% of imported legacy decks usable without manual repair |
 | 3 | External customers | Sell to higher ed and health sciences | First paid site license; security review passed |
@@ -85,7 +85,7 @@ OratorStudio is one product with four modules. They share one sign-in, one store
 **Boundaries decided so far**
 
 - **The presentation is the thing the author makes (F-025).** It holds its topic and occasion, its curation (sources, facts, probes, message, points) and its slides. Today the outline and the deck are stored as two linked objects; F-025 joins them under one presentation.
-- **Curate is a workspace you question.** The author builds the case by discovering, asking, accepting and discarding, one step at a time (F-118, F-119 to F-024).
+- **Curate is a workspace you question.** The author builds the case by discovering, asking, accepting and discarding, one step at a time (F-118, F-119, F-020, F-021, F-022, F-023, F-024).
 - **Slides belong in Build.** Splitting or merging points into slides, choosing charts, quotes and layouts, and the time limit (which shapes slides more than the outline) are Build's.
 - **PPTX import is in Build**, since an existing deck is a starting point for slides. An imported deck can be sent back to Curate to pull out its message and points and check them against sources (F-117).
 - **Images go where their role is.** A slide image (photo, logo, illustration) is added in Build. An image used as evidence (a figure from a paper, a dashboard screenshot, a scanned table) is added in Curate with its source. Both live in one media library (F-017).
@@ -100,7 +100,7 @@ OratorStudio is one product with four modules. They share one sign-in, one store
 | Topic | What the presentation is about, before any position is taken |
 | Source | Something evidence comes from: a paper, report, registry record, document, data URL or the author's note. Id S1, S2… |
 | Fact | One statement taken from a source, with its quote and location where there is one; checked or unchecked. Id F1, F2… |
-| Discovery | Finding sources the author didn't have, from named scientific and government databases (F-119 to F-023) |
+| Discovery | Finding sources the author didn't have, from named scientific and government databases (F-119, F-020, F-023) |
 | Probe | A question the author asks of the workspace; the checked answer may propose changes (F-118) |
 | Message | The one sentence the presentation supports (formerly "thesis") |
 | Point | One step that carries the message, backed by facts; becomes a slide's headline |
@@ -115,8 +115,8 @@ Each stage adds a user type with different needs. Admin features are not assumed
 
 | User | Typical presentation | Top needs | What evidence-based means to them |
 | --- | --- | --- | --- |
-| You (founder-presenter) | Talks, leadership briefings, internal updates | Fast authoring, live Q&A navigation, import of existing decks | Talks grounded in the current evidence, without losing years of existing content |
-| LLU admin | Board, budget, enrollment, accreditation reporting | Correct numbers, consistent brand, quick review and approval | Every number in a board deck traceable to its source |
+| The founder-presenter | Talks, leadership briefings, internal updates | Fast authoring, live Q&A navigation, import of existing decks | Talks grounded in the current evidence, without losing years of existing content |
+| LLU admin | Board, budget, enrollment and accreditation presentations | Correct numbers, consistent brand, quick review and approval | Every number in a board deck traceable to its source |
 | Faculty | Lectures, grand rounds, conference talks | Legacy import, handouts, accessibility, image attribution | Lectures that reflect the latest research, without rebuilding hundreds of slides |
 | Student / audience | Viewing a deck or handout | Readable, accessible, searchable material | Material they can check, with sources they can follow |
 | Institutional buyer (IT, compliance, procurement) | N/A | SSO, audit trail, privacy, accessibility compliance | An audit trail for every fact and AI suggestion, with data kept within the institution |
@@ -178,7 +178,7 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 | ID | Module | Requirement | Priority |
 | --- | --- | --- | --- |
 | F-019 | Curate | Start a presentation from a topic: the topic is required, the occasion (audience, time, what should happen) optional; no message is needed to begin | P0 |
-| F-001 | Curate | Superseded in part by F-019 (the occasion is optional and comes after the topic). Set the occasion: purpose, audience and one key takeaway (optional at the start, see F-019); the time limit is set in Build | P0 |
+| F-001 | Curate | Superseded by F-019: the topic comes first. The occasion (purpose, audience, and optionally a key takeaway) is set after it, when the author is ready; the time limit is set in Build | P1 |
 
 **Evidence: discovery**
 
@@ -195,7 +195,7 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 | --- | --- | --- | --- |
 | F-012 | Curate | Start from documents: read labeled figures from text-based PDFs in the browser, line them up across documents, let the author correct and confirm them as a data source; Build drafts bound charts from it (section 10) | P1 |
 | F-014 | Curate | Data URL sources: fetch JSON, XML or CSV from a URL on the institution's allowed list, map fields to rows (Claude may propose the mapping), confirm them, keep a dated snapshot, and refresh on demand with changes shown (section 10) | P1 |
-| F-015 | Curate | Start from research papers: Claude reads each uploaded paper for its citation, design, sample, findings and limitations, each with an exact quote and page that OratorStudio checks against the PDF; the author confirms findings; Claude analyzes across the papers for the presentation's purpose, citing only confirmed findings; decks drafted from it carry numbered references, quotes and a backup slide per paper (sections 9 and 10) | P1 |
+| F-015 | Curate | Start from research papers: Claude reads each uploaded paper for its citation, design, sample, findings and limitations, each with an exact quote and page that OratorStudio checks against the PDF; the author confirms findings; Claude analyzes across the papers for the presentation's purpose, citing only confirmed findings; decks drafted from it carry numbered references, quotes and a backup slide per paper (sections 9 and 10) The cross-paper analysis is a proposal: its findings become facts in the workspace and its message and points join the candidate messages (F-024); slides are drafted only from the outline the author approves. | P1 |
 
 **Making sense: the workspace**
 
@@ -203,8 +203,8 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 | --- | --- | --- | --- |
 | F-118 | Curate | Curate workspace with probes: each presentation has one workspace of sources (papers, documents, data, the author's notes) and the facts confirmed from them, with short ids (S2, F7). The author builds the case by asking successive questions; Claude answers from the active facts only, citing them, with the earlier questions as context, and proposes changes (add a point, link evidence, change the message, add an open question, discard a source or fact). The author accepts or dismisses each one. Answers and proposals are checked: citations must be active facts, and every number must appear in the facts cited. When the author discards a source or fact, by button or by asking, it is taken off every point, never sent to Claude again, and kept on record with the reason; it can be restored or undone | P0 |
 | F-021 | Curate | Discovery summary: from the workspace's active facts only, what is established, what is new (including where a discovered source supersedes one of the author's), what is contested and what is unknown, each statement citing its facts and checked like a probe answer; each unknown offers a search | P0 |
-| F-022 | Curate | Challenge me: find and summarize evidence against the direction the author is leaning (the message or a point), so the presentation is tested before the audience tests it | P1 |
-| F-013 | Curate | Claude analyzes confirmed figures for the presentation's purpose and against comparisons the author supplies (a budget, a target, last year, a normal). The result is an analysis, not a summary: a message, points with evidence, why each matters, possible drivers and confidence, then a recommendation and next steps. Every number carries a formula the app recomputes, and anything that doesn't check is left out; Claude's general knowledge is labeled and kept to speaker notes. Without Claude, computed checks and patterns still run. Details in section 10 | P1 |
+| F-022 | Curate | Challenge me: find and summarize evidence against the direction the author is leaning (the message or a point), so the presentation is tested before it is given | P1 |
+| F-013 | Curate | Claude analyzes confirmed figures for the presentation's purpose and against comparisons the author supplies (a budget, a target, last year, a normal). The result is an analysis, not a summary: a message, points with evidence, why each matters, possible drivers and confidence, then a recommendation and next steps. Every number carries a formula the app recomputes, and anything that doesn't check is left out; Claude's general knowledge is labeled and kept to speaker notes. Without Claude, computed checks and patterns still run. Details in section 10 Its message and points are proposals: they join the workspace and the candidate messages (F-024), and slides are drafted only from the outline the author approves. | P1 |
 
 **Message and outline**
 
@@ -348,15 +348,15 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 | Capability | What it does | Human control |
 | --- | --- | --- |
 | Discovery and outline (Curate) | Builds the discovery landscape and summary, then proposes candidate messages and points from the workspace's facts (F-020, F-021, F-024) | Author edits and approves before slides exist |
+| Finding sources (Curate) | Writes database searches from the author's words; reads added records for findings (F-119) | Author edits the search and picks every result; quotes checked against the record |
+| Probing the workspace (Curate) | Answers the author's successive questions from the workspace's active facts and proposes changes to the outline (F-118) | Citations and numbers checked; each proposal accepted or dismissed; discards only on the author's word |
+| Reading research papers (Curate) | Pulls each paper's findings and limitations with quotes and pages, then analyzes across papers for the presentation's purpose (F-015) | Quotes and numbers checked against the PDF; author confirms each finding; points that fail checks are left out |
 | Slide drafting (Build) | Turns the outline's points into slide headlines, evidence blocks and layout, fitted to the time limit | Shown as a diff; accept, edit, or reject |
-| Consistency and claim checks | Finds conflicting numbers, unsupported claims, stale data | Warnings only; never silently changes content |
+| Consistency and evidence checks (Build) | Finds conflicting numbers, unsupported points, stale data | Warnings only; never silently changes content |
 | Variant generation | Cuts a deck to a target length or depth | Preview before saving; original untouched |
 | Accessibility remediation | Suggests alt text, reading order, caption fixes | Per-item accept; flagged as AI-generated |
 | Q&A prediction (Present) | Drafts likely questions and answers from the deck's own evidence | Answers cite slides; presenter edits |
 | Semantic search and voice | Matches spoken or typed queries to slides | Presenter preview before audience sees it |
-| Finding sources (Curate) | Writes database searches from the author's words; reads added records for findings (F-119) | Author edits the search and picks every result; quotes checked against the record |
-| Probing the workspace (Curate) | Answers the author's successive questions from the workspace's active facts and proposes changes to the outline (F-118) | Citations and numbers checked; each proposal accepted or dismissed; discards only on the author's word |
-| Reading research papers (Curate) | Pulls each paper's findings and limitations with quotes and pages, then analyzes across papers for the presentation's purpose (F-015) | Quotes and numbers checked against the PDF; author confirms each finding; points that fail checks are left out |
 | Illustrations (Build) | Generates images from a prompt through the institution's image provider (F-116) | Illustration only; labeled as AI-generated; clinical- or data-looking images blocked or flagged |
 | Viewer Q&A (Engage) | Answers viewer questions from a published deck | Restricted to deck content; shows source slides; says "not covered" otherwise |
 
@@ -380,55 +380,18 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 
 ## 10. Sources, import, export and interoperability
 
-Sources and their analysis are in Orator Curate; PPTX import is in Orator Build; exports are in Orator Present.
+In the order of the journey: the sources a presentation draws on (found by discovery, or brought by the author) are in Orator Curate; PPTX import is in Orator Build; exports are in Orator Present.
 
-Migration decides adoption. Nobody will rebuild ten years of decks, so PPTX import quality is a P0 feature at every stage.
+**Discovery (F-019, F-020, F-119)**
 
-**PPTX import**
-
-- Full import (the Stage 2 target, F-201): convert text boxes, tables, images, charts, speaker notes, and master slide styles into blocks and themes.
-- Infer each slide's claim and evidence from titles and structure; mark low-confidence inferences for review.
-- Anything that cannot convert (complex SmartArt, embedded objects, animations) is kept as a freeform region or image, and listed in an import report.
-- Quality score per deck, so faculty and admins can triage a bulk import.
-- Basic import is the bar for now: text, images, tables, and speaker notes convert; everything else stays as an image or freeform region. Target: 80% of a representative sample of LLU decks import with no manual repair; measure this in Stage 0 and revisit the bar.
-
-**Documents as data sources (F-012)**
-
-Many decks restate figures from recurring reports: monthly finance packs, enrollment reports, statements. Retyping them is slow and is where wrong numbers come from.
-
-- The author adds a set of PDFs. They are read in the browser and not uploaded.
-- Labeled figures ("Purchases $22,773.77") are found and lined up across the documents into rows, one column per document, ordered by the month or period in the file names. Each value shows its page.
-- Lines that only look like figures are skipped: transaction lists, page numbers, account, box and phone numbers, dates, and numbers inside sentences.
-- The author checks the grid, types over or fills any value, and confirms each row. Nothing unconfirmed can be used. A value printed twice in one document with different amounts is flagged.
-- Confirmed rows become a data source in the shared store. Build can draft a deck from them: one bound chart per row, a claim computed from the figures (flagged for the author to rewrite), a backup table, and every figure's document and page in the notes and the editor.
-- The author states what the presentation is for, can add comparisons (a budget, a target, last year's figures, a normal) for any row, and can ask Claude to analyze the confirmed rows (F-013). The analysis is reasoning, not a summary: a message; points that each state a conclusion, its evidence, why it matters for the purpose, possible drivers as hypotheses with how to check them, and a confidence level; then a recommendation with its tradeoffs, and next steps. Only the purpose, comparisons, labels and confirmed figures are sent, never the documents.
-- Every number Claude takes from the figures comes with a formula, such as `(sum([Purchases]) - [Purchases @ Jan 2026]) / 9`, so it can show multi-step work; the app recomputes each one. A point, message, recommendation or next step with a number that doesn't check is shown with the reason and kept out of the deck.
-- Claude may add context from its general knowledge (seasonal norms, how such accounts usually behave). It is labeled as such wherever it appears, stays in the speaker notes rather than on slides, and any outside number in it must be declared; an undeclared one drops the context. Claude's text is labeled as AI-written in the editor.
-- Where Claude runs: OratorStudio can be opened inside claude.ai, Anthropic's Claude app; there, requests run on the person's own Claude account, with their permission asked on first use. Run on LLU's own servers, requests go through an API key the institution holds (F-114). Sensitivity labels (F-108) will decide which sources may be sent at all.
-- Checks that need no AI always run: rows that add up to another in every period, and closing figures carried into the next period. When Claude isn't connected, computed patterns (swings, trends, concentration, offsets) stand in.
-- First release: text-based PDFs only, matched by rules so the figures themselves are predictable and checkable. Scanned PDFs and saved layouts per report type are F-111.
-
-Tested on ten real monthly financial statements (kept private, not in the repository): the summary figures (balances, purchases, payments, credits) were found in all ten and matched the reconciled values exactly. One figure changed layout partway through the year and was found in only seven; the gaps were visible in the grid and filled by hand, as designed.
-
-**Research papers (F-015)**
-
-- The author adds research papers as PDFs. Text is read in the browser, column by column for two-column layouts, with page numbers kept.
-- Claude reads each paper on its own (one request per paper; the reference list is left out; a very long paper is cut, and the page says so) and returns its citation, design, sample, findings and limitations, each with an exact quote and page.
-- OratorStudio checks every quote word for word on its page (a page off by one is corrected) and every number in it against that page. A finding that fails cannot be selected. The citation's DOI, authors and title are checked against the first pages.
-- The author confirms findings. Only confirmed findings, with their quotes and citations, go to Claude for the analysis across papers, not the full papers.
-- Each point of the analysis states its conclusion, evidence, cited findings, whether the studies agree, the strength of the evidence and why, why it matters, and what the papers do not cover. Strength is Claude's reasoned judgment, shown with its reason; it is not a formal GRADE or risk-of-bias rating.
-- A deck drafted from it in Build has a message slide, one slide per point with reference numbers and a supporting quote, what the evidence doesn't tell us, the recommendation, next steps, references, and a backup slide per paper.
-- First release: text-based PDFs. Quotes from tables may fail the word-for-word check; they are shown as unusable rather than let through.
-
-**Images (F-017, F-115, F-116)**
-
-- One media library holds every image. Slide images are added in Build; evidence images are added in Curate with their source and date.
-- Evidence images can be read by Claude for figures or points, confirmed by the author like any other source, and labeled as read from an image.
-- AI-generated illustrations come from the institution's chosen image provider. Only the prompt is sent, never patient or student information.
+- From the topic, the server searches named databases only, at fixed endpoints: PubMed and PubMed Central at the NIH (journal articles, including CDC's MMWR, and free full texts), ClinicalTrials.gov (registered and ongoing studies), and Europe PMC for NCBI Bookshelf government reports and preprints. PubMed comes first because it answers fastest from the host.
+- The landscape has four parts: strongest evidence (systematic reviews, meta-analyses, guidelines, newest first), the newest primary studies, ongoing trials, and government reports. A result appears once, in the first part it fits.
+- Claude may write the PubMed search from the topic; it is shown and editable. Without Claude, the topic's words are searched as typed.
+- Each result shows its date and how much can be read: free full text (read by section, with quotes checked against the text), abstract only (labeled wherever it is used), or the registry record. Nothing enters the workspace until the author adds it.
 
 **Sources: uploads and URLs (F-014, F-112, F-113)**
 
-Every source is one the author chose: a record found by discovery in a named database (F-019 to F-020, F-119), a file the author uploads, or a URL the author adds. There is no open web search: discovery queries only named scientific and government databases, nothing enters the workspace unless the author adds it, and the presentation can always say exactly what it drew on.
+Every source is one the author chose: a record found by discovery in a named database (F-019, F-020, F-119), a file the author uploads, or a URL the author adds. There is no open web search: discovery queries only named scientific and government databases, nothing enters the workspace unless the author adds it, and the presentation can always say exactly what it drew on.
 
 | Kind | Examples | How it is read | First release |
 | --- | --- | --- | --- |
@@ -445,6 +408,51 @@ Every source is one the author chose: a record found by discovery in a named dat
 - **Internal systems.** Systems on LLU's network may not be reachable from the hosting provider. Those need an MCP server or a small connector that LLU runs inside its network.
 - **Who calls MCP.** Claude can call MCP tools itself, but then figures arrive inside Claude's answer. The app calls the tools, records the responses, and gives Claude the recorded data to analyze, so every number traces to a recorded response. When OratorStudio is opened inside claude.ai, it can also use connectors the person has already set up in Claude, with their sign-in.
 - **Rights and terms.** Web page sources carry their URL and retrieval date in citations; reuse of quoted material follows the same attribution rules as images (F-204).
+
+**Documents as data sources (F-012)**
+
+Many decks restate figures from recurring reports: monthly finance packs, enrollment reports, statements. Retyping them is slow and is where wrong numbers come from.
+
+- The author adds a set of PDFs. They are read in the browser and not uploaded.
+- Labeled figures ("Purchases $22,773.77") are found and lined up across the documents into rows, one column per document, ordered by the month or period in the file names. Each value shows its page.
+- Lines that only look like figures are skipped: transaction lists, page numbers, account, box and phone numbers, dates, and numbers inside sentences.
+- The author checks the grid, types over or fills any value, and confirms each row. Nothing unconfirmed can be used. A value printed twice in one document with different amounts is flagged.
+- Confirmed rows become a data source in the shared store and facts in the workspace. Once the author approves the outline, Build can draft a deck from them: one bound chart per row, a point computed from the figures (flagged for the author to rewrite), a backup table, and every figure's document and page in the notes and the editor.
+- The author states what the presentation is for, can add comparisons (a budget, a target, last year's figures, a normal) for any row, and can ask Claude to analyze the confirmed rows (F-013). The analysis is reasoning, not a summary: a message; points that each state a conclusion, its evidence, why it matters for the purpose, possible drivers as hypotheses with how to check them, and a confidence level; then a recommendation with its tradeoffs, and next steps. Only the purpose, comparisons, labels and confirmed figures are sent, never the documents.
+- Every number Claude takes from the figures comes with a formula, such as `(sum([Purchases]) - [Purchases @ Jan 2026]) / 9`, so it can show multi-step work; the app recomputes each one. A point, message, recommendation or next step with a number that doesn't check is shown with the reason and kept out of the deck.
+- Claude may add context from its general knowledge (seasonal norms, how such accounts usually behave). It is labeled as such wherever it appears, stays in the speaker notes rather than on slides, and any outside number in it must be declared; an undeclared one drops the context. Claude's text is labeled as AI-written in the editor.
+- Where Claude runs: OratorStudio can be opened inside claude.ai, Anthropic's Claude app; there, requests run on the person's own Claude account, with their permission asked on first use. Run on LLU's own servers, requests go through an API key the institution holds (F-114). Sensitivity labels (F-108) will decide which sources may be sent at all.
+- Checks that need no AI always run: rows that add up to another in every period, and closing figures carried into the next period. When Claude isn't connected, computed patterns (swings, trends, concentration, offsets) stand in.
+- First release: text-based PDFs only, matched by rules so the figures themselves are predictable and checkable. Scanned PDFs and saved layouts per report type are F-111.
+
+Tested on ten real monthly financial statements (kept private, not in the repository): the summary figures (balances, purchases, payments, credits) were found in all ten and matched the reconciled values exactly. One figure changed layout partway through the year and was found in only seven; the gaps were visible in the grid and filled by hand, as designed.
+
+**Research papers (F-015)**
+
+- The author adds research papers as PDFs. Text is read in the browser, column by column for two-column layouts, with page numbers kept.
+- Claude reads each paper on its own (one request per paper; the reference list is left out; a very long paper is cut, and the page says so) and returns its citation, design, sample, findings and limitations, each with an exact quote and page.
+- OratorStudio checks every quote word for word on its page (a page off by one is corrected) and every number in it against that page. A finding that fails cannot be selected. The citation's DOI, authors and title are checked against the first pages.
+- The author confirms findings. Only confirmed findings, with their quotes and citations, go to Claude for the analysis across papers, not the full papers.
+- Each point of the analysis states its conclusion, evidence, cited findings, whether the studies agree, the strength of the evidence and why, why it matters, and what the papers do not cover. Strength is Claude's reasoned judgment, shown with its reason; it is not a formal GRADE or risk-of-bias rating.
+- Its findings become workspace facts, and its message and points join the candidates the author chooses from (F-024). A deck drafted from the approved outline in Build has a message slide, one slide per point with reference numbers and a supporting quote, what the evidence doesn't tell us, the recommendation, next steps, references, and a backup slide per paper.
+- First release: text-based PDFs. Quotes from tables may fail the word-for-word check; they are shown as unusable rather than let through.
+
+**Images (F-017, F-115, F-116)**
+
+- One media library holds every image. Slide images are added in Build; evidence images are added in Curate with their source and date.
+- Evidence images can be read by Claude for figures or points, confirmed by the author like any other source, and labeled as read from an image.
+- AI-generated illustrations come from the institution's chosen image provider. Only the prompt is sent, never patient or student information.
+
+**PPTX import**
+
+Migration decides adoption. Nobody will rebuild ten years of decks, so PPTX import quality is a P0 feature at every stage.
+
+
+- Full import (the Stage 2 target, F-201): convert text boxes, tables, images, charts, speaker notes, and master slide styles into blocks and themes.
+- Infer each slide's point and evidence from titles and structure; mark low-confidence inferences for review.
+- Anything that cannot convert (complex SmartArt, embedded objects, animations) is kept as a freeform region or image, and listed in an import report.
+- Quality score per deck, so faculty and admins can triage a bulk import.
+- Basic import is the bar for now: text, images, tables, and speaker notes convert; everything else stays as an image or freeform region. Target: 80% of a representative sample of LLU decks import with no manual repair; measure this in Stage 0 and revisit the bar.
 
 **Exports**
 
@@ -536,7 +544,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 **Roadmap**
 
 1. **Version .3 (you).** Curate: topic-first discovery (PubMed, ClinicalTrials.gov, government reports), the author's own documents, data URLs and papers, the workspace with probes and discard, the discovery summary, candidate messages and points, the outline. Build: structured editor, slide drafting, one theme, freeform regions, basic PPTX import. Present: non-linear live mode, offline package, PPTX and PDF export. Engage: audience Q&A with slide matching, simple polls. Gate: you present from it weekly for 8 weeks.
-2. **Stage 1 (LLU admins).** Excel and CSV data bindings, web page sources and MCP connectors, evidence images and AI illustrations, AI keys and usage tracking, provenance and consistency checks, themes, variants, claim-level review, roles and audit log. Gate: 5 admins each ship 3 real decks.
+2. **Stage 1 (LLU admins).** Excel and CSV data bindings, web page sources and MCP connectors, evidence images and AI illustrations, AI keys and usage tracking, provenance and consistency checks, themes, variants, point-level review, roles and audit log. Gate: 5 admins each give 3 real presentations from it.
 3. **Stage 2 (faculty).** Bulk import, handouts, accessibility remediation, image attribution, Canvas via LTI, quizzes. Gate: 20 faculty active; 80% of imported legacy decks usable without manual repair.
 4. **Stage 3 (external).** Multi-tenant admin console, SSO and SCIM, public API and MCP, HECVAT and VPAT. Pricing and billing are out of scope until this stage is planned.
 
@@ -551,7 +559,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 | Claude answers and proposals flagged by the checks | Tracked; falling over time | .3 |
 | Legacy decks imported without repair | 80% (revisit given "basic" import) | .3 |
 | Q&A questions matched to the right slide in top 3 | 90% on a labeled set | .3 |
-| Number or claim errors caught before a board meeting | Tracked per deck | 1 |
+| Number or point errors caught before a board meeting | Tracked per presentation | 1 |
 | Figures read from documents that the author had to correct | Under 5% on a labeled set of LLU reports | 1 |
 | Accessibility checks passing at export | 95% | 2 |
 
@@ -565,7 +573,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 | Claude misreads or overstates a source | A wrong fact on a slide | Quotes checked word for word, numbers checked against cited facts, the author confirms every fact, abstract-only sources labeled |
 | Generic AI output makes forgettable presentations | Low adoption | Evidence-first workflow, the author chooses the message, strong defaults, easy overrides |
 | Import quality too low | Users abandon | Import report, freeform fallback, quality score, early testing on real decks |
-| Wrong slide appears on voice command | Public embarrassment | Presenter-only preview, confirm gate, never-show flag |
+| Wrong slide appears on voice command | The presenter loses control of the room | Presenter-only preview, confirm gate, never-show flag |
 | Audience abuse or off-topic submissions | Disrupted sessions | Moderation queue, rate limits, rotating codes |
 | Built entirely with AI-assisted coding | Hidden defects, security gaps | Tests, code review passes, security checklist, staged rollout |
 | AI-generated image mistaken for evidence in a clinical or research deck | Misleading content | Illustration-only rule; labels; clinical- and data-looking images blocked or flagged (F-116) |
@@ -654,7 +662,7 @@ The first built-in theme uses the LLU palette, with every color tagged by its sa
 
 **Name.** OratorStudio replaces the earlier working name, LecternAI. It has not yet been through a trademark search. Before the name is public, run a trademark search, check domains and app store listings, and decide who files. LLU would own any mark.
 
-**Tagline and motto.** The tagline is "Ideas first. Slides follow." It restates design principle 2: authors edit meaning, and layout follows. The motto, "Create. Present. Engage.", predates the four modules. A motto that names them, "Curate. Build. Present. Engage.", is proposed. The line for Curate is "Curate the evidence. Hone your message. Each point backed by evidence, every fact traceable to its source." "Orator's Sidekick" was considered as a name and not adopted.
+**Tagline and motto.** The tagline is "Ideas first. Slides follow." It restates design principles 1 and 2: the evidence and the message come first, and the slides follow from them. The motto, "Create. Present. Engage.", predates the four modules. A motto that names them, "Curate. Build. Present. Engage.", is proposed. The line for Curate is "Curate the evidence. Hone your message. Each point backed by evidence, every fact traceable to its source." "Orator's Sidekick" was considered as a name and not adopted.
 
 **Logo.** The logo is a wordmark: "Orator" in bold type followed by "Studio" in an accent color, with no space between them. On the brand card, the tagline sits below the name, then a thin rule, then the motto in a lighter gray. The app uses this lockup on the sign-in page and the name with the tagline on the phone join page. The typeface is a placeholder (the system sans-serif) until a brand typeface is chosen.
 
