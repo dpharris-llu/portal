@@ -13,5 +13,5 @@ export async function POST(request: Request) {
   if (blocked) return blocked;
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid request.", code: "invalid_request" }, { status: 400 });
-  return claudeJson(searchPlanPrompt(parsed.data), SearchPlan, "value");
+  return claudeJson(searchPlanPrompt(parsed.data), SearchPlan, "value", "search_plan");
 }

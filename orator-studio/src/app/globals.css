@@ -515,3 +515,16 @@ a.list-row:hover, .list-row:has(> a:hover) { background: var(--panel); color: in
 @media (max-width: 699px) { .new-presentation { grid-column: auto; } }
 .probe-heading { display: block; margin-top: 6px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--red); }
 .probe-heading:first-child { margin-top: 0; }
+
+/* Claude usage page */
+.usage-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.usage-stats > div { border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px 18px; background: #fff; display: flex; flex-direction: column; gap: 4px; }
+.usage-stats span { font-size: 13px; color: var(--muted); }
+.usage-stats strong { font-family: var(--serif); font-size: 26px; font-weight: 600; color: var(--navy); }
+.usage-stats em { font-style: normal; font-size: 13px; color: var(--muted); }
+.usage-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.usage-table th, .usage-table td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #eef0f3; white-space: nowrap; }
+.usage-table th { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--panel); }
+.usage-table tr:last-child td { border-bottom: 0; }
+.ghost-link { font-size: 14px; font-weight: 500; padding: 8px 10px; border-radius: 10px; color: var(--navy); }
+.ghost-link:hover { background: var(--panel); }

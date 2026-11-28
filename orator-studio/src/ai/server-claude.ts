@@ -6,19 +6,31 @@ import { z } from "zod";
 import { outputSchema } from "./schema";
 import { aiConfigured } from "./claude";
 import { serverAccess } from "@/lib/serverAccess";
+import { summarize } from "./pricing";
+import { overBudget, recordUsage, type UsageRecord } from "./usage";
+
+const MODEL = "claude-opus-5-5";
 
 export async function guard(): Promise<NextResponse | null> {
   if (!aiConfigured()) return NextResponse.json({ error: "Claude isn't connected to this server. Set ANTHROPIC_API_KEY.", code: "not_configured" }, { status: 501 });
   const access = await serverAccess();
   if (!access.ok) return NextResponse.json({ error: access.error, code: "not_granted" }, { status: access.status });
+  const budget = await overBudget();
+  if (budget) return NextResponse.json({ error: budget, code: "over_budget" }, { status: 402 });
   return null;
 }
 
-export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T, key: string): Promise<NextResponse> {
+/**
+ * `task` names the job in the usage record (search plan, probe, ...); `key` is
+ * where the answer goes in the response.
+ */
+export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T, key: string, task: string): Promise<NextResponse> {
+  const started = Date.now();
+  const record = (r: Omit<UsageRecord, "task" | "latencyMs">) => recordUsage({ task, latencyMs: Date.now() - started, ...r });
   try {
     const client = new Anthropic();
     const stream = client.beta.messages.stream({
-      model: "claude-opus-5-5",
+      model: MODEL,
       max_tokens: 32000,
       output_config: { effort: "high", format: { type: "json_schema", schema: outputSchema(schema) } },
       betas: ["server-side-fallback-2026-07-01"],
@@ -26,16 +38,33 @@ export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T,
       messages: [{ role: "user", content: prompt }],
     });
     const response = await stream.finalMessage();
-    if (response.stop_reason === "refusal") return NextResponse.json({ error: "Claude declined this request.", code: "refused" }, { status: 422 });
-    if (response.stop_reason === "max_tokens") return NextResponse.json({ error: "Claude's answer was too long. Try fewer papers or rows.", code: "invalid_json" }, { status: 502 });
+    const usage = { requestId: stream.request_id ?? null, summary: summarize(MODEL, response.model, response.usage) };
+    if (response.stop_reason === "refusal") {
+      await record({ ...usage, status: "refused" });
+      return NextResponse.json({ error: "Claude declined this request.", code: "refused" }, { status: 422 });
+    }
+    if (response.stop_reason === "max_tokens") {
+      await record({ ...usage, status: "too_long" });
+      return NextResponse.json({ error: "Claude's answer was too long. Try fewer papers or rows.", code: "invalid_json" }, { status: 502 });
+    }
     const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-    const parsed = schema.safeParse(JSON.parse(text));
+    const parsed = schema.safeParse(safeJson(text));
+    await record({ ...usage, status: parsed.success ? "ok" : "unreadable" });
     if (!parsed.success) return NextResponse.json({ error: "Claude's answer couldn't be read. Try again.", code: "invalid_json" }, { status: 502 });
     return NextResponse.json({ [key]: parsed.data });
   } catch (e) {
+    await record({ status: "error", requestId: (e as { requestID?: string }).requestID ?? null, error: explain(e) });
     if (e instanceof Anthropic.RateLimitError) return NextResponse.json({ error: "Claude is busy. Try again shortly.", code: "rate_limited" }, { status: 429 });
     console.error("Claude request failed", e);
     return NextResponse.json({ error: explain(e), code: "upstream_error" }, { status: 502 });
+  }
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
   }
 }
 

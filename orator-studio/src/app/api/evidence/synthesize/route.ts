@@ -11,5 +11,5 @@ export async function POST(request: Request) {
   if (blocked) return blocked;
   const parsed = SynthesisRequest.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid request.", code: "invalid_request" }, { status: 400 });
-  return claudeJson(synthesisPrompt(parsed.data), Synthesis, "value");
+  return claudeJson(synthesisPrompt(parsed.data), Synthesis, "value", "synthesize");
 }

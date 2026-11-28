@@ -23,8 +23,9 @@ Vercel marks each variable as **Config** (readable after saving) or **Secret** (
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Config | Supabase → Project Settings → API Keys (or the project home page): the Project URL | Sign-in, cloud storage, live sessions. Public by design. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Config | Supabase → Project Settings → API Keys → **Publishable key** (`sb_publishable_…`) | Same. Public by design: row-level security protects the data. The variable keeps its old name; the new publishable key goes in it. |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Supabase → Project Settings → API Keys → **Secret key** (`sb_secret_…`) | Server only. Writes audience sessions. Never in the browser, a chat or a screenshot. The new secret key goes in the old variable name. |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Supabase → Project Settings → API Keys → **Secret key** (`sb_secret_…`) | Server only. Writes audience sessions and the Claude usage record. Never in the browser, a chat or a screenshot. The new secret key goes in the old variable name. |
 | `ANTHROPIC_API_KEY` | **Secret** | Claude Console (console.anthropic.com) → API keys | Claude on the server. Takes effect only when the Supabase variables are set, so only signed-in people can use it. Set a monthly spending limit in the console. |
+| `AI_MONTHLY_BUDGET_USD` | Config | Your choice, for example `25` | Optional. A monthly limit on the estimated Claude cost, per tenant. When this month's estimate reaches it, Claude requests are refused until the 1st; the usage page warns at 80%. A safety net on top of the console's own spending limit. |
 | `NCBI_API_KEY` | **Secret** | NCBI: sign in at ncbi.nlm.nih.gov → Account settings → **API Key Management** → Create | Optional. Raises PubMed's limit from about 3 to 10 requests a second, so discovery doesn't hit "too many requests" (429) on Vercel's shared addresses. The app already paces and retries without it. |
 | `SOURCE_ALLOWED_HOSTS` | Config | Your choice, for example `api.open-meteo.com` | Hosts that data URL sources may be fetched from. Empty means any public host. Database searches (PubMed, Europe PMC, ClinicalTrials.gov) don't use this list. |
 | `REQUIRE_SIGN_IN` | Config | `1` | Only for hosts other than Vercel: turns off Claude and URL fetching when sign-in isn't configured. Automatic on Vercel. |
@@ -55,7 +56,13 @@ Work created in local mode stays in that browser; it doesn't move into the cloud
 
 ## Changing the database
 
-The database is defined by `supabase/migrations/` (0001 core: tenants, presentations, decks and their logs; 0002 and 0003: live sessions). `supabase/reset.sql` removes everything the app created. `supabase/setup-all.sql` is reset.sql followed by the migrations, regenerated whenever either changes; pasting it rebuilds the database from scratch.
+The database is defined by `supabase/migrations/` (0001 core: tenants, presentations, decks and their logs; 0002 and 0003: live sessions; 0004: the Claude usage record). A new migration that only adds a table, like 0004, can be pasted on its own into the SQL Editor without losing data. `supabase/reset.sql` removes everything the app created. `supabase/setup-all.sql` is reset.sql followed by the migrations, regenerated whenever either changes; pasting it rebuilds the database from scratch.
+
+## Claude usage and cost
+
+Every Claude request the server makes is recorded in the `ai_usage` table: who asked, for which presentation, which task, which model answered (a refused request can fall back to another model, billed at that model's price), the tokens in, out and thinking, the time it took, Anthropic's request id, and an estimated cost at list prices (`src/ai/pricing.ts`). The **Claude usage** page (`/usage`, linked in the top bar) shows this month, each month, and the totals by presentation, task and model. Each request is also one `[ai-usage]` line in Vercel → Logs.
+
+The estimate is for watching spend; the bill is in the Claude Console → **Usage** and **Cost**. Compare the two each month: the request ids match the console's. Claude used inside claude.ai runs on the person's own Claude plan and isn't recorded here. Database searches are free.
 
 ## Checks
 

@@ -75,7 +75,7 @@ export async function askClaudeFor<T>(opts: {
   }
   let res: Response;
   try {
-    res = await fetch(opts.route, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(opts.payload), signal: opts.signal });
+    res = await fetch(opts.route, { method: "POST", headers: { "content-type": "application/json", ...presentationHeader() }, body: JSON.stringify(opts.payload), signal: opts.signal });
   } catch {
     throw new ClaudeError(opts.signal?.aborted ? "Stopped." : MESSAGES.upstream_error, opts.signal?.aborted ? "cancelled" : "upstream_error");
   }
@@ -92,6 +92,15 @@ export async function askClaudeFor<T>(opts: {
   const value = opts.parse(json[opts.key]);
   if (value === null) throw new ClaudeError(MESSAGES.invalid_json, "invalid_json");
   return { value, via: "api" };
+}
+
+/**
+ * Which presentation a request is for, so its Claude use is counted against it
+ * (the usage record). Read from the page address: /curate/<id> or /research/<id>.
+ */
+function presentationHeader(): Record<string, string> {
+  const m = /^\/(?:curate|research)\/([\w-]{1,80})/.exec(window.location.pathname);
+  return m ? { "x-presentation-id": m[1] } : {};
 }
 
 export async function askClaude(req: AnalysisRequest, opts: { signal?: AbortSignal; onProgress?: (chars: number) => void } = {}): Promise<{ analysis: Analysis; via: Transport }> {

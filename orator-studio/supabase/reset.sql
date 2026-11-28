@@ -12,6 +12,7 @@ drop table if exists
   public.presentation_ops, public.presentations,
   public.deck_ops, public.decks,
   public.live_votes, public.live_questions, public.live_responses, public.live_devices, public.live_polls, public.live_sessions,
+  public.ai_usage,
   public.memberships, public.tenants
   cascade;
 

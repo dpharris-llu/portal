@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { outputSchema } from "./schema";
 import { Outline, outlinePrompt, type OutlineRequest } from "./outline";
+import { summarize } from "./pricing";
+import { recordUsage } from "./usage";
 
 const MODEL = "claude-opus-5-5";
 
@@ -16,6 +18,7 @@ export function aiConfigured(): boolean {
  */
 export async function draftOutline(req: OutlineRequest): Promise<Outline | null> {
   const client = new Anthropic();
+  const started = Date.now();
   const response = await client.beta.messages.create({
     model: MODEL,
     max_tokens: 16000,
@@ -28,9 +31,15 @@ export async function draftOutline(req: OutlineRequest): Promise<Outline | null>
     fallbacks: "default",
     messages: [{ role: "user", content: outlinePrompt(req) }],
   });
-  if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens") return null;
+  const done = (status: "ok" | "refused" | "too_long" | "unreadable") =>
+    recordUsage({ task: "outline", status, latencyMs: Date.now() - started, requestId: response._request_id ?? null, summary: summarize(MODEL, response.model, response.usage) });
+  if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens") {
+    await done(response.stop_reason === "refusal" ? "refused" : "too_long");
+    return null;
+  }
   const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
   const parsed = Outline.safeParse(safeJson(text));
+  await done(parsed.success ? "ok" : "unreadable");
   return parsed.success ? parsed.data : null;
 }
 

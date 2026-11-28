@@ -4,6 +4,7 @@
  * plus a top bar for the page's own title and actions. `compact` keeps the
  * narrow rail on wide screens, for work surfaces like the slide editor.
  */
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { browserSupabase } from "@/lib/supabase/client";
 import { ModuleNav } from "./ModuleNav";
@@ -18,6 +19,11 @@ export function TopBar({ children, compact = false }: { children?: React.ReactNo
         <header className="topbar">
           {children}
           <span className="spacer" />
+          {sb && (
+            <Link href="/usage" className="ghost-link">
+              Claude usage
+            </Link>
+          )}
           {sb && (
             <button
               className="ghost"
