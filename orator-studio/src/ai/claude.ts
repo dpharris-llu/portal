@@ -4,9 +4,9 @@ import { z } from "zod";
 import { fitToLimits, outputSchema } from "./schema";
 import { Outline, outlinePrompt, type OutlineRequest } from "./outline";
 import { summarize } from "./pricing";
+import { fallbackParams, modelFor } from "./models";
 import { recordUsage } from "./usage";
 
-const MODEL = "claude-opus-5-5";
 
 export function aiConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
@@ -19,20 +19,20 @@ export function aiConfigured(): boolean {
 export async function draftOutline(req: OutlineRequest): Promise<Outline | null> {
   const client = new Anthropic();
   const started = Date.now();
+  const { model, effort } = modelFor("outline");
   const response = await client.beta.messages.create({
-    model: MODEL,
+    model,
     max_tokens: 16000,
     output_config: {
-      effort: "medium",
+      effort,
       format: { type: "json_schema", schema: outputSchema(Outline) },
     },
     // On a policy decline, the API retries on a fallback model inside the same call.
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
+    ...fallbackParams(model),
     messages: [{ role: "user", content: outlinePrompt(req) }],
   });
   const done = (status: "ok" | "refused" | "too_long" | "unreadable") =>
-    recordUsage({ task: "outline", status, latencyMs: Date.now() - started, requestId: response._request_id ?? null, summary: summarize(MODEL, response.model, response.usage) });
+    recordUsage({ task: "outline", status, latencyMs: Date.now() - started, requestId: response._request_id ?? null, summary: summarize(model, response.model, response.usage) });
   if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens") {
     await done(response.stop_reason === "refusal" ? "refused" : "too_long");
     return null;

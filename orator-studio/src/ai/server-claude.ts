@@ -7,9 +7,9 @@ import { fitToLimits, outputSchema } from "./schema";
 import { aiConfigured } from "./claude";
 import { serverAccess } from "@/lib/serverAccess";
 import { summarize } from "./pricing";
+import { fallbackParams, modelFor } from "./models";
 import { overBudget, recordUsage, type UsageRecord } from "./usage";
 
-const MODEL = "claude-opus-5-5";
 
 export async function guard(): Promise<NextResponse | null> {
   if (!aiConfigured()) return NextResponse.json({ error: "Claude isn't connected to this server. Set ANTHROPIC_API_KEY.", code: "not_configured" }, { status: 501 });
@@ -27,18 +27,18 @@ export async function guard(): Promise<NextResponse | null> {
 export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T, key: string, task: string): Promise<NextResponse> {
   const started = Date.now();
   const record = (r: Omit<UsageRecord, "task" | "latencyMs">) => recordUsage({ task, latencyMs: Date.now() - started, ...r });
+  const { model, effort } = modelFor(task);
   try {
     const client = new Anthropic();
     const stream = client.beta.messages.stream({
-      model: MODEL,
+      model,
       max_tokens: 32000,
-      output_config: { effort: "high", format: { type: "json_schema", schema: outputSchema(schema) } },
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      output_config: { effort, format: { type: "json_schema", schema: outputSchema(schema) } },
+      ...fallbackParams(model),
       messages: [{ role: "user", content: prompt }],
     });
     const response = await stream.finalMessage();
-    const usage = { requestId: stream.request_id ?? null, summary: summarize(MODEL, response.model, response.usage) };
+    const usage = { requestId: stream.request_id ?? null, summary: summarize(model, response.model, response.usage) };
     if (response.stop_reason === "refusal") {
       await record({ ...usage, status: "refused" });
       return NextResponse.json({ error: "Claude declined this request.", code: "refused" }, { status: 422 });

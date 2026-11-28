@@ -60,7 +60,7 @@ The database is defined by `supabase/migrations/` (0001 core: tenants, presentat
 
 ## Claude usage and cost
 
-Every Claude request the server makes is recorded in the `ai_usage` table: who asked, for which presentation, which task, which model answered (a refused request can fall back to another model, billed at that model's price), the tokens in, out and thinking, the time it took, Anthropic's request id, and an estimated cost at list prices (`src/ai/pricing.ts`). The **Claude usage** page (`/usage`, linked in the top bar) shows this month, each month, and the totals by presentation, task and model. Each request is also one `[ai-usage]` line in Vercel → Logs.
+Which model does which task is set in one table, `src/ai/models.ts`: Claude Sonnet 5.5 is the standard, and Claude Haiku 5.5 (about 20 times cheaper) does low-stakes work whose result the author sees at once, such as search plans. Every Claude request the server makes is recorded in the `ai_usage` table: who asked, for which presentation, which task, which model answered (a refused request can fall back to another model, billed at that model's price), the tokens in, out and thinking, the time it took, Anthropic's request id, and an estimated cost at list prices (`src/ai/pricing.ts`). The **Claude usage** page (`/usage`, linked in the top bar) shows this month, each month, and the totals by presentation, task and model. Each request is also one `[ai-usage]` line in Vercel → Logs.
 
 The estimate is for watching spend; the bill is in the Claude Console → **Usage** and **Cost**. Compare the two each month: the request ids match the console's. Claude used inside claude.ai runs on the person's own Claude plan and isn't recorded here. Database searches are free.
 

@@ -57,3 +57,11 @@ describe("usage report", () => {
     expect(r.byMonth.map(([k]) => k)).toEqual(["2026-11", "2026-10"]);
   });
 });
+
+describe("standard models", () => {
+  it("prices Sonnet and Haiku, with Haiku's long-prompt rate", () => {
+    expect(summarize("claude-sonnet-5-5", "claude-sonnet-5-5", { input_tokens: 1_000_000, output_tokens: 1_000_000 }).costUsd).toBeCloseTo(12, 10);
+    expect(summarize("claude-haiku-5-5", "claude-haiku-5-5", { input_tokens: 100_000, output_tokens: 1_000_000 }).costUsd).toBeCloseTo(0.01 + 0.5, 10);
+    expect(summarize("claude-haiku-5-5", "claude-haiku-5-5", { input_tokens: 200_000, output_tokens: 1_000_000 }).costUsd).toBeCloseTo(0.1 + 2.5, 10);
+  });
+});

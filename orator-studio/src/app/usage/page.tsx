@@ -123,7 +123,7 @@ export default async function UsagePage() {
                 {r.thisMonth.cost >= budget ? "The monthly limit has been reached: Claude requests are paused until the 1st." : "Over 80% of this month's limit is used."}
               </p>
             )}
-            {r.fallbacks > 0 && <p className="muted">{r.fallbacks} request(s) this month were answered by a fallback model after Claude Opus declined; they are priced at that model&apos;s rates.</p>}
+            {r.fallbacks > 0 && <p className="muted">{r.fallbacks} request(s) this month were answered by a fallback model after the first model declined; they are priced at that model&apos;s rates.</p>}
 
             {!rows.length && <p className="muted">No Claude requests recorded yet. Ask Claude something in Curate, then come back.</p>}
 

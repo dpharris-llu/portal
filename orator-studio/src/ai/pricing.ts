@@ -10,15 +10,22 @@
  * the 1-hour cache. Thinking tokens are already inside output_tokens.
  */
 
-export type Price = { input: number; output: number; cacheRead: number };
+export type Price = {
+  input: number;
+  output: number;
+  cacheRead: number;
+  /** A second rate card for prompts longer than `above` tokens (Haiku 5.5). */
+  long?: { above: number; input: number; output: number; cacheRead: number };
+};
 
 export const PRICES_CHECKED = "2026-11";
 
 export const PRICES: Record<string, Price> = {
   "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2 },
   "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.1 },
-  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01 },
+  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01, long: { above: 100_000, input: 0.5, output: 2.5, cacheRead: 0.05 } },
   // Models a refused request can fall back to.
+  "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2 },
   "claude-opus-5": { input: 5, output: 25, cacheRead: 0.5 },
   "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5 },
   "claude-fable-5-2": { input: 8, output: 40, cacheRead: 0.2 },
@@ -36,8 +43,10 @@ export type Attempt = {
 
 /** Dollars for one attempt, or null when the model has no price here. */
 export function attemptCost(a: Attempt): number | null {
-  const p = PRICES[a.model];
-  if (!p) return null;
+  const base = PRICES[a.model];
+  if (!base) return null;
+  const prompt = a.input + a.cacheRead + a.cacheWrite5m + a.cacheWrite1h;
+  const p = base.long && prompt > base.long.above ? base.long : base;
   const perToken =
     a.input * p.input +
     a.output * p.output +
