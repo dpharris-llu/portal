@@ -275,3 +275,9 @@ begin
     execute format('grant execute on function %s to service_role', f.sig);
   end loop;
 end $$;
+
+-- The functions above run as the caller (the server's service role), so that
+-- role needs the tables. Phones and signed-in users get nothing here: they go
+-- through the server.
+grant all on public.live_sessions, public.live_polls, public.live_devices, public.live_responses, public.live_questions, public.live_votes to service_role;
+grant usage, select on all sequences in schema public to service_role;

@@ -224,6 +224,18 @@ begin
 end;
 $$;
 
+-- Table privileges. Supabase no longer grants these automatically to tables
+-- made in the SQL Editor, and without them every request is refused before
+-- Row Level Security runs. The grants open the tables to the policies above;
+-- the policies still decide which rows each person sees. Logs get no update
+-- or delete, so history stays append-only even at this level.
+grant usage on schema public to anon, authenticated, service_role;
+grant select on public.tenants, public.memberships to authenticated;
+grant select, insert, update, delete on public.presentations, public.decks to authenticated;
+grant select, insert on public.presentation_ops, public.deck_ops to authenticated;
+grant all on public.tenants, public.memberships, public.presentations, public.presentation_ops, public.decks, public.deck_ops to service_role;
+grant usage, select on all sequences in schema public to authenticated, service_role;
+
 -- ===== Part 2: migrations/0002_live.sql =====
 -- Audience response sessions (spec 5A) stored in Postgres, so they work on
 -- serverless hosting. Rows are written only through the functions below, which
@@ -502,6 +514,12 @@ begin
     execute format('grant execute on function %s to service_role', f.sig);
   end loop;
 end $$;
+
+-- The functions above run as the caller (the server's service role), so that
+-- role needs the tables. Phones and signed-in users get nothing here: they go
+-- through the server.
+grant all on public.live_sessions, public.live_polls, public.live_devices, public.live_responses, public.live_questions, public.live_votes to service_role;
+grant usage, select on all sequences in schema public to service_role;
 
 -- ===== Part 2: migrations/0003_live_realtime.sql =====
 -- Realtime Authorization for audience sessions (private broadcast channels).

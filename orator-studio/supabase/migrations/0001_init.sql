@@ -185,3 +185,15 @@ begin
   end loop;
 end;
 $$;
+
+-- Table privileges. Supabase no longer grants these automatically to tables
+-- made in the SQL Editor, and without them every request is refused before
+-- Row Level Security runs. The grants open the tables to the policies above;
+-- the policies still decide which rows each person sees. Logs get no update
+-- or delete, so history stays append-only even at this level.
+grant usage on schema public to anon, authenticated, service_role;
+grant select on public.tenants, public.memberships to authenticated;
+grant select, insert, update, delete on public.presentations, public.decks to authenticated;
+grant select, insert on public.presentation_ops, public.deck_ops to authenticated;
+grant all on public.tenants, public.memberships, public.presentations, public.presentation_ops, public.decks, public.deck_ops to service_role;
+grant usage, select on all sequences in schema public to authenticated, service_role;
