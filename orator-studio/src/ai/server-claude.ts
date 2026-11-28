@@ -3,7 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { outputSchema } from "./schema";
+import { fitToLimits, outputSchema } from "./schema";
 import { aiConfigured } from "./claude";
 import { serverAccess } from "@/lib/serverAccess";
 import { summarize } from "./pricing";
@@ -48,8 +48,11 @@ export async function claudeJson<T extends z.ZodType>(prompt: string, schema: T,
       return NextResponse.json({ error: "Claude's answer was too long. Try fewer papers or rows.", code: "invalid_json" }, { status: 502 });
     }
     const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-    const parsed = schema.safeParse(safeJson(text));
-    await record({ ...usage, status: parsed.success ? "ok" : "unreadable" });
+    const json = safeJson(text);
+    const parsed = schema.safeParse(json === null ? null : fitToLimits(schema, json));
+    // Which fields failed (paths only, never the content), so a paid but unusable answer can be fixed.
+    const why = parsed.success ? undefined : json === null ? "not JSON" : parsed.error.issues.slice(0, 5).map((i) => `${i.path.join(".")}: ${i.code}`).join("; ");
+    await record({ ...usage, status: parsed.success ? "ok" : "unreadable", error: why });
     if (!parsed.success) return NextResponse.json({ error: "Claude's answer couldn't be read. Try again.", code: "invalid_json" }, { status: 502 });
     return NextResponse.json({ [key]: parsed.data });
   } catch (e) {

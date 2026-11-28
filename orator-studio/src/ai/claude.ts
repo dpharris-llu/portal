@@ -1,7 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { outputSchema } from "./schema";
+import { fitToLimits, outputSchema } from "./schema";
 import { Outline, outlinePrompt, type OutlineRequest } from "./outline";
 import { summarize } from "./pricing";
 import { recordUsage } from "./usage";
@@ -38,7 +38,8 @@ export async function draftOutline(req: OutlineRequest): Promise<Outline | null>
     return null;
   }
   const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  const parsed = Outline.safeParse(safeJson(text));
+  const json = safeJson(text);
+  const parsed = Outline.safeParse(json === null ? null : fitToLimits(Outline, json));
   await done(parsed.success ? "ok" : "unreadable");
   return parsed.success ? parsed.data : null;
 }

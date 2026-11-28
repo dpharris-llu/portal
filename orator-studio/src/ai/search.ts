@@ -5,7 +5,8 @@
 import { z } from "zod";
 import type { Provider } from "@/find/types";
 
-export const SearchPlan = z.object({ query: z.string().max(500), broader: z.string().max(500).optional(), note: z.string().max(400) });
+// PubMed accepts long queries; a query cut short would be wrong, so the limit is generous.
+export const SearchPlan = z.object({ query: z.string().max(4000), broader: z.string().max(4000).optional(), note: z.string().max(600) });
 export type SearchPlan = z.infer<typeof SearchPlan>;
 
 export function searchPlanPrompt(o: { provider: Provider; want: string; purpose: string; thesis: string }): string {

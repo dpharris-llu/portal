@@ -43,3 +43,22 @@ describe("schemas sent to Anthropic", () => {
     expect(SynthesisRequest.safeParse({}).success).toBe(false);
   });
 });
+
+import { fitToLimits } from "./schema";
+import { SearchPlan as Plan } from "./search";
+import { ProbeAnswer as Answer } from "./probe";
+
+describe("fitToLimits", () => {
+  it("trims over-long text instead of rejecting a paid answer", () => {
+    const v = fitToLimits(Plan, { query: "a", note: "x".repeat(2000) }) as { note: string };
+    expect(v.note.length).toBe(600);
+    expect(Plan.safeParse(v).success).toBe(true);
+  });
+  it("trims lists and reaches into union branches", () => {
+    const raw = { answer: "ok", cites: [], proposals: Array.from({ length: 12 }, () => ({ why: "w", action: { kind: "set_thesis", text: "t".repeat(900) } })) };
+    const v = fitToLimits(Answer, raw) as { proposals: Array<{ action: { text: string } }> };
+    expect(v.proposals).toHaveLength(8);
+    expect(v.proposals[0].action.text.length).toBe(400);
+    expect(Answer.safeParse(v).success).toBe(true);
+  });
+});
