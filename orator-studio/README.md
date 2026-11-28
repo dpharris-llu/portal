@@ -2,7 +2,9 @@
 
 *Ideas first. Slides follow.* · Create. Present. Engage.
 
-A presentation platform that stores a deck as structured content (claims, evidence and intent) and generates the layout from it. This folder is the version .3 (Stage 0) starting point described in the product spec, [`docs/product-spec.md`](docs/product-spec.md).
+An AI-native platform for evidence-based presentations: **Curate** the evidence, hone the message, **Build** the slides, **Present** and **Engage**. Each point is backed by evidence, every fact traceable to its source. This folder is version .3 (Stage 0) of the product spec, [`docs/product-spec.md`](docs/product-spec.md).
+
+**Where things stand, decisions made, and what's open: [`docs/status.md`](docs/status.md).** Setup and keys: [`docs/deployment.md`](docs/deployment.md).
 
 ## Run it
 
@@ -27,6 +29,9 @@ To sign in and sync, copy `.env.example` to `.env.local` and fill in:
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Magic Link login, cloud storage of decks, and audience sessions over Realtime. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only, and required with the two above. Audience sessions are written with it. |
 | `ANTHROPIC_API_KEY` | Claude on the server: outlines, analysis, reading papers. Without it, Claude works only inside claude.ai, and outlines use a template. |
+| `AI_MONTHLY_BUDGET_USD` | Optional. A monthly limit on the estimated Claude cost, per person (each person has their own tenant). |
+| `OPENALEX_API_KEY` | Optional, server only. Your own OpenAlex daily allowance for "Research in all fields". |
+| `API_BIBLE_KEY` | Server only. API.Bible key (Starter plan, non-commercial) for NIV, NKJV, NLT passages. |
 | `NCBI_API_KEY` | Optional, server only. A free key from NCBI raises PubMed's limit from about 3 to 10 requests a second and makes it yours rather than shared with the host's address. Discovery works without it, a little slower. |
 | `SOURCE_ALLOWED_HOSTS` | Comma-separated hosts that data URL sources may be fetched from, such as `api.open-meteo.com`. Empty means any public host. |
 | `REQUIRE_SIGN_IN` | Set to `1` on a public server other than Vercel. Without sign-in, the Claude and URL-fetch routes then switch off (on Vercel this is automatic). |
@@ -53,7 +58,7 @@ Step by step, with the current live setup, the environment variables and their V
 | `src/layout/engine.ts` | Rule-based layout (statement, quote, visual, split, stack, grid), shrink-to-fit with overflow warnings, flow around freeform regions, and a per-slide override. Pure, so export can reuse it. | 5, F-003 to F-005 |
 | `src/model/argument.ts` | The Research argument and its workspace: purpose, thesis, points with evidence, sources and facts with short ids (S2, F7), probes, discard and restore. Operations with inverses, like decks. | 3, F-016, F-118 |
 | `src/research/`, `src/components/research/` | Research workspace: the probe panel, sources and facts with discard, Find sources, upload a PDF, read-or-pick facts, the brief, and links from the documents, data and papers flows. | F-002, F-016, F-118, F-119 |
-| `src/find/` | Find sources: PubMed (NIH E-utilities), Europe PMC (reports and preprints) and ClinicalTrials.gov. Fixed endpoints only; full texts from PubMed Central become checkable sections. Test fixtures are made up. | F-119 |
+| `src/find/` | Find sources: the source catalog (`catalog.ts`), PubMed (NIH E-utilities), OpenAlex (all fields), Europe PMC (reports and preprints) and ClinicalTrials.gov; the Bible through API.Bible (`bible.ts`, `bible-server.ts`); word study over STEPBible data (`wordstudy.ts`). Fixed endpoints only; full texts from PubMed Central become checkable sections. Test fixtures are made up. | F-020, F-119, F-121, F-123, F-128 |
 | `src/evidence/` | Research papers: two-column PDF text, quote and number checks against the page, the cross-paper deck. | F-015 |
 | `src/documents/`, `src/sources/` | Figures from PDFs, data URL sources (JSON, XML, CSV) with snapshots and refresh, the server fetcher with its safeguards. | F-012 to F-014 |
 | `src/build/` | Drafting slides from an argument, with points left out going to backup. | F-003 |
@@ -64,8 +69,11 @@ Step by step, with the current live setup, the environment variables and their V
 | `src/audience/` | Audience sessions: polls (multiple choice, rating, ranking, short text, word cloud), Q&A with upvotes, moderation, a profanity filter, one response per device, rate limits, room lock. Two stores behind one interface: in memory with Server-Sent Events (local mode), and Postgres with Supabase Realtime. A parity test runs the same scenario through both. | 8 |
 | `src/ai/` | Prompts, schemas and checks for every Claude task: outlines, figure analysis, reading papers, cross-paper synthesis, probes, search planning. Claude is reached through the viewer's claude.ai account when the page runs there, otherwise through the server's API key (structured JSON output; which model does which task is set in `src/ai/models.ts`: Sonnet 5.5 as standard, Haiku 5.5 for search plans). | 9, F-013, F-015, F-118, F-119 |
 | `src/app/` | Pages: home, the four module pages (`/research`, `/build`, `/present`, `/engage`), the argument workspace (`/research/<id>`), drafting from an argument (`/build/<id>`), documents, data URL and papers flows, import, editor, presenter, audience window, phone join pages (`/join`, `/j/<code>`), login and the auth callback. API routes under `/api`. | 3 |
+| `src/ai/pricing.ts`, `src/ai/usage.ts`, `src/ai/usage-report.ts` | Claude usage and cost: token counts from every response (including fallback attempts), estimated cost at list prices, recorded per person, presentation and task; the optional monthly limit. Shown at `/usage`. | F-114 |
+| `src/lib/people.ts` | Invitations and administrators: invite by email (creates the account and its private space), list people with last sign-in and Claude cost, block or restore access. Shown at `/people` to administrators. | F-126 |
+| `public/wordstudy/`, `scripts/build-wordstudy.mjs` | Word-study data built from STEPBible (CC BY 4.0): each verse's Greek or Hebrew words, every occurrence of each word, brief definitions. Static files, no key. | F-128 |
 | `src/lib/serverAccess.ts` | Who may use routes that spend money or fetch URLs: signed-in users with Supabase; on Vercel without sign-in, nobody. | 11 |
-| `supabase/migrations/` | `0001`: tenants and memberships with roles; `presentations` (topic, curation) with the append-only `presentation_ops`; `decks`, each belonging to a presentation, with `deck_ops`; Row Level Security on every table; each new user gets a personal tenant. `0002`: audience session tables and the functions that enforce the rules. `0003`: who may use which Realtime channel. `reset.sql` removes it all; `setup-all.sql` is reset plus all migrations, for one paste into the SQL Editor. | 11, 12 |
+| `supabase/migrations/` | `0001`: tenants and memberships with roles; `presentations` (topic, curation) with the append-only `presentation_ops`; `decks`, each belonging to a presentation, with `deck_ops`; Row Level Security on every table; each new user gets a personal tenant. `0002`: audience session tables and the functions that enforce the rules. `0003`: who may use which Realtime channel. `0004`: the Claude usage record (`ai_usage`). `0005`: administrators and invitations. `reset.sql` removes it all; `setup-all.sql` is reset plus all migrations, for one paste into the SQL Editor; `make-admin.sql` makes the first administrator. | 11, 12 |
 
 ## Status against version .3 (Stage 0)
 
@@ -83,6 +91,11 @@ Step by step, with the current live setup, the environment variables and their V
 | F-011: notes and rehearsal timer | Notes are built. The timer counts narrative time and detour time separately; there's no rehearsal mode yet. |
 | L-02: semantic matching | Hook only. Search is lexical until per-slide embeddings are added. |
 | Magic Link login | Built. Sign-in, the login redirect and cloud saving were tested against a local Supabase stack; the email itself was not sent in tests. |
+| F-020, F-121, F-122: Discover with a source catalog | Built. Claude (Haiku) chooses which sources fit the topic with a reason each and writes the searches; the author's choice is saved with the presentation; each run is kept as a search record. OpenAlex adds research in all fields. |
+| F-114: AI usage and cost | Built (version .3 part): every Claude request recorded with tokens and estimated cost; `/usage`; optional monthly limit. |
+| F-123: Bible passages | Built: find passages by theme (Claude proposes references, the app fetches the text) or by words; look up by reference in NIV, NKJV, NLT (API.Bible) or KJV; TPT entered by the author. |
+| F-126: invitations | Built: invite-only, administrators invite on `/people`. Needs custom SMTP in Supabase for sign-in emails to reach colleagues. |
+| F-128: word study | Built: the original words of any verse with definitions, and every occurrence counted by book. Following a concept across related words is still to come. |
 | A-01 to A-05: audience response | Built. Join by QR code or short code, five poll types with live results on the slide, moderated Q&A with upvotes, and question-to-slide matching that opens a private preview. Tested end to end against a local Supabase stack, including 300 simultaneous participants. |
 
 ## How live sessions work with Supabase
