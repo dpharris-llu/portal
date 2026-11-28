@@ -4,9 +4,11 @@ Nov 28, 2026 · @DP Harris
 
 *Ideas first. Slides follow.*
 
-*Curate the evidence. Hone your message. Each point backed by evidence, every fact traceable to its source.*
+*Curate the evidence. Make your assertions. Every fact traceable to its source.* (Proposed wording, replacing "Hone your message"; the product owner chooses.)
 
-This spec defines OratorStudio, a platform for creating evidence-based presentations: clear about their message, current with what is known, and traceable in every fact. An author starts from a topic, curates the evidence (what they already know, and what discovery finds that they didn't), hones a message and the points that carry it, then builds, presents and engages. It has four modules: **Orator Curate**, **Orator Build**, **Orator Present** and **Orator Engage**. It is built first for one presenter, then LLU admins, then faculty, then sold to other institutions.
+This spec defines OratorStudio, a platform for creating evidence-based presentations: current with what is known, clear about what the author asserts, and traceable in every fact. An author curates a **Body of Knowledge** (sources and the facts drawn from them), organizes it by **Topics** in a topic library, makes **assertions** backed by those facts, then builds presentations for a purpose and an audience from a series of topics and their assertions, and presents and engages.
+
+> **Revised November 28, 2026: the knowledge model.** Knowledge is curated once and reused: sources and facts live in the author's Body of Knowledge, topics and assertions in a Topic Library, and a presentation is made from a series of topics with the assertions that suit its purpose and audience. This replaces the earlier model in which each presentation owned its own workspace and had one message. Sections 2, 3 and 5 and requirements F-130 to F-141 describe it. Existing data is deleted and the database rebuilt for it. Where later, more detailed sections still say "outline", "points" or "message", read them as a presentation's topics and assertions; they are updated as each part is rebuilt. It has four modules: **Orator Curate**, **Orator Build**, **Orator Present** and **Orator Engage**. It is built first for one presenter, then LLU admins, then faculty, then sold to other institutions.
 
 ## 1. The premise
 
@@ -18,19 +20,20 @@ This spec defines OratorStudio, a platform for creating evidence-based presentat
 - **Discovery is built in.** From the author's topic, it finds what has been published (systematic reviews, guidelines, the newest studies, ongoing trials, government reports) alongside the sources the author brings.
 - **Every fact is traceable.** Each fact keeps the exact passage and page it came from. Quotes are checked word for word, and every number Claude writes is checked against the facts it cites.
 - **The author decides.** Claude finds, summarizes, challenges and proposes; nothing enters the presentation unless the author keeps it, and anything can be discarded.
-- **Slides come last.** They are drafted from points that each rest on evidence, so a figure on a slide can always be traced back to its source, and changes in the evidence show which slides to review.
+- **Slides come last.** They are drafted from assertions that each rest on evidence, so a figure on a slide can always be traced back to its source, and changes in the evidence show which slides to review.
 
-**Vision.** A presentation is curated before it is designed. The author gathers evidence from their own sources and from discovery, decides what to keep, and hones a message with points that each rest on checked facts. Slides are then drafted from that outline: design is applied by rules, data stays live and sourced, and the presenter can go anywhere in the material in seconds.
+**Vision.** A presentation is curated before it is designed. The author gathers evidence from their own sources and from discovery, decides what to keep, and makes assertions that each rest on checked facts. Slides are then drafted from that outline: design is applied by rules, data stays live and sourced, and the presenter can go anywhere in the material in seconds.
 
 **Design principles**
 
-1. **Evidence first.** Curate before you design: the message and points rest on checked facts before any slide exists.
-2. **Content first.** Authors edit meaning; layout follows.
-3. **AI proposes, people decide.** Every AI change is visible, reversible, and labeled.
-4. **Every fact is traceable.** Any fact or figure can show where it came from and when it was last checked.
-5. **The presenter stays in control.** Presenting works offline and degrades gracefully; nothing reaches the screen without the presenter's say.
-6. **Escape hatch always.** Freeform placement exists for the one arrow that must go exactly there.
-7. **No lock-in.** Open file format, strong PPTX import and export.
+1. **Evidence first.** Curate before you design: assertions rest on checked facts before any slide exists.
+2. **Claude observes; people assert.** Claude finds, reads, checks and offers observations, labeling its own general knowledge; only a person makes an assertion, in their own words.
+3. **Content first.** Authors edit meaning; layout follows.
+4. **AI proposes, people decide.** Every AI change is visible, reversible, and labeled.
+5. **Every fact is traceable.** Any fact or figure can show where it came from and when it was last checked.
+6. **The presenter stays in control.** Presenting works offline and degrades gracefully; nothing reaches the screen without the presenter's say.
+7. **Escape hatch always.** Freeform placement exists for the one arrow that must go exactly there.
+8. **No lock-in.** Open file format, strong PPTX import and export.
 
 **Working assumptions (please correct)**
 
@@ -52,19 +55,19 @@ Stage 0 is version .3. Out of scope for now: pricing, billing, and site licensin
 
 ## 2. The author's journey
 
-**Topic → evidence (yours and discovered) → what is known → message → points → outline → slides → delivery.**
+**Topic → Body of Knowledge (sources and facts) → observations → assertions → presentation (purpose, audience, topics and their assertions) → slides → delivery.**
 
-1. **Start with a topic, not a position (F-019).** "Walking programs for adults with type 2 diabetes." The occasion is optional: audience, time, and what should happen.
-2. **Gather evidence from two streams into one workspace.**
-   - **Known sources, the author's own:** papers they rely on, institutional reports and data, facts they know firsthand. Marked as theirs.
-   - **Unknown sources, found by discovery (F-020):** the current landscape, strongest evidence first (systematic reviews, meta-analyses, guidelines), then the newest studies, ongoing trials and government reports. Each result shows its date and a summary; the author adds the ones that matter.
-   - Every source gets an id (S1, S2…) and every fact one too (F1, F2…). A fact is **checked** (its quote verified against the source) or **unchecked** (the author's own note).
-3. **Make sense of it (F-021).** A discovery summary, written from the workspace only and citing its facts: what is **established**, what is **new** (including where a discovered source supersedes one of the author's), what is **contested**, and what is **unknown**, each unknown with a search for it. The author probes with follow-up questions (F-118), asks the system to **challenge** their view (F-022), follows a paper to the newer work that cites it (F-023), and discards whatever doesn't belong.
-4. **Choose the message (F-024).** With the landscape known, the system offers two or three candidate messages grounded in the facts. The author picks, edits or writes their own. The message is the one sentence everything supports.
-5. **Build the points that carry it (F-024).** Proposed points, each tied to its facts. Weak support and objections are flagged; an objection is answered with evidence or moved to "What we don't know yet".
-6. **The outline.** Message, points in order with their evidence, what we don't know yet, recommendation and next steps, and a time check against the occasion. Approved, it goes to Build; later changes show which slides to review.
+1. **Choose or create a topic (F-131).** "Sabbath rest and health." A topic lives in the author's Topic Library and is reused across presentations. It has keywords and may be related to other topics.
+2. **Build the Body of Knowledge (F-130).** Sources and the facts drawn from them, from two streams:
+   - **The author's own:** papers they rely on, institutional reports and data, Scripture, and facts they know firsthand (whose source is the author, marked unchecked).
+   - **Found by discovery (F-020):** the current landscape for a topic, strongest evidence first, then the newest studies, ongoing trials and reports; and sources other people have made publicly discoverable (F-139).
+   - Every fact keeps its quote and location and is checked against its source where possible. Each source carries a general annotation; its link to a topic carries a note on why it matters there (F-135).
+3. **Make sense of it (F-132).** Claude offers **observations**: what the facts show, citing them, and, clearly separated and labeled, its own view from general knowledge. The author probes with questions (F-118), asks for a challenge (F-022), and discards what doesn't belong.
+4. **Make assertions (F-133).** An assertion is the author's own statement of what the evidence shows, backed by any number of facts (or none yet: unsupported). From an observation the author is asked "Do you agree? How would you say this?" and types the assertion in their own words. Each linked fact is marked as supporting, qualifying or contradicting it.
+5. **Build a presentation (F-136).** Set its purpose and audience; choose a series of topics and, within each, the assertions that suit that purpose and audience, in order. New topics and assertions can be written here too: they go into the Topic Library, and a new assertion is unsupported until evidence is found. The presentation then becomes slides.
+6. **Stay current (F-138).** When a source or fact changes or is discarded, the assertions linked to it, and the presentations using them, are flagged for review.
 
-The two halves of Curate loop rather than run once: a weak point sends the author back to discovery, and a challenge can change the message. So they share one workspace, shown as two steps: **1. Evidence** and **2. Message and outline**. An author who already knows their evidence can start at step 2.
+A presentation can start from either end: from evidence (curate first, then assert and build), or from scratch (write topics and assertions in Build, then investigate the unsupported ones). Both meet in the same Body of Knowledge and Topic Library.
 
 ## 3. Modules
 
@@ -72,42 +75,46 @@ OratorStudio is one product with four modules. They share one sign-in, one store
 
 | Module | Job | What is in it |
 | --- | --- | --- |
-| **Orator Curate** | Discover what is known, decide what to keep, and hone the message | The topic; the workspace of sources (the author's own and those found by discovery) and checked facts; the discovery summary; probes; the message, points and outline; the written brief |
-| **Orator Build** | Turn the outline into slides | Slide drafting from the outline; structured editor; themes and layout; PPTX import; deck checks (consistency, accessibility); setting and fitting to a time limit; variants; point-level review and approval; slide images, including AI-generated illustrations |
+| **Orator Curate** | Build the Body of Knowledge and make assertions about it | The Body of Knowledge (sources and checked facts, the author's own and those found by discovery, with annotations); the Topic Library (topics, keywords, related topics, collaborators); Claude's observations; probes; the author's assertions and the facts behind them; the annotated bibliography |
+| **Orator Build** | Turn topics and assertions into a presentation and its slides | The presentation's purpose and audience; choosing and ordering topics and their assertions (and writing new ones, unsupported until investigated); | slide drafting; structured editor; themes and layout; PPTX import; deck checks (consistency, accessibility); setting and fitting to a time limit; variants; point-level review and approval; slide images, including AI-generated illustrations |
 | **Orator Present** | Deliver it | Present mode and presenter view; search and voice jump; backup slides; rehearsal timer; offline package; PPTX, PDF and HTML export |
 | **Orator Engage** | Involve the audience | Live sessions and join codes; polls; moderated Q&A; question-to-slide matching; Q&A on a published deck; Canvas publishing |
 
 **Shared platform (not a module).** Sign-in, institutions and roles; the LLU brand theme (stored here, applied in Build); storage of presentations, sources and snapshots; sensitivity labels; the media library; AI provider settings, API keys and usage tracking; audit log.
 
-**Why "curate."** A curator judges what matters, keeps the best, sets the rest aside, and arranges what is kept into something coherent for an audience. That is the author's job in the first module, and it matches how the system works: it finds and checks; the author chooses (design principle 3). Discovery is the headline action inside Curate, not its name.
+**Why "curate."** A curator judges what matters, keeps the best, sets the rest aside, and arranges what is kept into something coherent for an audience. That is the author's job in the first module, and it matches how the system works: it finds and checks; the author chooses (design principles 2 and 4). Discovery is the headline action inside Curate, not its name.
 
 
 **Boundaries decided so far**
 
-- **The presentation is the thing the author makes (F-025).** It holds its topic and occasion, its curation (sources, facts, probes, message, points) and its slides. Today the outline and the deck are stored as two linked objects; F-025 joins them under one presentation.
-- **Curate is a workspace you question.** The author builds the case by discovering, asking, accepting and discarding, one step at a time (F-118, F-119, F-020, F-021, F-022, F-023, F-024).
-- **Slides belong in Build.** Splitting or merging points into slides, choosing charts, quotes and layouts, and the time limit (which shapes slides more than the outline) are Build's.
-- **PPTX import is in Build**, since an existing deck is a starting point for slides. An imported deck can be sent back to Curate to pull out its message and points and check them against sources (F-117).
+- **Evidence and interpretation are kept apart.** The Body of Knowledge holds only what sources say (sources and facts). Topics and assertions, what a person holds the evidence to mean, live in the Topic Library. A fact can support many assertions; an assertion can rest on many facts.
+- **Curate builds the knowledge; Build makes presentations from it.** Assertions belong to topics, not to presentations, so they are reused; a presentation references them. An assertion written while building is filed under its topic in the Topic Library.
+- **Assertions are human.** Claude observes and may give its view, labeled; only a person asserts, in their own words (F-132, F-133).
+- **Slides belong in Build.** Splitting or merging assertions into slides, choosing charts, quotes and layouts, and the time limit (which shapes slides more than the outline) are Build's.
+- **PPTX import is in Build**, since an existing deck is a starting point for slides. An imported deck can be sent back to Curate to pull out its topics and assertions and check them against sources (F-117).
 - **Images go where their role is.** A slide image (photo, logo, illustration) is added in Build. An image used as evidence (a figure from a paper, a dashboard screenshot, a scanned table) is added in Curate with its source. Both live in one media library (F-017).
-- **Exports follow what is exported.** Present exports slides (PPTX, PDF, HTML). Curate exports the outline as a written brief. Pre-read and handout variants are made in Build and exported through Present.
+- **Exports follow what is exported.** Present exports slides (PPTX, PDF, HTML). Curate exports a topic's annotated bibliography and a presentation's assertions with their evidence as a written brief. Pre-read and handout variants are made in Build and exported through Present.
 - **Engage is separate from Present**, so audience features can ship on their own schedule.
 
 **Words used in this spec**
 
 | Word | Meaning |
 | --- | --- |
-| Presentation | What the author makes: topic, occasion, curation and slides |
-| Topic | What the presentation is about, before any position is taken |
-| Source | Something evidence comes from: a paper, report, registry record, document, data URL or the author's note. Id S1, S2… |
-| Fact | One statement taken from a source, with its quote and location where there is one; checked or unchecked. Id F1, F2… |
+| Body of Knowledge | The author's personal library of sources and the facts drawn from them. Evidence only: no assertions |
+| Source | Something evidence comes from: a paper, report, registry record, statistic, Bible passage, document, data URL, or the author's own knowledge. Carries a general annotation |
+| Fact | One statement taken from a source, with its quote and location where there is one; checked against the source, or unchecked (the author's own knowledge). Belongs to one source |
+| Topic | A subject in the author's Topic Library, reused across presentations: keywords, related topics, collaborators, linked sources, observations and assertions. No subtopics |
+| Topic Library | The author's topics, with those shared with them as a collaborator or viewer |
+| Observation | What Claude offers about the facts: what they show (citing them), and, labeled separately, its view from general knowledge. Never an assertion |
+| Assertion | A person's own statement of what the evidence shows, in their words, belonging to a topic, backed by zero or more facts. With none it is unsupported |
+| Link | The tie between an assertion and a fact, marked supporting, qualifying or contradicting |
+| Enhanced assertion | A collaborator's own assertion that builds on another person's, credited to both |
+| Presentation | What the author gives: a purpose and an audience, a series of topics, and in each the chosen assertions; then its slides |
 | Discovery | Finding sources the author didn't have, from named scientific and government databases (F-119, F-020, F-023) |
-| Probe | A question the author asks of the workspace; the checked answer may propose changes (F-118) |
-| Message | The one sentence the presentation supports (formerly "thesis") |
-| Point | One step that carries the message, backed by facts; becomes a slide's headline |
-| Outline | Message, points with evidence, what we don't know yet, recommendation and next steps (formerly "the argument") |
-| Brief | The outline written out as a document |
+| Probe | A question the author asks of a topic's facts; the answer is an observation (F-118) |
+| Brief | A presentation's assertions with their evidence, written out as a document |
 
-In the code and database, the outline is still stored as `argument` and `argument_ops`, the message as `thesis`, and the module's pages live under `/research`. These internal names are invisible to authors.
+Retired: "message" (replaced by the presentation's purpose and audience), "point" and "outline" (replaced by a presentation's topics and assertions), and "the workspace" as something a presentation owns.
 
 ## 4. Users and use cases
 
@@ -124,11 +131,11 @@ Each stage adds a user type with different needs. Admin features are not assumed
 
 **Primary use cases, in the order of the journey**
 
-1. Start a presentation from a topic and discover the current evidence: strongest first, then the newest studies, ongoing trials and government reports.
-2. Bring your own evidence into the same workspace: monthly reports as PDFs (figures lined up into sourced charts), data from a URL, research papers (read and quote-checked), and facts you know firsthand.
-3. Ask questions of the evidence, summarize what is established, new, contested and unknown, challenge your own message, and discard what doesn't belong.
-4. Choose a message and the points that carry it, each backed by checked facts, and export the outline as a written brief.
-5. Build slides from the outline, fitted to the time; when the outline changes, see which slides to review.
+1. Create a topic and discover the current evidence for it: strongest first, then the newest studies, ongoing trials and government reports.
+2. Bring your own evidence into the same Body of Knowledge: monthly reports as PDFs (figures lined up into sourced charts), data from a URL, research papers (read and quote-checked), and facts you know firsthand.
+3. Ask questions of the evidence, read Claude's observations, challenge your own view, and discard what doesn't belong.
+4. Make assertions in your own words, each backed by the facts that support, qualify or contradict it; export a topic's annotated bibliography.
+5. Build a presentation for a purpose and audience from a series of topics and their assertions, or from scratch with assertions to investigate later; fit the slides to the time; when evidence changes, see which assertions and slides to review.
 6. Import an existing PowerPoint deck and continue from it, and send it to Curate to check its claims against sources.
 7. Generate a 5-minute, 45-minute and pre-read version from one presentation.
 8. Present live and jump to any slide by voice or search during Q&A.
@@ -136,19 +143,33 @@ Each stage adds a user type with different needs. Admin features are not assumed
 10. Review a colleague's changes point by point and approve or reject each.
 11. Publish a lecture as slides, a handout and an accessible study guide, and let viewers ask questions answered only from its evidence.
 12. Add images once to a shared library, as slide images or as evidence with their source.
-13. Learn to research: in a course set to learning mode, a student discovers sources, reads them, writes each fact with its quote and page, and builds the message, with Claude as coach rather than reader; the instructor sees the record of the student's own work (F-209, F-210).
-## 5. The presentation model
+13. Learn to research: in a course set to learning mode, a student discovers sources, reads them, writes each fact with its quote and page, and makes the assertions, with Claude as coach rather than reader; the instructor sees the record of the student's own work (F-209, F-210).
+## 5. The knowledge model
 
-The model follows the journey: a presentation holds its curation (where the evidence lives) and its slides (where the design lives). Keeping the two apart, and linked, is what separates this product from a PowerPoint with an AI sidebar.
+Knowledge is curated once and reused. Three layers, kept apart and linked:
+
+```
+Body of Knowledge (personal)        Topic Library                       Presentations
+  Source ──has──▶ Fact  ◀──link──▶  Assertion ◀──has── Topic  ◀──series of──  Presentation
+  (annotation)    (quote, checked)  (supports /         (keywords,             (purpose, audience;
+                                     qualifies /         related topics,        chosen assertions
+                                     contradicts)        collaborators)         per topic, in order)
+```
 
 | Concept | Definition | Why it matters |
 | --- | --- | --- |
-| Presentation | What the author makes: topic, occasion, its curation and its slides (F-025) | One thing for the author to think about, from first search to delivery |
-| Outline | Made in Curate: the message, points in order with their evidence (checked facts, figures, evidence images) or marked unsupported, what we don't know yet, a recommendation and next steps | Separates what you'll say from how the slides look; one outline can feed several slide versions or a brief |
-| Topic and occasion | What the presentation is about, and optionally who it is for, what should happen and how long it runs | Discovery starts from the topic; the occasion shapes the message and the time fit |
-| Probe | A question the author asks of the workspace; the answer cites facts and may propose changes the author accepts or dismisses | The case is built step by step, with a record of how |
-| Slides (deck) | Made in Build, usually from the outline: an ordered narrative plus a pool of backup material, with a time budget | Enables multiple versions and non-linear delivery |
-| Slide | One point as its headline, the evidence blocks under it, and a presenter intent (inform, persuade, decide) | Layout can be regenerated without losing meaning |
+| Body of Knowledge | The author's personal library of sources and facts (F-130) | Evidence is gathered and checked once, then reused by every topic and presentation |
+| Source | Something evidence comes from: a record found by discovery (paper, report, registry entry, statistic), Scripture, an uploaded file, a web page, a data URL, an MCP connector, or the author's own knowledge. Marked as the author's own or discovered; every fetch is kept as a dated snapshot; carries a general annotation (F-135); can be made publicly discoverable (F-139) | Every fact traces to exactly what was read, and when |
+| Fact | One statement taken from a source with its exact quote and location, checked against it; or the author's own knowledge, unchecked. Belongs to one source; supports zero or more assertions | The evidence layer holds only what sources say |
+| Topic | A subject in the Topic Library: name, keywords, related topics, an author with collaborators and viewers, links to sources (each with a "why it matters here" note), observations and assertions. No subtopics (F-131) | A topic grows over time and serves many presentations |
+| Observation | Claude's: what the facts show, citing them; and, labeled separately, its view from general knowledge, which can't be cited as evidence but can prompt a search or an assertion to investigate (F-132) | Claude helps people see; it never asserts |
+| Assertion | A person's own statement of what the evidence shows, typed in their own words, belonging to a topic. Backed by zero or more facts; with none it is unsupported. Nobody edits another person's assertion: a collaborator comments, or writes an enhanced assertion that builds on it (F-133, F-137) | The presentation belongs to the human |
+| Link | An assertion's tie to a fact, marked supporting, qualifying or contradicting. Many to many. When an assertion cites a fact, its source is linked to the assertion's topic automatically (F-140) | Counter-evidence stays in view; changes travel along links |
+| Evidence summary | For an assertion, a plain description of its linked facts: how many, from how many sources, of what kinds, from which years, and how many support, qualify or contradict. No rating (F-134) | Judging strength is part of asserting, which is the author's |
+| Presentation | A purpose and an audience (metadata), a series of topics, and in each the assertions chosen for that purpose and audience, in order; then its slides. New topics and assertions written here go into the Topic Library (F-136) | One topic serves a board talk and a lecture with different assertions |
+| Review flag | Raised on an assertion when a linked fact or source changes or is discarded, and on the presentations using it (F-138) | Presentations stay as current as their evidence |
+| Slides (deck) | Made in Build from a presentation's topics and assertions: an ordered narrative plus a pool of backup material, with a time budget | Enables multiple versions and non-linear delivery |
+| Slide | Usually one assertion as its headline, the evidence blocks under it, and a presenter intent (inform, persuade, decide) | Layout can be regenerated without losing meaning |
 | Block | A typed unit of content: text, figure, chart, table, image, quote, equation, diagram | Each type has its own accessibility and review rules |
 | Layout | A rule-based arrangement chosen from the slide's blocks and the active theme | No manual nudging; overridable per slide |
 | Theme (design tokens) | Colors, type, spacing, logo rules, contrast minimums, owned by the institution | Brand and accessibility are enforced, not checked |
@@ -162,6 +183,10 @@ The model follows the journey: a presentation holds its curation (where the evid
 | Freeform region | A slide area exempt from layout rules, with absolute positioning | The escape hatch |
 
 **Rules of the model**
+
+- Assertions never enter the Body of Knowledge, and facts never carry opinions. An assertion with no facts stays unsupported in the Topic Library; firsthand knowledge enters the Body of Knowledge as a fact whose source is the author, unchecked.
+- Assertions don't rest on other assertions: only on facts. Reasoning shows in the order of topics and assertions in a presentation.
+- Copying a public source copies the source and its facts, disconnected from the original; assertions are never copied.
 
 - A slide may be freeform in part, but the model still records its point and evidence so search, review, and variants keep working.
 - Edits by AI and by people are stored as operations with author, time, and reason, which powers history and point-level diffs.
@@ -179,7 +204,19 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 
 | ID | Module | Requirement | Priority |
 | --- | --- | --- | --- |
-| F-019 | Curate | Start a presentation from a topic: the topic is required, the occasion (audience, time, what should happen) optional; no message is needed to begin | P0 |
+| F-130 | Curate | Body of Knowledge: each person's library of sources and the facts drawn from them, gathered by discovery, upload, data URL, Scripture lookup or typed firsthand knowledge (a fact whose source is the author, unchecked). A source is stored once and serves any number of topics; facts belong to one source and are checked against it where possible. Discarding a source or fact keeps it on record with a reason, and flags what depends on it (F-138) | P0 |
+| F-131 | Curate | Topic Library: create topics with a name, keywords and related topics (no subtopics); find topics by keyword; each topic shows its linked sources, observations and assertions; discovery and its search record run per topic | P0 |
+| F-132 | Curate | Observations: Claude describes what a topic's facts show, citing them; any view from its general knowledge is labeled separately and can't be cited as evidence, but can start a search or an assertion to investigate. Probes and challenges (F-118, F-022) answer as observations. Observations are saved with the topic | P0 |
+| F-133 | Curate | Assertions: a person writes an assertion in their own words under a topic, links facts to it and marks each as supporting, qualifying or contradicting. From an observation the app asks "Do you agree? How would you say this?" and the person types the assertion; there is no button to accept Claude's wording. An assertion with no facts is unsupported and listed for investigation | P0 |
+| F-134 | Curate | Evidence summary: each assertion shows a plain description of its linked facts (counts of facts and sources, kinds of source, years, and how many support, qualify or contradict), with no rating | P0 |
+| F-135 | Curate | Annotated bibliography: each source has a general annotation (what it found, how strong, why it matters), drafted by Claude and edited by the author, plus a note on each topic it is linked to; a topic's bibliography can be exported or printed | P1 |
+| F-136 | Build | Presentations from topics: a presentation has a purpose and an audience; the author chooses a series of topics and, in each, the assertions that suit them, in order, and can write new topics and assertions in place (filed in the Topic Library; new assertions unsupported until investigated). Slides are drafted from it | P0 |
+| F-137 | Platform | Roles on topics and presentations: an author, collaborators designated by the author (who can add sources, facts and their own assertions) and viewers (read only). Nobody edits another person's assertion: collaborators comment for the author to revise, or write an enhanced assertion that builds on it, credited to both | P1 |
+| F-138 | Platform | Review flags: when a source or fact changes or is discarded, every assertion linked to it is flagged, and every presentation using those assertions shows what to review | P0 |
+| F-139 | Curate | Publicly discoverable sources: the author can make any source discoverable by others; someone who takes it gets a copy of the source and its facts, disconnected from the original; assertions are never shared this way | P1 |
+| F-140 | Curate | Automatic links: when an assertion cites a fact, the fact's source is linked to the assertion's topic, so the topic's bibliography stays complete | P0 |
+| F-141 | Platform | Start fresh for the knowledge model: existing presentations and decks are deleted and the database rebuilt; discovery, reading and checking, Scripture, word study, usage tracking and invitations carry over onto the new model | P0 |
+| F-019 | Curate | Superseded by F-131 and F-136: topics live in the Topic Library; a presentation has a purpose and audience. Was: start a presentation from a topic: the topic is required, the occasion (audience, time, what should happen) optional; no message is needed to begin | P0 |
 | F-001 | Curate | Superseded by F-019: the topic comes first. The occasion (purpose, audience, and optionally a key takeaway) is set after it, when the author is ready; the time limit is set in Build | P1 |
 
 **Evidence: discovery**
@@ -211,18 +248,18 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 
 | ID | Module | Requirement | Priority |
 | --- | --- | --- | --- |
-| F-118 | Curate | Curate workspace with probes: each presentation has one workspace of sources (papers, documents, data, the author's notes) and the facts confirmed from them, with short ids (S2, F7). The author builds the case by asking successive questions; Claude answers from the active facts only, citing them, with the earlier questions as context, and proposes changes (add a point, link evidence, change the message, add an open question, discard a source or fact). The author accepts or dismisses each one. Answers and proposals are checked: citations must be active facts, and every number must appear in the facts cited. When the author discards a source or fact, by button or by asking, it is taken off every point, never sent to Claude again, and kept on record with the reason; it can be restored or undone | P0 |
+| F-118 | Curate | Revised by F-130 to F-132: probes are asked of a topic's facts in the Body of Knowledge, and answers are observations. Was: Curate workspace with probes: each presentation has one workspace of sources (papers, documents, data, the author's notes) and the facts confirmed from them, with short ids (S2, F7). The author builds the case by asking successive questions; Claude answers from the active facts only, citing them, with the earlier questions as context, and proposes changes (add a point, link evidence, change the message, add an open question, discard a source or fact). The author accepts or dismisses each one. Answers and proposals are checked: citations must be active facts, and every number must appear in the facts cited. When the author discards a source or fact, by button or by asking, it is taken off every point, never sent to Claude again, and kept on record with the reason; it can be restored or undone | P0 |
 | F-021 | Curate | Discovery summary: from the workspace's active facts only, what is established, what is new (including where a discovered source supersedes one of the author's), what is contested and what is unknown, each statement citing its facts and checked like a probe answer; each unknown offers a search | P0 |
-| F-022 | Curate | Challenge me: find and summarize evidence against the direction the author is leaning (the message or a point), so the presentation is tested before it is given | P1 |
+| F-022 | Curate | Challenge me: find and summarize evidence against the direction the author is leaning (an assertion, or the topic as a whole), so the presentation is tested before it is given | P1 |
 | F-013 | Curate | Claude analyzes confirmed figures for the presentation's purpose and against comparisons the author supplies (a budget, a target, last year, a normal). The result is an analysis, not a summary: a message, points with evidence, why each matters, possible drivers and confidence, then a recommendation and next steps. Every number carries a formula the app recomputes, and anything that doesn't check is left out; Claude's general knowledge is labeled and kept to speaker notes. Without Claude, computed checks and patterns still run. Details in section 10 Its message and points are proposals: they join the workspace and the candidate messages (F-024), and slides are drafted only from the outline the author approves. | P1 |
 
 **Message and outline**
 
 | ID | Module | Requirement | Priority |
 | --- | --- | --- | --- |
-| F-024 | Curate | Message and points: the system offers two or three candidate messages and the points that would carry each, every point tied to facts; weak support and objections are flagged; the author picks, edits or writes their own. Replaces the template-first outline of F-002 when the workspace has facts | P0 |
+| F-024 | Curate | Superseded by F-132 and F-133 (observations and the author's own assertions). Was: message and points: the system offers two or three candidate messages and the points that would carry each, every point tied to facts; weak support and objections are flagged; the author picks, edits or writes their own. Replaces the template-first outline of F-002 when the workspace has facts | P0 |
 | F-002 | Curate | Superseded in part by F-024 when the workspace has facts; still used to start with no sources. Outline: the author writes, reorders and nests points, with or without sources; Claude may propose an outline or more points; evidence is attached per point, and a point with none is marked unsupported; the author approves before slides are drafted | P0 |
-| F-016 | Curate | Save the outline (message, points, evidence, open questions, recommendation, next steps) as Curate's output and Build's input; one outline can feed several slide versions; export it as a written brief (DOCX or Markdown) | P1 |
+| F-016 | Curate | Revised by F-136: a presentation's topics and assertions are Build's input; the brief writes them out with their evidence. Was: save the outline (message, points, evidence, open questions, recommendation, next steps) as Curate's output and Build's input; one outline can feed several slide versions; export it as a written brief (DOCX or Markdown) | P1 |
 
 **Build**
 
@@ -248,7 +285,7 @@ Grouped by the step of the journey they serve (section 2). Stage 0 requirements 
 | ID | Module | Requirement | Priority |
 | --- | --- | --- | --- |
 | F-018 | Platform | Magic Link sign-in, one institution, author role | P0 |
-| F-025 | Platform | The presentation as one object: topic, occasion, curation (sources, facts, probes, outline) and its slides together, in one list ("Your presentations"), opening in the module last used. Replaces the separate outline and deck lists | P1 |
+| F-025 | Platform | Superseded by the knowledge model (section 5, F-130 to F-141). Was: the presentation as one object: topic, occasion, curation (sources, facts, probes, outline) and its slides together, in one list ("Your presentations"), opening in the module last used. Replaces the separate outline and deck lists | P1 |
 | F-017 | Platform | Shared media library: upload an image once; each image is a slide image or evidence; evidence images keep their source and date; alt text and rights travel with the image | P1 |
 
 **Engage**
@@ -359,11 +396,11 @@ AI is used where it saves real effort, and always as a proposal the user can ins
 
 | Capability | What it does | Human control |
 | --- | --- | --- |
-| Discovery and outline (Curate) | Builds the discovery landscape and summary, then proposes candidate messages and points from the workspace's facts (F-020, F-021, F-024) | Author edits and approves before slides exist |
+| Discovery and observations (Curate) | Builds the discovery landscape for a topic, then offers observations from its facts, with its general knowledge labeled separately (F-020, F-021, F-132) | Author edits and approves before slides exist |
 | Finding sources (Curate) | Writes database searches from the author's words; reads added records for findings (F-119) | Author edits the search and picks every result; quotes checked against the record |
-| Probing the workspace (Curate) | Answers the author's successive questions from the workspace's active facts and proposes changes to the outline (F-118) | Citations and numbers checked; each proposal accepted or dismissed; discards only on the author's word |
+| Probing a topic (Curate) | Answers the author's successive questions from a topic's facts as observations; the author makes any assertion in their own words (F-118, F-133) | Citations and numbers checked; each proposal accepted or dismissed; discards only on the author's word |
 | Reading research papers (Curate) | Pulls each paper's findings and limitations with quotes and pages, then analyzes across papers for the presentation's purpose (F-015) | Quotes and numbers checked against the PDF; author confirms each finding; points that fail checks are left out |
-| Slide drafting (Build) | Turns the outline's points into slide headlines, evidence blocks and layout, fitted to the time limit | Shown as a diff; accept, edit, or reject |
+| Slide drafting (Build) | Turns a presentation's assertions into slide headlines, evidence blocks and layout, fitted to the time limit | Shown as a diff; accept, edit, or reject |
 | Consistency and evidence checks (Build) | Finds conflicting numbers, unsupported points, stale data | Warnings only; never silently changes content |
 | Variant generation | Cuts a deck to a target length or depth | Preview before saving; original untouched |
 | Accessibility remediation | Suggests alt text, reading order, caption fixes | Per-item accept; flagged as AI-generated |
@@ -585,7 +622,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 | Login | Supabase Magic Link, with a transactional email service for delivery | No passwords; SSO (Entra ID) added in a later stage |
 | Tenancy | Tenant ID on every record, enforced by Row Level Security | Multi-tenant from day one, even with one tenant |
 | Presentation model | The curation (topic, sources, facts, probes, outline) and each deck (a typed block tree) are changed only by operations, each kept in an append-only log | Gives history, point-level diffs, undo, and later co-editing |
-| Data model | Postgres tables: `tenants`, `memberships`; `presentations` with `presentation_ops`; `decks` (each belonging to a presentation, or none for an import) with `deck_ops`; `live_*` for audience sessions. Row Level Security on every table; the logs are insert-only. Set up or reset with `supabase/setup-all.sql` | The tables follow the model; history cannot be rewritten; one paste rebuilds a database |
+| Data model | Planned for the knowledge model (F-141): `sources` and `facts` (the Body of Knowledge, per owner; `public` flag; copies record what they came from), `topics` (keywords, related topics) with `topic_sources` (note per topic), `observations`, `assertions` (author, topic, `builds_on`) with `assertion_facts` (role: supports, qualifies, contradicts), `comments`, `presentations` (purpose, audience) with `presentation_topics` and `presentation_assertions` (order), `members` (role on a topic or presentation: author, collaborator, viewer), `review_flags`; changes logged as operations as now. Kept: `tenants`, `memberships`, `decks` with `deck_ops`, `ai_usage`, `app_admins`, `invitations`, `live_*`. Current tables: `presentations` with `presentation_ops`, `decks` with `deck_ops`, `live_*`. Row Level Security on every table; the logs are insert-only. Set up or reset with `supabase/setup-all.sql` | The tables follow the model; history cannot be rewritten; one paste rebuilds a database |
 | Layout | Rules from theme tokens, run in the browser | Instant reflow; same logic reused for export |
 | Search | Per-slide embeddings computed at save; index bundled into the offline package | Semantic jump works with no network |
 | Audience response | Supabase Realtime channels per session | Live polls and Q&A without running a WebSocket server |
@@ -635,7 +672,7 @@ Clients reach one presentation service; AI calls, storage, and outside systems s
 | Patient or student data enters decks on a non-compliant host | Privacy breach | Non-sensitive content only in .3; BAA plan or Azure move before Stage 1 real data |
 | Discovery misses key evidence (database coverage, search wording) | A presentation that looks evidence-based but isn't complete | Search shown and editable; several databases; strongest evidence first; Challenge me; the author's own sources alongside |
 | Claude misreads or overstates a source | A wrong fact on a slide | Quotes checked word for word, numbers checked against cited facts, the author confirms every fact, abstract-only sources labeled |
-| Generic AI output makes forgettable presentations | Low adoption | Evidence-first workflow, the author chooses the message, strong defaults, easy overrides |
+| Generic AI output makes forgettable presentations | Low adoption | Evidence-first workflow, assertions in the author's own words, strong defaults, easy overrides |
 | Import quality too low | Users abandon | Import report, freeform fallback, quality score, early testing on real decks |
 | Wrong slide appears on voice command | The presenter loses control of the room | Presenter-only preview, confirm gate, never-show flag |
 | Audience abuse or off-topic submissions | Disrupted sessions | Moderation queue, rate limits, rotating codes |
@@ -733,7 +770,7 @@ The first built-in theme uses the LLU palette, with every color tagged by its sa
 
 **Name.** OratorStudio replaces the earlier working name, LecternAI. It has not yet been through a trademark search. Before the name is public, run a trademark search, check domains and app store listings, and decide who files. LLU would own any mark.
 
-**Tagline and motto.** The tagline is "Ideas first. Slides follow." It restates design principles 1 and 2: the evidence and the message come first, and the slides follow from them. The motto, "Create. Present. Engage.", predates the four modules. A motto that names them, "Curate. Build. Present. Engage.", is proposed. The line for Curate is "Curate the evidence. Hone your message. Each point backed by evidence, every fact traceable to its source." "Orator's Sidekick" was considered as a name and not adopted.
+**Tagline and motto.** The tagline is "Ideas first. Slides follow." It restates design principles 1 and 3: the evidence and the author's assertions come first, and the slides follow from them. The motto, "Create. Present. Engage.", predates the four modules. A motto that names them, "Curate. Build. Present. Engage.", is proposed. The line for Curate is "Curate the evidence. Hone your message. Each point backed by evidence, every fact traceable to its source." "Orator's Sidekick" was considered as a name and not adopted.
 
 **Logo.** The logo is a wordmark: "Orator" in bold type followed by "Studio" in an accent color, with no space between them. On the brand card, the tagline sits below the name, then a thin rule, then the motto in a lighter gray. The app uses this lockup on the sign-in page and the name with the tagline on the phone join page. The typeface is a placeholder (the system sans-serif) until a brand typeface is chosen.
 
