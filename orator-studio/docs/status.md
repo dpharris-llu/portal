@@ -29,7 +29,9 @@ Last updated: November 28, 2026. The product spec ([`product-spec.md`](product-s
 | Decision | Why |
 | --- | --- |
 | **The knowledge model** (spec section 5, F-130 to F-141): a personal **Body of Knowledge** (sources have facts), a **Topic Library** (topics have assertions), **assertions supported by facts** (many to many, each link marked supports / qualifies / contradicts), and **presentations** with a purpose and an audience, made from a series of topics with the assertions that suit them | Knowledge is curated once and reused across presentations; evidence and interpretation stay apart. Decided by the product owner on November 28, 2026; replaces "each presentation owns its workspace and one message" |
-| **Claude observes; people assert** | Claude may offer observations, labeling its general knowledge separately; a person types every assertion in their own words ("Do you agree? How would you say this?"). Nobody edits another person's assertion: collaborators comment or write an enhanced assertion |
+| **Five modules: Discover, Curate, Build, Present, Engage** | Finding evidence is a different activity from making sense of it. Discover owns the Body of Knowledge (sources and facts; explore an idea, find evidence); Curate owns the Topic Library (topics, observations, assertions); Build makes presentations. Two ways in: start in Build when you know what you want to say, or in Discover when you're exploring |
+| **Ingestion engine** (F-143 to F-147) | Scholars have a large body of work: their writing (papers, books, sermons, lectures, decks, drafts) and collected papers are read into the Body of Knowledge and a proposed Topic Library; what they wrote counts as their assertions, quoted and cited; the works they cited become sources worth exploring. Runs in the background at batch prices; personal for now |
+| **Claude observes; people assert** | Observations come from the author or Claude, labeled by who made them; Claude may offer observations, labeling its general knowledge separately; a person types every assertion in their own words ("Do you agree? How would you say this?"). Nobody edits another person's assertion: collaborators comment or write an enhanced assertion |
 | **Start fresh** for the knowledge model | Nothing is in real use yet; existing presentations and decks are deleted and the database rebuilt |
 | Four modules: **Curate → Build → Present → Engage** | "Curate" names what the author does with evidence: gather, judge, keep, discard. It replaced "Research" and "Discover". |
 | Vocabulary: a **presentation** has one **message** and several **points**; Curate produces the **outline** | Plain words an author uses; "argument" and "thesis" sounded combative. (The code still says `Argument` internally.) |
@@ -53,7 +55,7 @@ Last updated: November 28, 2026. The product spec ([`product-spec.md`](product-s
 
 ## Next, in order
 
-0. **Review the knowledge model in the spec** (sections 2, 3, 5 and F-130 to F-141), then rebuild onto it (F-141).
+0. **Review the knowledge model in the spec** (sections 2, 3, 5 and F-130 to F-147), then rebuild onto it (F-141), including the ingestion engine.
 1. **The talk** (in a few days): use the live site; fix only what the dry run shows.
 2. **A slight redesign** (requested; scope to be agreed).
 3. **Word study:** follow a concept across related words (Claude suggests, data confirms); spell out grammar codes.
